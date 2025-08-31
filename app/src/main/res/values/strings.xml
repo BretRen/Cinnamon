@@ -1,0 +1,52 @@
+<resources>
+    <string
+        name="app_name"
+        translatable="false">CuteConnect</string>
+    <string name="empty" />
+    <string name="reply">Reply</string>
+    <string name="okay">Okay</string>
+    <string name="me">Me</string>
+    <string name="cancel">Cancel</string>
+    <string name="dialer">Dialer</string>
+    <string name="type_here">Type here…</string>
+    <string name="messages">Messages</string>
+    <string name="contacts">Contacts</string>
+    <string name="call_log">Call log</string>
+    <string name="search_messages">Search messages</string>
+    <string name="search_contacts">Search contacts</string>
+    <string name="start_convo">Type a contact or number</string>
+    <string name="search_calls">Search calls</string>
+    <string name="call">Call</string>
+    <string name="copy_no_clipboard">Copy number to clipboard</string>
+    <string name="send_msg">Send message</string>
+    <string name="delete">Delete</string>
+    <string name="you_blocked_this_no">You blocked this number.</string>
+    <string name="unblock_no">Unblock number ?</string>
+    <string name="unblock">Unblock</string>
+    <string name="unblock_no_u_sure">Are you sure you want to unblock %1$s ?</string>
+    <string name="choose_no_to_call">Choose a number to call</string>
+    <string name="delete_convo">Delete conversation ?</string>
+    <string name="delete_convo_u_sure">Are you sure you want to delete this conversation ? This action cannot be undone !</string>
+    <string name="delete_call_log">Delete call log ?</string>
+    <string name="delete_call_log_u_sure">Are you sure you want to delete this call log ? This action cannot be undone !</string>
+    <string name="not_default_sms">CuteConnect is not your default SMS app.</string>
+    <string name="not_default_dialer">CuteConnect is not your default dialer app.</string>
+    <string name="is_default_sms">CuteConnect is your default SMS app!</string>
+    <string name="is_default_dialer">CuteConnect is your default dialer app!</string>
+    <string name="set_as_sms_app">Set as default SMS app</string>
+    <string name="set_as_dialer_app">Set as default dialer app</string>
+    <string name="capture">Capture</string>
+    <string name="attach_media">Attach media</string>
+    <string name="attach_file">Attach file</string>
+    <string name="reply_short_code_unavailable">Can\'t reply to short codes like these</string>
+    <string name="cant_text_while_airplane">Can\'t text while airplane mode is on</string>
+    <string name="voicemail">Voicemail</string>
+    <plurals name="delete_msg">
+        <item quantity="one">Delete message ?</item>
+        <item quantity="other">Delete messages ?</item>
+    </plurals>
+    <plurals name="delete_msg_u_sure">
+        <item quantity="one">Are you sure you want to delete this message ? This action cannot be undone !</item>
+        <item quantity="other">Are you sure you want to delete %d messages ? This action cannot be undone !</item>
+    </plurals>
+</resources>

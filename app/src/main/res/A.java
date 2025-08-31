@@ -1,0 +1,1 @@
+val GlobalFont = FontFamily(Font(R.font.nunito))
