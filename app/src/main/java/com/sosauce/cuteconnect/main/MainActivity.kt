@@ -1,6 +1,7 @@
 package com.sosauce.cuteconnect.main
 
 import android.Manifest
+import android.app.ComponentCaller
 import android.app.role.RoleManager
 import android.app.role.RoleManager.ROLE_DIALER
 import android.app.role.RoleManager.ROLE_SMS
@@ -28,6 +29,7 @@ import com.sosauce.cuteconnect.ui.navigation.Nav
 import com.sosauce.cuteconnect.ui.screens.setup.SetupScreen
 import com.sosauce.cuteconnect.ui.theme.CuteConnectTheme
 import com.sosauce.cuteconnect.utils.hasBothRoles
+import com.sosauce.cuteconnect.utils.requestRole
 
 class MainActivity : ComponentActivity() {
 
@@ -48,12 +50,13 @@ class MainActivity : ComponentActivity() {
 
                 var hasBothRoles by remember { mutableStateOf(hasBothRoles()) }
                 if (hasBothRoles) {
-                    Nav()
+                    Nav(intent = intent)
                 } else {
                     SetupScreen { hasBothRoles = hasBothRoles() }
                 }
             }
         }
     }
+
 }
 

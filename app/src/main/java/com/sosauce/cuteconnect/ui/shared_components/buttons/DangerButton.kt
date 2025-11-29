@@ -15,8 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.stringResource
 import com.sosauce.cuteconnect.R
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
-
+import androidx.compose.material3.Text
 @Composable
 fun DangerButton(
     onClick: () -> Unit,

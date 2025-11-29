@@ -25,10 +25,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import com.sosauce.cuteconnect.R
-import com.sosauce.cuteconnect.data.actions.CommonAction
-import com.sosauce.cuteconnect.ui.shared_components.buttons.DangerButton
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
 
+import com.sosauce.cuteconnect.ui.shared_components.buttons.DangerButton
+import androidx.compose.material3.Text
 @Composable
 fun DeleteMessageSheet(
     selectedMessages: Int,
@@ -46,20 +45,20 @@ fun DeleteMessageSheet(
                 .fillMaxWidth()
                 .padding(5.dp)
         ) {
-            CuteText(
+            Text(
                 text = pluralStringResource(R.plurals.delete_msg, selectedMessages, selectedMessages),
                 style = MaterialTheme.typography.headlineMediumEmphasized.copy(
                     fontWeight = FontWeight.SemiBold
                 )
             )
-            CuteText(
+            Text(
                 text = "$selectedMessages messages",
                 style = MaterialTheme.typography.bodyMediumEmphasized.copy(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             )
             Spacer(Modifier.height(10.dp))
-            CuteText(
+            Text(
                 text = pluralStringResource(R.plurals.delete_msg_u_sure, selectedMessages, selectedMessages),
                 style = MaterialTheme.typography.bodyLargeEmphasized.copy(
                     textAlign = TextAlign.Center
@@ -73,13 +72,13 @@ fun DeleteMessageSheet(
                     modifier = Modifier.weight(1f),
                     onClick = onDismissRequest
                 ) {
-                    CuteText(stringResource(R.string.cancel))
+                    Text(stringResource(R.string.cancel))
                 }
                 DangerButton(
                     modifier = Modifier.weight(1f),
                     onClick = onDelete
                 ) {
-                    CuteText(stringResource(R.string.delete))
+                    Text(stringResource(R.string.delete))
                 }
             }
         }

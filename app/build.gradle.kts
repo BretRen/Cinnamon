@@ -104,6 +104,7 @@ dependencies {
     implementation(libs.androidx.media3.ui.compose)
     implementation(libs.coil.video)
     implementation(libs.geocoder)
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation("com.klinkerapps:android-smsmms:5.2.6")
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 

@@ -53,7 +53,7 @@ import com.sosauce.cuteconnect.domain.model.ConversationSettings
 import com.sosauce.cuteconnect.domain.model.CuteSimCard
 import com.sosauce.cuteconnect.ui.navigation.LocalHazeState
 import com.sosauce.cuteconnect.ui.shared_components.SimSelector
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
+import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.ui.shared_components.toolbars.ToolbarSkeleton
 import com.sosauce.cuteconnect.utils.addOrNot
 import com.sosauce.cuteconnect.utils.rememberSearchbarMaxFloatValue
@@ -107,7 +107,7 @@ fun ConversationBottomBar(
             TextField(
                 state = textFieldState,
                 placeholder = {
-                    CuteText(
+                    Text(
                         text = "Message",
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

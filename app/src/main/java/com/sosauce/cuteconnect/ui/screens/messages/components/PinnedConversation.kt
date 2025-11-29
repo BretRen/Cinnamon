@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sosauce.cuteconnect.domain.model.CuteConversation
 import com.sosauce.cuteconnect.ui.navigation.Screen
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
+import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.ui.shared_components.DefaultContactIcon
 import com.sosauce.cuteconnect.utils.getContactNameOrNothing
 
@@ -37,8 +37,7 @@ fun PinnedConversation(
     modifier: Modifier = Modifier,
     cuteConversation: CuteConversation,
     onNavigate: (Screen) -> Unit,
-    onLongClick: () -> Unit,
-    isSelected: Boolean
+    onLongClick: () -> Unit
 ) {
 
 
@@ -52,9 +51,8 @@ fun PinnedConversation(
                 .widthIn(max = 150.dp)
                 .padding(10.dp)
                 .clip(RoundedCornerShape(10.dp))
-                .background(if (isSelected) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surfaceContainerLow)
                 .combinedClickable(
-                    onClick = { onNavigate(Screen.Conversation(cuteConversation.recipients.first())) },
+                    onClick = { onNavigate(Screen.Conversation(cuteConversation.threadId)) },
                     onLongClick = onLongClick
                 ),
             contentAlignment = Alignment.Center
@@ -68,12 +66,12 @@ fun PinnedConversation(
                     firstLetter = senderOrNumber.firstOrNull(),
                     size = 70.dp
                 )
-                CuteText(
+                Text(
                     text = senderOrNumber,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                CuteText(
+                Text(
                     text = cuteConversation.snippet,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

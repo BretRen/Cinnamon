@@ -10,10 +10,12 @@ import com.sosauce.cuteconnect.R
 import com.sosauce.cuteconnect.data.managers.MessageNotificationManager
 import com.sosauce.cuteconnect.utils.RESULT_KEY
 import com.sosauce.cuteconnect.utils.THREAD_ID
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
-class MessageReplyReceiver: BroadcastReceiver() {
+class MessageReplyReceiver: BroadcastReceiver(), KoinComponent {
     override fun onReceive(context: Context, intent: Intent) {
-        val messagesNotificationManager by lazy { MessageNotificationManager(context) }
+        val messagesNotificationManager by inject<MessageNotificationManager>()
         val threadId = intent.getLongExtra(THREAD_ID, -1L)
         if (threadId == -1L) return
 

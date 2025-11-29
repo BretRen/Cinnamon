@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.sosauce.cuteconnect.ui.screens.voicemail
 
 import androidx.compose.animation.AnimatedVisibility
@@ -11,10 +13,13 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.material3.ContainedLoadingIndicator
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -22,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.sosauce.cuteconnect.data.managers.AudioManager
@@ -34,53 +40,54 @@ import com.sosauce.cuteconnect.utils.showCuteSearchbar
 
 @Composable
 fun VoicemailScreen(
-    voicemails: List<CuteVoicemail>,
+    state: VoicemailState,
     onNavigateUp: () -> Unit
 ) {
-    val context = LocalContext.current
-    val listState = rememberLazyListState()
-    val textState = rememberTextFieldState()
 
-    DisposableEffect(Unit) {
-        AudioManager.initializePlayer(context.applicationContext)
-        onDispose {
-            AudioManager.releasePlayer()
+    if (state.isLoading) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            ContainedLoadingIndicator()
         }
-    }
+    } else {
+        val context = LocalContext.current
+        val listState = rememberLazyListState()
+        val textState = rememberTextFieldState()
 
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
+        DisposableEffect(Unit) {
+            AudioManager.initializePlayer(context.applicationContext)
+            onDispose {
+                AudioManager.releasePlayer()
+            }
+        }
+
         Scaffold(
-            contentWindowInsets = WindowInsets.safeDrawing
+            contentWindowInsets = WindowInsets.safeDrawing,
+            bottomBar = {
+                MiniCuteSearchbar(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .wrapContentWidth()
+                        .navigationBarsPadding(),
+                    textFieldState = textState,
+                    onNavigateUp = onNavigateUp
+                )
+            }
         ) { paddingValues ->
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
                 contentPadding = paddingValues,
                 state = listState
             ) {
                 items(
-                    items = voicemails,
+                    items = state.voicemails,
                     key = { it.id }
                 ) { voicemail ->
                     VoicemailItem(voicemail)
-
                 }
             }
         }
-
-        AnimatedVisibility(
-            visible = listState.showCuteSearchbar,
-            enter = slideInVertically { it },
-            exit = slideOutVertically { it },
-            modifier = Modifier.align(rememberSearchbarAlignment())
-        ) {
-            MiniCuteSearchbar(
-                textFieldState = textState,
-                onNavigateUp = onNavigateUp
-            )
-        }
-
     }
 
 }

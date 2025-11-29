@@ -26,13 +26,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
@@ -47,141 +47,71 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.skydoves.cloudy.cloudy
 import com.sosauce.cuteconnect.R
-import com.sosauce.cuteconnect.data.actions.CallAction
 import com.sosauce.cuteconnect.data.contact_settings.ContactSettingsActions
-import com.sosauce.cuteconnect.data.conversation_settings.ConversationSettingActions
 import com.sosauce.cuteconnect.domain.model.CuteContact
 import com.sosauce.cuteconnect.ui.navigation.Screen
 import com.sosauce.cuteconnect.ui.screens.contacts.components.ContactActionsRow
 import com.sosauce.cuteconnect.ui.screens.contacts.components.ContactInfos
 import com.sosauce.cuteconnect.ui.shared_components.BottomActionButtons
-import com.sosauce.cuteconnect.ui.shared_components.CuteNavigationButton
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
+import com.sosauce.cuteconnect.ui.shared_components.buttons.CuteNavigationButton
+import androidx.compose.material3.Text
+import com.sosauce.cuteconnect.ui.screens.phone.CallAction
 import com.sosauce.cuteconnect.ui.shared_components.DefaultContactIcon
-import com.sosauce.cuteconnect.utils.addOrNot
-import com.sosauce.cuteconnect.utils.copyMutate
-import com.sosauce.cuteconnect.viewModels.ContactViewModel
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 
 @Composable
 fun ContactDetails(
-    contact: CuteContact,
+    state: ContactDetailsState,
     onNavigateBack: () -> Unit,
     onNavigate: (Screen) -> Unit,
-    onHandleCallAction: (CallAction) -> Unit
+    onHandleCallAction: (CallAction) -> Unit,
+    onHandleContactSettingsAction: (ContactSettingsActions) -> Unit
 ) {
 
-    val context = LocalContext.current
-    var isEditMode by rememberSaveable { mutableStateOf(false) }
-    val scrollState = rememberScrollState()
-    val contactViewModel = koinViewModel<ContactViewModel>(
-        parameters = { parametersOf(contact.id) }
-    )
-    val contactSettings by contactViewModel.contactSettings.collectAsStateWithLifecycle()
-    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {
-        it?.let { uri ->
-            context.contentResolver.takePersistableUriPermission(
-                uri,
-                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-            )
-            //
-            contactViewModel.handleContactSettingsActions(
-                ContactSettingsActions.UpsertContactSettings(
-                    contactSettings.copy(
-                        poster = uri.toString(),
-                    )
-                )
-            )
-        }
-    }
-
-
-    Scaffold { pv ->
+    if (state.isLoading) {
         Box(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .verticalScroll(scrollState)
-                    .padding(pv)
-            ) {
-                IconButton(
-                    onClick = { imagePicker.launch(arrayOf("image/*")) }
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Add,
-                        contentDescription = null
-                    )
-                }
-                Box(
-                    modifier = Modifier
-                        .padding(horizontal = 10.dp)
-                        .clip(RoundedCornerShape(24.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    AsyncImage(
-                        model = contactSettings.poster.toUri(),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .height(200.dp)
-                            .cloudy(30),
-                        contentScale = ContentScale.FillWidth
-                    )
-                    DefaultContactIcon(
-                        firstLetter = contact.name.firstOrNull(),
-                        modifier = Modifier
-                            .padding(start = 10.dp),
-                        size = 170.dp,
-                        contactPfp = contact.photo,
-                        shape = MaterialShapes.Cookie12Sided.toShape()
-                    )
-
-                }
-                Spacer(Modifier.height(15.dp))
-                CuteText(
-                    text = contact.name,
-                    modifier = Modifier.basicMarquee(),
-                    style = MaterialTheme.typography.headlineLargeEmphasized
+            ContainedLoadingIndicator()
+        }
+    } else {
+        val context = LocalContext.current
+        var isEditMode by rememberSaveable { mutableStateOf(false) }
+        val scrollState = rememberScrollState()
+        val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {
+            it?.let { uri ->
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 )
-                Spacer(Modifier.height(15.dp))
-                ContactActionsRow(
-                    contact = contact,
-                    onNavigate = onNavigate,
-                    onHandleCallAction = onHandleCallAction
+                onHandleContactSettingsAction(
+                    ContactSettingsActions.UpsertContactSettings(
+                        state.settings.copy(
+                            poster = uri.toString()
+                        )
+                    )
                 )
-                Spacer(Modifier.height(25.dp))
-                ContactInfos(
-                    contact = contact,
-                    isEditMode = isEditMode
-                )
-
             }
+        }
 
-            AnimatedVisibility(
-                visible = scrollState.canScrollForward,
-                enter = slideInVertically { it },
-                exit = slideOutVertically { it },
-                modifier = Modifier.align(Alignment.BottomCenter)
 
-            ) {
+        Scaffold(
+            bottomBar = {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    CuteNavigationButton(
-                        modifier = Modifier.navigationBarsPadding()
-                    ) { onNavigateBack() }
-                    BottomActionButtons(
-                        modifier = Modifier.navigationBarsPadding()
-                    ) {
+                    CuteNavigationButton(onNavigateUp = onNavigateBack)
+                    BottomActionButtons {
                         Row {
                             IconButton(
                                 onClick = { isEditMode = !isEditMode }
@@ -214,10 +144,68 @@ fun ContactDetails(
                         }
                     }
                 }
+            }
+        ) { pv ->
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .verticalScroll(scrollState)
+                    .padding(pv)
+            ) {
+                IconButton(
+                    onClick = { imagePicker.launch(arrayOf("image/*")) }
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Add,
+                        contentDescription = null
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 10.dp)
+                        .clip(RoundedCornerShape(24.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AsyncImage(
+                        model = state.settings.poster.toUri(),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .height(200.dp)
+                            .cloudy(30),
+                        contentScale = ContentScale.FillWidth
+                    )
+                    DefaultContactIcon(
+                        firstLetter = state.contact.name.firstOrNull(),
+                        modifier = Modifier
+                            .padding(start = 10.dp),
+                        size = 170.dp,
+                        contactPfp = state.contact.photo,
+                        shape = MaterialShapes.Cookie12Sided.toShape()
+                    )
+
+                }
+                Spacer(Modifier.height(15.dp))
+                Text(
+                    text = state.contact.name,
+                    modifier = Modifier.basicMarquee(),
+                    style = MaterialTheme.typography.headlineLargeEmphasized
+                )
+                Spacer(Modifier.height(15.dp))
+                ContactActionsRow(
+                    contact = state.contact,
+                    onNavigate = onNavigate,
+                    onHandleCallAction = onHandleCallAction
+                )
+                Spacer(Modifier.height(25.dp))
+                ContactInfos(
+                    contact = state.contact,
+                    isEditMode = isEditMode
+                )
 
             }
-
         }
+
     }
+
 
 }

@@ -1,3 +1,5 @@
+@file:OptIn(DelicateCoroutinesApi::class)
+
 package com.sosauce.cuteconnect.data.receivers
 
 import android.Manifest
@@ -20,22 +22,29 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.Person
 import androidx.core.app.RemoteInput
 import com.sosauce.cuteconnect.R
+import com.sosauce.cuteconnect.data.datastore.getArchivedConversations
 import com.sosauce.cuteconnect.data.managers.MessageNotificationManager
+import com.sosauce.cuteconnect.data.telephony.CuteTelephonyManager
 import com.sosauce.cuteconnect.domain.model.CuteMessage
-import com.sosauce.cuteconnect.domain.repository.CommonRepository
 import com.sosauce.cuteconnect.utils.RESULT_KEY
 import com.sosauce.cuteconnect.utils.getContactNameOrNothing
 import com.sosauce.cuteconnect.utils.getThreadIdOrCreate
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
-class SmsReceiver : BroadcastReceiver() {
+class SmsReceiver : BroadcastReceiver(), KoinComponent {
     override fun onReceive(context: Context, intent: Intent) {
 
         if (intent.action != "android.provider.Telephony.SMS_DELIVER") return
 
-        val messagesNotificationManager by lazy { MessageNotificationManager(context) }
-        val commonRepository by lazy { CommonRepository(context) }
+        val messagesNotificationManager by inject<MessageNotificationManager>()
+        val cuteTelephonyManager by inject<CuteTelephonyManager>()
 
         Sms.Intents.getMessagesFromIntent(intent).forEach { message ->
 
@@ -43,18 +52,18 @@ class SmsReceiver : BroadcastReceiver() {
                 message.displayOriginatingAddress?.getThreadIdOrCreate(context) ?: 0
             }
 
-            val cuteMessage = CuteMessage(
+            cuteTelephonyManager.saveSmsToDevice(
                 address = message.displayOriginatingAddress ?: "",
-                body = message.messageBody,
-                type = Sms.MESSAGE_TYPE_INBOX,
-                threadId = threadId,
-                read = false
+                message = message.messageBody,
+                messageType = Sms.MESSAGE_TYPE_INBOX
             )
 
-            commonRepository.saveSmsToDevice(cuteMessage)
+            val archived = runBlocking(Dispatchers.IO) { getArchivedConversations(context).first() }
+            if (threadId.toString() in archived) return
+
             messagesNotificationManager.sendOrAppendMessageNotification(
                 threadId = threadId,
-                message = cuteMessage,
+                message = message.messageBody,
                 number = message.displayOriginatingAddress
             )
         }

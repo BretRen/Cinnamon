@@ -9,11 +9,26 @@ import com.sosauce.cuteconnect.data.conversation_settings.ConversationSettingsDa
 import com.sosauce.cuteconnect.data.conversation_settings.ConversationSettingsDatabase
 import com.sosauce.cuteconnect.data.managers.CallManager
 import com.sosauce.cuteconnect.data.managers.CallNotificationManager
-import com.sosauce.cuteconnect.domain.repository.CommonRepository
-import com.sosauce.cuteconnect.viewModels.CallViewModel
-import com.sosauce.cuteconnect.viewModels.CommonViewModel
-import com.sosauce.cuteconnect.viewModels.ContactViewModel
-import com.sosauce.cuteconnect.viewModels.ConversationViewModel
+import com.sosauce.cuteconnect.data.managers.MessageNotificationManager
+import com.sosauce.cuteconnect.data.telephony.CuteTelephonyManager
+import com.sosauce.cuteconnect.domain.repository.ArchivedThreadsRepository
+import com.sosauce.cuteconnect.domain.repository.ContactDetailsRepository
+import com.sosauce.cuteconnect.domain.repository.ContactsRepository
+import com.sosauce.cuteconnect.domain.repository.ConversationsRepository
+import com.sosauce.cuteconnect.domain.repository.DialerRepository
+import com.sosauce.cuteconnect.domain.repository.MessagesRepository
+import com.sosauce.cuteconnect.domain.repository.SimsRepository
+import com.sosauce.cuteconnect.domain.repository.VoicemailsRepository
+import com.sosauce.cuteconnect.ui.screens.archived.ArchivedViewModel
+import com.sosauce.cuteconnect.ui.screens.contacts.ContactDetailsViewModel
+import com.sosauce.cuteconnect.ui.screens.contacts.ContactsViewModel
+import com.sosauce.cuteconnect.ui.screens.dialer.DialerViewModel
+import com.sosauce.cuteconnect.ui.screens.dialer.DialpadViewModel
+import com.sosauce.cuteconnect.ui.screens.messages.ConversationDetailsViewModel
+import com.sosauce.cuteconnect.ui.screens.messages.MessagesViewModel
+import com.sosauce.cuteconnect.ui.screens.phone.CallingViewModel
+import com.sosauce.cuteconnect.ui.screens.voicemail.VoicemailViewModel
+import com.sosauce.cuteconnect.ui.screens.wallpaper.ThemingViewModel
 import org.koin.android.ext.koin.androidApplication
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.singleOf
@@ -39,11 +54,27 @@ val appModule = module {
         ).build().dao
     }
 
+    singleOf(::CallManager)
+    singleOf(::MessageNotificationManager)
     singleOf(::CallNotificationManager)
-    singleOf(::CommonRepository)
+    singleOf(::CuteTelephonyManager)
+    singleOf(::ConversationsRepository)
+    singleOf(::SimsRepository)
+    singleOf(::ContactsRepository)
+    singleOf(::ContactDetailsRepository)
+    singleOf(::MessagesRepository)
+    singleOf(::ArchivedThreadsRepository)
+    singleOf(::DialerRepository)
+    singleOf(::VoicemailsRepository)
 
-    viewModelOf(::CommonViewModel)
-    viewModelOf(::CallViewModel)
-    viewModelOf(::ConversationViewModel)
-    viewModelOf(::ContactViewModel)
+    viewModelOf(::ContactsViewModel)
+    viewModelOf(::ContactDetailsViewModel)
+    viewModelOf(::ConversationDetailsViewModel)
+    viewModelOf(::ThemingViewModel)
+    viewModelOf(::MessagesViewModel)
+    viewModelOf(::ArchivedViewModel)
+    viewModelOf(::DialerViewModel)
+    viewModelOf(::VoicemailViewModel)
+    viewModelOf(::CallingViewModel)
+    viewModelOf(::DialpadViewModel)
 }

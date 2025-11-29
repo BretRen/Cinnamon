@@ -17,7 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.sosauce.cuteconnect.domain.model.CuteContact
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
+import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.ui.shared_components.DefaultContactIcon
 import com.sosauce.cuteconnect.utils.betterFormatNumber
 import com.sosauce.cuteconnect.utils.thenIf
@@ -54,13 +54,13 @@ fun ContactListItem(
             Column(
                 modifier = Modifier.padding(15.dp)
             ) {
-                CuteText(
+                Text(
                     text = contact.name,
                     maxLines = 1,
                     modifier = Modifier.basicMarquee()
                 )
                 if (showNumber) {
-                    CuteText(
+                    Text(
                         text = contact.phoneNumbers.first().number.betterFormatNumber(),
                         maxLines = 1,
                         modifier = Modifier.basicMarquee(),

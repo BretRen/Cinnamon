@@ -36,8 +36,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
-
+import androidx.compose.material3.Text
 @Composable
 fun Dialpad(
     onSendTone: (Char) -> Unit
@@ -87,7 +86,7 @@ fun Dialpad(
                             modifier = Modifier
                                 .weight(1f)
                                 .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide)),
-                        ) { CuteText(number.toString()) }
+                        ) { Text(number.toString()) }
                     },
                     {}
                 )
@@ -110,7 +109,7 @@ fun Dialpad(
                             modifier = Modifier
                                 .weight(1f)
                                 .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide)),
-                        ) { CuteText(number.toString()) }
+                        ) { Text(number.toString()) }
                     },
                     {}
                 )
@@ -133,7 +132,7 @@ fun Dialpad(
                             modifier = Modifier
                                 .weight(1f)
                                 .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide)),
-                        ) { CuteText(number.toString()) }
+                        ) { Text(number.toString()) }
                     },
                     {}
                 )
@@ -156,7 +155,7 @@ fun Dialpad(
                             modifier = Modifier
                                 .weight(1f)
                                 .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide)),
-                        ) { CuteText(number.toString()) }
+                        ) { Text(number.toString()) }
                     },
                     {}
                 )

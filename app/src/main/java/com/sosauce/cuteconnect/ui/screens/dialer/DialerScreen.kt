@@ -27,6 +27,7 @@ import androidx.compose.material.icons.rounded.Voicemail
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialShapes
@@ -41,12 +42,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.sosauce.cuteconnect.R
-import com.sosauce.cuteconnect.data.actions.CallAction
-import com.sosauce.cuteconnect.data.actions.CommonAction
+
 import com.sosauce.cuteconnect.domain.model.CuteCallLog
 import com.sosauce.cuteconnect.ui.navigation.Screen
 import com.sosauce.cuteconnect.ui.shared_components.searchbars.CuteSearchbar
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
+import androidx.compose.material3.Text
+import com.sosauce.cuteconnect.ui.screens.phone.CallAction
 import com.sosauce.cuteconnect.utils.groupSubsequentlyBy
 import com.sosauce.cuteconnect.utils.rememberSearchbarAlignment
 import com.sosauce.cuteconnect.utils.showCuteSearchbar
@@ -54,11 +55,9 @@ import com.sosauce.cuteconnect.utils.toReadableDate
 
 @Composable
 fun DialerScreen(
+    state: DialerState,
     onNavigate: (Screen) -> Unit,
-    callLogs: List<CuteCallLog>,
-    onHandleCallActions: (CallAction) -> Unit,
-    onHandleCommonAction: (CommonAction) -> Unit,
-    onCallAction: (CallAction) -> Unit
+    onHandleCallActions: (CallAction) -> Unit
 ) {
 
     val listState = rememberLazyListState()
@@ -66,7 +65,6 @@ fun DialerScreen(
     Scaffold { paddingValues ->
         Box {
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
                 contentPadding = paddingValues
             ) {
                 item {
@@ -86,20 +84,20 @@ fun DialerScreen(
                                 contentDescription = null
                             )
                             Spacer(Modifier.width(10.dp))
-                            CuteText(stringResource(R.string.voicemail))
+                            Text(stringResource(R.string.voicemail))
                         }
                     }
                     Spacer(Modifier.height(10.dp))
                 }
 
-                callLogs
+                state.callLogs
                     .groupBy { it.date.toReadableDate() }
                     .forEach { (date, callLog) ->
                         item {
                             Row(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                CuteText(
+                                Text(
                                     text = date,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(start = 10.dp)
@@ -114,8 +112,7 @@ fun DialerScreen(
                             CallLogItem(
                                 callLog = callLog,
                                 numberOfAppearance = appearances,
-                                onHandleCommonAction = onHandleCommonAction,
-                                onCallAction = onCallAction,
+                                onCallAction = onHandleCallActions,
                                 modifier = Modifier
                                     .animateItem()
                                     .clip(RoundedCornerShape(24.dp))
@@ -134,9 +131,9 @@ fun DialerScreen(
                 CuteSearchbar(
                     sortingMenu = {},
                     fab = {
-                        SmallFloatingActionButton(
+                        FloatingActionButton(
                             onClick = { onNavigate(Screen.Dialpad) },
-                            shape = MaterialShapes.Cookie7Sided.toShape()
+                            shape = MaterialShapes.Cookie9Sided.toShape()
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Dialpad,

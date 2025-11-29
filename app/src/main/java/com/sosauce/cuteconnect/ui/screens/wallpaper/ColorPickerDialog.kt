@@ -27,8 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.github.skydoves.colorpicker.compose.HsvColorPicker
 import com.github.skydoves.colorpicker.compose.rememberColorPickerController
 import com.sosauce.cuteconnect.R
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
-
+import androidx.compose.material3.Text
 @Composable
 fun ColorPickerDialog(
     onDismissRequest: () -> Unit,
@@ -46,7 +45,7 @@ fun ColorPickerDialog(
                 contentDescription = null
             )
         },
-        title = { CuteText("Color picker") },
+        title = { Text("Color picker") },
         confirmButton = {
             TextButton(
                 onClick = {
@@ -54,14 +53,14 @@ fun ColorPickerDialog(
                     onDismissRequest()
                 }
             ) {
-                CuteText("Save color")
+                Text("Save color")
             }
         },
         dismissButton = {
             TextButton(
                 onClick = onDismissRequest
             ) {
-                CuteText(stringResource(R.string.cancel))
+                Text(stringResource(R.string.cancel))
             }
         },
         text = {
@@ -83,7 +82,7 @@ fun ColorPickerDialog(
                         .clip(RoundedCornerShape(5.dp))
                         .background(controller.selectedColor.value)
                 )
-                CuteText("#$hexCode")
+                Text("#$hexCode")
             }
         }
     )

@@ -38,6 +38,9 @@ sealed class Screen: NavKey {
     data object Settings : Screen()
 
     @Serializable
+    data object ArchivedThreads : Screen()
+
+    @Serializable
     data class ConversationTheming(
         val threadId: Long
     ) : Screen()
@@ -50,12 +53,9 @@ sealed class Screen: NavKey {
         val id: Long
     ) : Screen()
 
-    /**
-     * @param number Must be plain number with no formatting.
-     */
     @Serializable
     data class Conversation(
-        val number: String
+        val threadId: Long
     ) : Screen()
 
 }

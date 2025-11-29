@@ -2,6 +2,7 @@
 
 package com.sosauce.cuteconnect.ui.screens.messages
 
+import android.provider.Telephony
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -25,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastFilter
 import com.sosauce.cuteconnect.domain.model.CuteContact
 import com.sosauce.cuteconnect.ui.navigation.Screen
 import com.sosauce.cuteconnect.ui.screens.contacts.ContactListItem
@@ -42,51 +45,36 @@ fun StartConversation(
     onNavigate: (Screen) -> Unit
 ) {
     val context = LocalContext.current
-    val listState = rememberLazyListState()
     val textState = rememberTextFieldState()
 
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        Scaffold { paddingValues ->
-            LazyColumn(
-                contentPadding = paddingValues,
-                state = listState,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(
-                    items = contacts.filter { it.name.lowercase().contains(textState.text.toString().lowercase()) || it.phoneNumbers.firstOrNull()?.number?.contains(textState.text) == true },
-                    key = { it.id }
-                ) { contact ->
-                    ContactListItem(
-                        modifier = Modifier
-                            .animateItem()
-                            .padding(
-                                vertical = 2.dp,
-                                horizontal = 4.dp
-                            ),
-                        contact = contact,
-                        onContactClick = {
-                            try {
-                                onNavigate(Screen.Conversation(contact.phoneNumbers.first().number))
-                            } catch (_: Exception) {}
-                        },
-                        showNumber = true
-                    )
-                }
-            }
-        }
-
-        AnimatedVisibility(
-            visible = listState.showCuteSearchbar,
-            enter = slideInVertically { it },
-            exit = slideOutVertically { it },
-            modifier = Modifier.align(rememberSearchbarAlignment())
-        ) {
+    Scaffold(
+        bottomBar = {
             MiniCuteSearchbar(
+                modifier = Modifier.fillMaxWidth().wrapContentWidth(),
                 textFieldState = textState,
                 onNavigateUp = onNavigateUp
             )
+        }
+    ) { paddingValues ->
+        LazyColumn(
+            contentPadding = paddingValues
+        ) {
+            items(
+                items = contacts.fastFilter { it.name.lowercase().contains(textState.text.toString().lowercase()) || it.phoneNumbers.firstOrNull()?.number?.contains(textState.text) == true },
+                key = { it.id }
+            ) { contact ->
+                ContactListItem(
+                    modifier = Modifier
+                        .animateItem()
+                        .padding(
+                            vertical = 2.dp,
+                            horizontal = 4.dp
+                        ),
+                    contact = contact,
+                    onContactClick = { onNavigate(Screen.Conversation(Telephony.Threads.getOrCreateThreadId(context, contact.phoneNumbers.first().number))) },
+                    showNumber = true
+                )
+            }
         }
     }
 }

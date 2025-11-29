@@ -13,8 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.sosauce.cuteconnect.R
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
-
+import androidx.compose.material3.Text
 /**
  * A delete dropdown menu item. Provides an alert dialog as one should always be shown before deleting anything.
  */
@@ -39,7 +38,7 @@ fun DropdownItemDelete(
             dismissButton = {
                 TextButton(
                     onClick = { showDialog = false }
-                ) { CuteText(stringResource(R.string.cancel)) }
+                ) { Text(stringResource(R.string.cancel)) }
             },
             confirmButton = {
                 TextButton(
@@ -47,7 +46,7 @@ fun DropdownItemDelete(
                         onDelete()
                         showDialog = false
                     }
-                ) { CuteText(stringResource(R.string.delete)) }
+                ) { Text(stringResource(R.string.delete)) }
             },
             text = dialogText,
             title = dialogTitle
@@ -56,7 +55,7 @@ fun DropdownItemDelete(
 
     CuteDropdownMenuItem(
         onClick = { showDialog = true },
-        text = { CuteText(stringResource(R.string.delete)) },
+        text = { Text(stringResource(R.string.delete)) },
         leadingIcon = {
             Icon(
                 painter = painterResource(R.drawable.delete),

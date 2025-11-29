@@ -47,11 +47,11 @@ import com.google.i18n.phonenumbers.NumberParseException
 import com.google.i18n.phonenumbers.PhoneNumberUtil
 import com.google.i18n.phonenumbers.geocoding.PhoneNumberOfflineGeocoder
 import com.sosauce.cuteconnect.R
-import com.sosauce.cuteconnect.data.actions.CallAction
-import com.sosauce.cuteconnect.data.actions.CommonAction
+
 import com.sosauce.cuteconnect.domain.model.CuteCallLog
 import com.sosauce.cuteconnect.ui.shared_components.CuteDropdownMenuItem
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
+import androidx.compose.material3.Text
+import com.sosauce.cuteconnect.ui.screens.phone.CallAction
 import com.sosauce.cuteconnect.ui.shared_components.DefaultContactIcon
 import com.sosauce.cuteconnect.ui.shared_components.DropdownItemDelete
 import com.sosauce.cuteconnect.utils.betterFormatNumber
@@ -69,7 +69,6 @@ fun CallLogItem(
     modifier: Modifier = Modifier,
     callLog: CuteCallLog,
     numberOfAppearance: Int,
-    onHandleCommonAction: (CommonAction) -> Unit,
     onCallAction: (CallAction) -> Unit
 ) {
 
@@ -153,7 +152,7 @@ fun CallLogItem(
             Column(
                 modifier = Modifier.padding(15.dp)
             ) {
-                CuteText(
+                Text(
                     text = if (numberOfAppearance <= 1) numberOrName else "$numberOrName ($numberOfAppearance)",
                     maxLines = 1,
                     modifier = Modifier.basicMarquee()
@@ -168,7 +167,7 @@ fun CallLogItem(
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(Modifier.width(5.dp))
-                    CuteText(
+                    Text(
                         text = buildString {
                             append(callLog.date.toReadableDuration(DurationUnit.MILLISECONDS))
                             append(" · ")
@@ -205,7 +204,7 @@ fun CallLogItem(
                     CuteDropdownMenuItem(
                         onClick = action.onClick,
                         text = {
-                            CuteText(
+                            Text(
                                 text = stringResource(action.text)
                             )
                         },
@@ -219,15 +218,15 @@ fun CallLogItem(
                 }
                 DropdownItemDelete(
                     onDelete = {
-                        onHandleCommonAction(
-                            CommonAction.DeleteFromContentUri(
-                                CallLog.Calls.CONTENT_URI,
-                                callLog.id
-                            )
-                        )
+//                        onHandleCommonAction(
+//                            CommonAction.DeleteFromContentUri(
+//                                CallLog.Calls.CONTENT_URI,
+//                                callLog.id
+//                            )
+//                        )
                     },
-                    dialogTitle = { CuteText(stringResource(R.string.delete_call_log)) },
-                    dialogText = { CuteText(stringResource(R.string.delete_call_log_u_sure)) }
+                    dialogTitle = { Text(stringResource(R.string.delete_call_log)) },
+                    dialogText = { Text(stringResource(R.string.delete_call_log_u_sure)) }
                 )
 
             }

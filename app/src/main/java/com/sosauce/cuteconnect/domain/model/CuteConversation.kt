@@ -6,13 +6,12 @@ package com.sosauce.cuteconnect.domain.model
  * @param contacts contacts associated to this thread
  */
 data class CuteConversation(
-    val threadId: Long,
-    val contacts: List<CuteContact>,
-    //val contactsId: List<Long>,
-    val recipients: List<String>,
-    val snippet: String,
-    val date: Long,
-    val read: Boolean,
-    val isSenderBlocked: Boolean,
-    val isGroupChat: Boolean
+    val threadId: Long = 0,
+    val contacts: List<CuteContact> = emptyList(),
+    val recipients: List<String> = emptyList(),
+    val snippet: String = "",
+    val date: Long = 0,
+    val read: Boolean = true,
+    val isSenderBlocked: Boolean = false,
+    val isGroupChat: Boolean = false
 )

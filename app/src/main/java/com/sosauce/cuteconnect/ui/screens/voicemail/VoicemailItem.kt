@@ -26,7 +26,7 @@ import com.sosauce.cuteconnect.ui.shared_components.AnimatedSlider
 import com.sosauce.cuteconnect.ui.shared_components.CuteDropdownMenuItem
 import com.sosauce.cuteconnect.ui.shared_components.CuteDropdownMenuItemUnclickable
 import com.sosauce.cuteconnect.ui.shared_components.DefaultContactIcon
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
+import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.utils.getContactNameOrNothing
 import com.sosauce.cuteconnect.utils.getContactPfpUri
 import com.sosauce.cuteconnect.utils.toReadableDate
@@ -59,8 +59,8 @@ fun VoicemailItem(
             CuteDropdownMenuItemUnclickable(
                 text = {
                     Column {
-                        CuteText(nameOrNumber)
-                        CuteText(
+                        Text(nameOrNumber)
+                        Text(
                             text = "${voicemail.date.toReadableDate()} · ${voicemail.duration.toReadableDuration()}",
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

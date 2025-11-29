@@ -13,8 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.sosauce.cuteconnect.domain.model.CuteMms
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
-
+import androidx.compose.material3.Text
 @Composable
 fun DebugMmsScreen(
     cuteMms: List<CuteMms>
@@ -40,7 +39,7 @@ fun DebugMmsScreen(
                     contentDescription = null
                 )
 
-                if (it.text != null) { CuteText(it.text) }
+                if (it.text != null) { Text(it.text) }
             }
         }
     }

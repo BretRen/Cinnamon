@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.sosauce.cuteconnect.R
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
+import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.utils.ICON_TEXT_SPACING
 
 @Composable
@@ -48,7 +48,7 @@ fun TextingUnavailableBar(
             contentDescription = null
         )
         Spacer(Modifier.width(ICON_TEXT_SPACING.dp))
-        CuteText(stringResource(reasonText))
+        Text(stringResource(reasonText))
     }
 }
 

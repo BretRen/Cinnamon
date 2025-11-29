@@ -36,7 +36,7 @@ import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
 import com.sosauce.cuteconnect.R
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
+import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.utils.ImageUtils
 
 @Composable
@@ -77,7 +77,7 @@ fun DefaultContactIcon(
             contentAlignment = Alignment.Center
         ) {
             if (firstLetter?.isLetter() == true) {
-                CuteText(
+                Text(
                     text = firstLetter.uppercase(),
                     style = MaterialTheme.typography.titleLargeEmphasized.copy(
                         color = MaterialTheme.colorScheme.contentColorFor(color),

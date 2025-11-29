@@ -50,6 +50,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.SimCard
+import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButton
@@ -87,23 +88,20 @@ import androidx.compose.ui.util.fastFirst
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
-import com.sosauce.cuteconnect.data.actions.CommonAction
 import com.sosauce.cuteconnect.domain.model.CuteMessage
 import com.sosauce.cuteconnect.ui.navigation.Screen
 import com.sosauce.cuteconnect.ui.screens.messages.components.ConversationTopBar
 import com.sosauce.cuteconnect.ui.screens.messages.components.MessageBubble
 import com.sosauce.cuteconnect.ui.screens.messages.components.SelectedTopBar
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
+import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.utils.ImageUtils
 import com.sosauce.cuteconnect.utils.cuteHazeEffect
-import com.sosauce.cuteconnect.viewModels.ConversationViewModel
 import dev.chrisbanes.haze.hazeSource
 import org.koin.androidx.compose.koinViewModel
 import androidx.core.net.toUri
 import com.materialkolor.DynamicMaterialTheme
 import com.materialkolor.rememberDynamicMaterialThemeState
 import com.skydoves.cloudy.cloudy
-import com.sosauce.cuteconnect.data.actions.CallAction
 import com.sosauce.cuteconnect.data.conversation_settings.ConversationSettingActions
 import com.sosauce.cuteconnect.data.datastore.rememberDefaultSimCard
 import com.sosauce.cuteconnect.domain.model.ConversationSettings
@@ -116,6 +114,7 @@ import com.sosauce.cuteconnect.ui.screens.messages.components.ConversationBottom
 import com.sosauce.cuteconnect.ui.screens.messages.components.GenericThumbnail
 import com.sosauce.cuteconnect.ui.screens.messages.components.MediaThumbnail
 import com.sosauce.cuteconnect.ui.screens.messages.components.SandwichPosition
+import com.sosauce.cuteconnect.ui.screens.phone.CallAction
 import com.sosauce.cuteconnect.ui.shared_components.SimSelector
 import com.sosauce.cuteconnect.utils.addOrNot
 import com.sosauce.cuteconnect.utils.addOrRemove
@@ -133,169 +132,162 @@ import org.koin.core.parameter.parametersOf
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ConversationScreen(
-    cuteMessages: List<CuteMessage>,
-    cuteConversation: CuteConversation,
-    cuteSimCards: List<CuteSimCard>,
-    threadId: Long,
-    onHandleCommonAction: (CommonAction) -> Unit,
+    state: ConversationDetailsState,
     onHandleCallAction: (CallAction) -> Unit,
+    onDeleteConversation: () -> Unit,
+    onHandleConversationSettingsActions: (ConversationSettingActions) -> Unit,
+    onHandleConversationActions: (ConversationActions) -> Unit,
     onNavigateUp: () -> Unit,
     onNavigate: (Screen) -> Unit,
 ) {
-    val context = LocalContext.current
-    val convoViewModel = koinViewModel<ConversationViewModel>(
-        parameters = { parametersOf(threadId) }
-    )
-    val convoSettings by convoViewModel.settings.collectAsStateWithLifecycle()
-    val selectedMessages = remember { mutableStateListOf<CuteMessage>() }
-    val listState = rememberLazyListState()
-    val chatWallpaperState = rememberHazeState()
 
-    LaunchedEffect(cuteMessages) { listState.scrollToItem(listState.layoutInfo.totalItemsCount) }
+    if (state.isLoading) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            ContainedLoadingIndicator()
+        }
+    } else {
+        val context = LocalContext.current
+        val selectedMessages = remember { mutableStateListOf<CuteMessage>() }
+        val listState = rememberLazyListState()
+        val chatWallpaperState = rememberHazeState()
+
+        LaunchedEffect(state.messages) { listState.scrollToItem(listState.layoutInfo.totalItemsCount) }
 
 
-    DynamicMaterialTheme(
-        state = rememberDynamicMaterialThemeState(
-            seedColor = if (convoSettings.color == 0) MaterialTheme.colorScheme.primary else Color(convoSettings.color),
-            isDark = isSystemInDarkTheme() // NEED TO CHANGE THIS WHEN I HAVE APP THEME
-        ),
-    ) {
+        DynamicMaterialTheme(
+            state = rememberDynamicMaterialThemeState(
+                seedColor = if (state.settings.color == -1) MaterialTheme.colorScheme.primary else Color(state.settings.color),
+                isDark = isSystemInDarkTheme() // NEED TO CHANGE THIS WHEN I HAVE APP THEME
+            ),
+        ) {
 
-        Box {
-            // Wallpaper
-            AsyncImage(
-                model = ImageUtils.imageRequester(convoSettings.wallpaper.toUri(), context),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .hazeSource(chatWallpaperState)
-            )
-
-            Scaffold(
-                topBar = {
-                    AnimatedContent(
-                        targetState = selectedMessages.isEmpty()
-                    ) {
-                        if (it) {
-                            ConversationTopBar(
-                                cuteConversation = cuteConversation,
-                                threadId = threadId,
-                                onNavigateUp = onNavigateUp,
-                                onHandleCallAction = onHandleCallAction,
-                                onNavigate = onNavigate,
-                                onDeleteConversation = {
-                                    cuteMessages.fastForEach { message ->
-                                        onHandleCommonAction(
-                                            CommonAction.DeleteFromContentUri(
-                                                Sms.CONTENT_URI,
-                                                message.id
-                                            )
-                                        )
-                                    }
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .wrapContentWidth()
-                            )
-                        } else {
-                            SelectedTopBar(
-                                selectedCuteMessages = selectedMessages,
-                                onUnselectAll = selectedMessages::clear,
-                                onHandleCommonAction = onHandleCommonAction
-                            )
-                        }
-                    }
-                },
-                bottomBar = {
-                    ConversationBottomBar(
-                        onSendMessage = { message ->
-                            val cuteMessage = CuteMessage(
-                                body = message,
-                                type = Sms.MESSAGE_TYPE_SENT,
-                                address = cuteConversation.recipients.first(),
-                                threadId = threadId,
-                            )
-                            onHandleCommonAction(CommonAction.SendMessage(cuteMessage))
-                        },
-                        onSaveDraft = { draft ->
-                            convoViewModel.handleConversationSettingsActions(
-                                ConversationSettingActions.UpsertConversationSettings(
-                                    convoSettings.copy(
-                                        draft = draft
-                                    )
-                                )
-                            )
-                        },
-                        cuteSimCards = cuteSimCards
-                    )
-                },
-                containerColor = Color.Transparent
-            ) { paddingValues ->
-                LazyColumn(
+            Box {
+                // Wallpaper
+                AsyncImage(
+                    model = ImageUtils.imageRequester(state.settings.wallpaper.toUri(), context),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxSize()
-                        .hazeSource(LocalHazeState.current)
-                        .hazeEffect(
-                            state = chatWallpaperState
-                        ) { blurRadius = convoSettings.wallpaperBlurIntensity.dp },
-                    state = listState,
-                    contentPadding = paddingValues
-                ) {
+                        .hazeSource(chatWallpaperState)
+                )
 
-
-                    cuteMessages.groupBy { it.date.toReadableDate() }.forEach { (date, cuteMessages) ->
-                        item(
-                            key = date
+                Scaffold(
+                    topBar = {
+                        AnimatedContent(
+                            targetState = selectedMessages.isEmpty()
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 10.dp),
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                CuteText(
-                                    text = date,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            if (it) {
+                                ConversationTopBar(
+                                    state = state,
+                                    onNavigateUp = onNavigateUp,
+                                    onHandleCallAction = onHandleCallAction,
+                                    onNavigate = onNavigate,
+                                    onDeleteConversation = onDeleteConversation,
                                     modifier = Modifier
-                                        .background(
-                                            color = MaterialTheme.colorScheme.background,
-                                            shape = CircleShape
-                                        )
-                                        .padding(5.dp)
+                                        .fillMaxWidth()
+                                        .wrapContentWidth()
+                                )
+                            } else {
+                                SelectedTopBar(
+                                    selectedCuteMessages = selectedMessages,
+                                    onUnselectAll = selectedMessages::clear
                                 )
                             }
                         }
+                    },
+                    bottomBar = {
+                        ConversationBottomBar(
+                            onSendMessage = { message ->
+                                onHandleConversationActions(
+                                    ConversationActions.SendSms(
+                                        address = state.recipients.first(),
+                                        message = message
+                                    )
+                                )
+                            },
+                            onSaveDraft = { draft ->
+                                onHandleConversationSettingsActions(
+                                    ConversationSettingActions.UpsertConversationSettings(
+                                        state.settings.copy(
+                                            draft = draft
+                                        )
+                                    )
+                                )
+                            },
+                            cuteSimCards = state.simCards
+                        )
+                    },
+                    containerColor = Color.Transparent
+                ) { paddingValues ->
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            //.hazeSource(LocalHazeState.current)
+                            .hazeEffect(
+                                state = chatWallpaperState
+                            ) { blurRadius = state.settings.wallpaperBlurIntensity.dp },
+                        state = listState,
+                        contentPadding = paddingValues
+                    ) {
 
-                        itemsIndexed(
-                            items = cuteMessages,
-                            key = { _, cuteMessage -> cuteMessage.id }
-                        ) { index, cuteMessage ->
 
-
-                            val prev = cuteMessages.getOrNull(index - 1)
-                            val next = cuteMessages.getOrNull(index + 1)
-                            val sameAsPrev = prev?.type == cuteMessage.type
-                            val sameAsNext = next?.type == cuteMessage.type
-
-                            val sandwichPosition = when {
-                                !sameAsPrev && !sameAsNext -> SandwichPosition.SOLO
-                                !sameAsPrev && sameAsNext -> SandwichPosition.TOP
-                                sameAsPrev && sameAsNext -> SandwichPosition.MIDDLE
-                                sameAsPrev && !sameAsNext -> SandwichPosition.BOTTOM
-                                else -> SandwichPosition.SOLO
+                        state.messages.forEach { (date, cuteMessages) ->
+                            item(
+                                key = date
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 10.dp),
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        text = date,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier
+                                            .background(
+                                                color = MaterialTheme.colorScheme.background,
+                                                shape = CircleShape
+                                            )
+                                            .padding(5.dp)
+                                    )
+                                }
                             }
-                            MessageBubble(
-                                modifier = Modifier.animateItem(),
-                                cuteMessage = cuteMessage,
-                                onAddMessageToSelected = { selectedMessages.addOrRemove(cuteMessage) },
-                                isSelected = selectedMessages.contains(cuteMessage),
-                                isInSelectMode = selectedMessages.isNotEmpty(),
-                                sandwichPosition = sandwichPosition,
-                                allMedias = emptyList(),
-                                onHandleCommonAction = onHandleCommonAction
-                            )
 
+                            itemsIndexed(
+                                items = cuteMessages,
+                                key = { _, cuteMessage -> cuteMessage.id }
+                            ) { index, cuteMessage ->
+
+
+                                val prev = cuteMessages.getOrNull(index - 1)
+                                val next = cuteMessages.getOrNull(index + 1)
+                                val sameAsPrev = prev?.type == cuteMessage.type
+                                val sameAsNext = next?.type == cuteMessage.type
+
+                                val sandwichPosition = when {
+                                    !sameAsPrev && !sameAsNext -> SandwichPosition.SOLO
+                                    !sameAsPrev && sameAsNext -> SandwichPosition.TOP
+                                    sameAsPrev && sameAsNext -> SandwichPosition.MIDDLE
+                                    sameAsPrev && !sameAsNext -> SandwichPosition.BOTTOM
+                                    else -> SandwichPosition.SOLO
+                                }
+                                MessageBubble(
+                                    modifier = Modifier.animateItem(),
+                                    cuteMessage = cuteMessage,
+                                    onAddMessageToSelected = { selectedMessages.addOrRemove(cuteMessage) },
+                                    isSelected = selectedMessages.contains(cuteMessage),
+                                    isInSelectMode = selectedMessages.isNotEmpty(),
+                                    sandwichPosition = sandwichPosition,
+                                    allMedias = emptyList(),
+                                    onHandleConversationActions = onHandleConversationActions
+                                )
+
+                            }
                         }
                     }
                 }

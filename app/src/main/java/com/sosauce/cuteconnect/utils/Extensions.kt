@@ -515,6 +515,8 @@ fun Activity.requestRole(
         if (isRoleAvailable && !isRoleHeld) {
             val roleRequestIntent = roleManager.createRequestRoleIntent(role)
             startActivityForResult(roleRequestIntent, 1)
+
+            println("Hello - $roleRequestIntent")
         }
     } else {
         if (role == RoleManager.ROLE_SMS) {

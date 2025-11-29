@@ -23,6 +23,7 @@ import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -39,12 +40,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sosauce.cuteconnect.R
-import com.sosauce.cuteconnect.data.actions.CallAction
 import com.sosauce.cuteconnect.domain.model.CuteConversation
 import com.sosauce.cuteconnect.ui.navigation.LocalHazeState
 import com.sosauce.cuteconnect.ui.navigation.Screen
 import com.sosauce.cuteconnect.ui.shared_components.CuteDropdownMenuItem
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
+import androidx.compose.material3.Text
+import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastForEachIndexed
+import com.sosauce.cuteconnect.domain.states.ConversationState
+import com.sosauce.cuteconnect.ui.screens.messages.ConversationDetailsState
+import com.sosauce.cuteconnect.ui.screens.phone.CallAction
 import com.sosauce.cuteconnect.ui.shared_components.DefaultContactIcon
 import com.sosauce.cuteconnect.ui.shared_components.DefaultGroupChatIcon
 import com.sosauce.cuteconnect.ui.shared_components.DropdownItemBlock
@@ -63,8 +68,7 @@ import kotlin.text.firstOrNull
 @Composable
 fun ConversationTopBar(
     modifier: Modifier = Modifier,
-    cuteConversation: CuteConversation,
-    threadId: Long,
+    state: ConversationDetailsState,
     onNavigateUp: () -> Unit,
     onHandleCallAction: (CallAction) -> Unit,
     onNavigate: (Screen) -> Unit,
@@ -73,48 +77,62 @@ fun ConversationTopBar(
 
     val context = LocalContext.current
     var showMoreMenu by remember { mutableStateOf(false) }
-    val nameOrNumber = remember { cuteConversation.recipients.first().getContactNameOrNothing(context) }
+    val nameOrNumber = remember { state.recipients.first().betterFormatNumber() }
+    val isGroupChat = state.recipients.size > 1
 
 
 
     ToolbarSkeleton(
-        onClick = { onNavigate(Screen.ContactDetails(cuteConversation.recipients.first().getContactId(context))) }
+        onClick = if (isGroupChat) { null } else {
+            { onNavigate(Screen.ContactDetails(state.recipients.first().getContactId(context))) }
+        }
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
             IconButton(
-                onClick = onNavigateUp
+                onClick = onNavigateUp,
+                shapes = IconButtonDefaults.shapes()
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                     contentDescription = null
                 )
             }
-            if (cuteConversation.isGroupChat) {
-                DefaultGroupChatIcon()
+            if (isGroupChat) {
+                DefaultGroupChatIcon(
+                    modifier = Modifier.padding(end = 10.dp),
+                )
             } else {
                 DefaultContactIcon(
                     firstLetter = nameOrNumber.firstOrNull(),
                     modifier = Modifier.padding(end = 10.dp),
                     size = 38.dp,
-                    contactPfp = cuteConversation.contacts.firstOrNull()?.photo ?: Uri.EMPTY
+                    contactPfp = Uri.EMPTY
                 )
             }
-            CuteText(
-                text = nameOrNumber.betterFormatNumber(),
+            Text(
+                text = buildString {
+                    state.recipients.fastForEachIndexed { index, number ->
+                        append(number.getContactNameOrNothing(context))
+                        if (index != state.recipients.lastIndex) {
+                            append(", ")
+                        }
+                    }
+                },
                 maxLines = 1,
                 modifier = Modifier
                     .weight(1f),
                 overflow = TextOverflow.Ellipsis
             )
 
-            if (!cuteConversation.isGroupChat) {
+            if (!isGroupChat) {
                 IconButton(
                     onClick = {
-                        onHandleCallAction(CallAction.LaunchCall(cuteConversation.recipients.first()))
-                    }
+                        onHandleCallAction(CallAction.LaunchCall(state.recipients.first()))
+                    },
+                    shapes = IconButtonDefaults.shapes()
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Phone,
@@ -123,7 +141,8 @@ fun ConversationTopBar(
                 }
             }
             IconButton(
-                onClick = { showMoreMenu = true }
+                onClick = { showMoreMenu = true },
+                shapes = IconButtonDefaults.shapes()
             ) {
                 Icon(
                     imageVector = Icons.Rounded.MoreVert,
@@ -133,17 +152,17 @@ fun ConversationTopBar(
                     expanded = showMoreMenu,
                     onDismissRequest = { showMoreMenu = false },
                     shape = RoundedCornerShape(24.dp),
-                    modifier = Modifier
-                        .hazeEffect(
-                            state = LocalHazeState.current,
-                            style = HazeMaterials.regular(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainer
-                            )
-                        )
+//                    modifier = Modifier
+//                        .hazeEffect(
+//                            state = LocalHazeState.current,
+//                            style = HazeMaterials.regular(
+//                                containerColor = MaterialTheme.colorScheme.surfaceContainer
+//                            )
+//                        )
                 ) {
                     CuteDropdownMenuItem(
-                        onClick = { onNavigate(Screen.ConversationTheming(threadId)) },
-                        text = { CuteText("Customize chat") },
+                        onClick = { onNavigate(Screen.ConversationTheming(state.threadId)) },
+                        text = { Text("Customize chat") },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Outlined.Palette,
@@ -154,12 +173,12 @@ fun ConversationTopBar(
 
                     DropdownItemBlock(
                         onBlock = {},
-                        dialogText = { CuteText(stringResource(R.string.block)) },
+                        dialogText = { Text(stringResource(R.string.block)) },
                     )
                     DropdownItemDelete(
                         onDelete = onDeleteConversation,
-                        dialogTitle = { CuteText(stringResource(R.string.delete_convo)) },
-                        dialogText = { CuteText(stringResource(R.string.delete_convo_u_sure)) }
+                        dialogTitle = { Text(stringResource(R.string.delete_convo)) },
+                        dialogText = { Text(stringResource(R.string.delete_convo_u_sure)) }
                     )
                 }
             }

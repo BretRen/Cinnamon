@@ -27,3 +27,7 @@ object MmsSize {
     const val FILE_SIZE_1_MB = 1_048_576L
     const val FILE_SIZE_2_MB = 2_097_152L
 }
+
+object CuteIntents {
+    const val NOTIFICATION_NAVIGATE_TO_THREAD = "notification thread"
+}

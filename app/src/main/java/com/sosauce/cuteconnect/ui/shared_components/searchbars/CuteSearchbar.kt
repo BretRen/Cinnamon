@@ -31,6 +31,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -50,7 +51,7 @@ import androidx.compose.ui.unit.dp
 import com.sosauce.cuteconnect.R
 import com.sosauce.cuteconnect.ui.navigation.Screen
 import com.sosauce.cuteconnect.ui.shared_components.ScreenSelection
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
+import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.ui.theme.nunitoFontFamily
 import com.sosauce.cuteconnect.utils.LocalScreen
 import com.sosauce.cuteconnect.utils.rememberSearchbarMaxFloatValue
@@ -71,9 +72,9 @@ fun CuteSearchbar(
 
     val screenToLeadingIcon =
         mapOf(
-            Screen.Messages to R.drawable.message_rounded,
-            Screen.Contacts to R.drawable.contacts,
-            Screen.Dialer to R.drawable.phone,
+            Screen.Messages to R.drawable.messages_filled,
+            Screen.Contacts to R.drawable.contacts_filled,
+            Screen.Dialer to R.drawable.phone_filled
         )
     val currentScreen = LocalScreen.current
     var isInScreenSelectionMode by remember { mutableStateOf(false) }
@@ -94,7 +95,9 @@ fun CuteSearchbar(
 
         Row(
             horizontalArrangement = if (navigationIcon != null) Arrangement.SpaceBetween else Arrangement.End,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 4.dp)
         ) {
             if (showBackButton) {
                 navigationIcon?.invoke()
@@ -122,7 +125,6 @@ fun CuteSearchbar(
                     ) {
                         if (it) {
                             ScreenSelection(
-                                screenToLeadingIcon = screenToLeadingIcon,
                                 onNavigate = onNavigate,
                                 dismiss = { isInScreenSelectionMode = false }
                             )
@@ -134,14 +136,15 @@ fun CuteSearchbar(
                                     unfocusedIndicatorColor = Color.Transparent,
                                 ),
                                 placeholder = {
-                                    CuteText(
+                                    Text(
                                         text = stringResource(R.string.search_here),
                                         maxLines = 1
                                     )
                                 },
                                 leadingIcon = {
                                     IconButton(
-                                        onClick = { isInScreenSelectionMode = true }
+                                        onClick = { isInScreenSelectionMode = true },
+                                        shapes = IconButtonDefaults.shapes()
                                     ) {
                                         Icon(
                                             painter = painterResource(
@@ -163,7 +166,8 @@ fun CuteSearchbar(
                                             sortingMenu()
                                         }
                                         IconButton(
-                                            onClick = { showSortMenu = !showSortMenu }
+                                            onClick = { showSortMenu = !showSortMenu },
+                                            shapes = IconButtonDefaults.shapes()
                                         ) {
                                             Icon(
                                                 imageVector = Icons.AutoMirrored.Rounded.Sort,
@@ -171,7 +175,8 @@ fun CuteSearchbar(
                                             )
                                         }
                                         IconButton(
-                                            onClick = { onNavigate(Screen.Settings) }
+                                            onClick = { onNavigate(Screen.Settings) },
+                                            shapes = IconButtonDefaults.shapes()
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Rounded.Settings,

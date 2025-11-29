@@ -56,18 +56,19 @@ import kotlinx.coroutines.flow.update
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-class CallService: InCallService(), CallServiceCallback, AndroidCallCallback {
+class CallService: InCallService(), CallServiceCallback, AndroidCallCallback, KoinComponent {
 
 
     private lateinit var audioManager: AudioManager
-    val callNotificationManager by lazy { CallNotificationManager(this) }
+    val callNotificationManager by inject<CallNotificationManager>()
+    val callManager by inject<CallManager>()
     private var cuteCall: Call? = null
     private val handler = Handler(Looper.getMainLooper())
     private val runnable = object : Runnable {
         var i = 0L
         override fun run() {
             i++
-            CallManager.updateTimeSpent(i)
+            callManager.updateTimeSpent(i)
             handler.postDelayed(this, 1000)
         }
     }
@@ -91,8 +92,8 @@ class CallService: InCallService(), CallServiceCallback, AndroidCallCallback {
                 Call.STATE_DISCONNECTED, Call.STATE_DISCONNECTING -> CallState.ENDED
                 else -> CallState.ONGOING
             }
-            CallManager.updateCallState(callState)
-            CallManager.updateIsHolding(state == Call.STATE_HOLDING)
+            callManager.updateCallState(callState)
+            callManager.updateIsHolding(state == Call.STATE_HOLDING)
 
             callNotificationManager.sendNotification(notification)
 
@@ -100,7 +101,7 @@ class CallService: InCallService(), CallServiceCallback, AndroidCallCallback {
 
         override fun onDetailsChanged(call: Call?, details: Call.Details?) {
             super.onDetailsChanged(call, details)
-            CallManager.updateNumber(details?.handle?.schemeSpecificPart ?: "Undetermined")
+            callManager.updateNumber(details?.handle?.schemeSpecificPart ?: "Undetermined")
         }
 
 
@@ -133,8 +134,8 @@ class CallService: InCallService(), CallServiceCallback, AndroidCallCallback {
     override fun onCallAdded(call: Call) {
         super.onCallAdded(call)
         cuteCall = call
-        CallManager.registerCallServiceCallback(this)
-        CallManager.registerAndroidCallCallback(this)
+        callManager.registerCallServiceCallback(this)
+        callManager.registerAndroidCallCallback(this)
         cuteCall?.registerCallback(callback)
         handler.post(runnable)
 
@@ -175,8 +176,8 @@ class CallService: InCallService(), CallServiceCallback, AndroidCallCallback {
     override fun onCallRemoved(call: Call?) {
         super.onCallRemoved(call)
         cuteCall?.unregisterCallback(callback)
-        CallManager.unregisterCallServiceCallback()
-        CallManager.unregisterAndroidCallCallback()
+        callManager.unregisterCallServiceCallback()
+        callManager.unregisterAndroidCallCallback()
         //handler.removeCallbacks(runnable)
         callNotificationManager.clearCallNotifications()
     }
@@ -218,7 +219,7 @@ class CallService: InCallService(), CallServiceCallback, AndroidCallCallback {
     @Deprecated("Deprecated in Java")
     override fun onCallAudioStateChanged(audioState: CallAudioState?) {
         super.onCallAudioStateChanged(audioState)
-        CallManager.updateIsMuted(audioState?.isMuted == true)
+        callManager.updateIsMuted(audioState?.isMuted == true)
 
 
 
@@ -261,8 +262,8 @@ class CallService: InCallService(), CallServiceCallback, AndroidCallCallback {
             name = CallAudioState.audioRouteToString(audioState?.route ?: CallAudioState.ROUTE_EARPIECE),
             type = audioState?.route ?: CallAudioState.ROUTE_EARPIECE
         )
-        CallManager.updateAvailableAudioRoutes(availableRoutes)
-        CallManager.updateCurrentAudioRoute(endpoint)
+        callManager.updateAvailableAudioRoutes(availableRoutes)
+        callManager.updateCurrentAudioRoute(endpoint)
     }
 
     override fun toggleMute(mute: Boolean) = setMuted(mute)

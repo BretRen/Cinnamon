@@ -14,7 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.sosauce.cuteconnect.ui.navigation.Screen
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
+import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.ui.shared_components.DefaultContactIcon
 
 @Composable
@@ -45,8 +45,8 @@ fun AboutMeCard(
 //                    .clip(CircleShape),
 //            )
             Column {
-                CuteText("Me")
-                CuteText(
+                Text("Me")
+                Text(
                     text = "+33700000000",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,

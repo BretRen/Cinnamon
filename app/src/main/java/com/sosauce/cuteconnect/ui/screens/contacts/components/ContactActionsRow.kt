@@ -32,10 +32,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.sosauce.cuteconnect.domain.model.CuteContact
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
+import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.R
-import com.sosauce.cuteconnect.data.actions.CallAction
 import com.sosauce.cuteconnect.ui.navigation.Screen
+import com.sosauce.cuteconnect.ui.screens.phone.CallAction
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 

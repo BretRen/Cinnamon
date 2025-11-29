@@ -47,7 +47,7 @@ import com.sosauce.cuteconnect.domain.model.CuteContact
 import com.sosauce.cuteconnect.domain.model.CuteConversation
 import com.sosauce.cuteconnect.ui.navigation.Screen
 import com.sosauce.cuteconnect.ui.shared_components.CuteDropdownMenuItem
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
+import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.ui.shared_components.DefaultContactIcon
 import com.sosauce.cuteconnect.ui.shared_components.DefaultGroupChatIcon
 import com.sosauce.cuteconnect.utils.betterFormatNumber
@@ -61,7 +61,6 @@ fun Conversation(
     modifier: Modifier = Modifier,
     cuteConversation: CuteConversation,
     cuteContact: CuteContact?,
-    conversationSettings: ConversationSettings,
     onClick: (Screen) -> Unit,
     onLongClick: () -> Unit
 ) {
@@ -83,7 +82,7 @@ fun Conversation(
                         showUnblockDialog = false
                     }
                 ) {
-                    CuteText(
+                    Text(
                         text = stringResource(R.string.unblock)
                     )
                 }
@@ -92,13 +91,13 @@ fun Conversation(
                 TextButton(
                     onClick = { showUnblockDialog = false }
                 ) {
-                    CuteText(
+                    Text(
                         text = stringResource(R.string.cancel)
                     )
                 }
             },
             text = {
-                CuteText(
+                Text(
                     text = stringResource(
                         R.string.unblock_no_u_sure,
                         cuteConversation.recipients.first()
@@ -106,7 +105,7 @@ fun Conversation(
                 )
             },
             title = {
-                CuteText(
+                Text(
                     text = stringResource(R.string.unblock_no)
                 )
             }
@@ -118,7 +117,7 @@ fun Conversation(
     CuteDropdownMenuItem(
         modifier = modifier,
         shape = RoundedCornerShape(24.dp),
-        onClick = { onClick(Screen.Conversation(cuteConversation.recipients.first())) },
+        onClick = { onClick(Screen.Conversation(cuteConversation.threadId)) },
         onLongClick = onLongClick,
         leadingIcon = {
             if (cuteConversation.isGroupChat) {
@@ -135,7 +134,7 @@ fun Conversation(
                 horizontalAlignment = Alignment.End
             ) {
 
-                CuteText(
+                Text(
                     text = cuteConversation.date.toDate(),
                     style = MaterialTheme.typography.bodySmallEmphasized.copy(
                         color = if (cuteConversation.read) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onBackground
@@ -174,7 +173,7 @@ fun Conversation(
             Column(
                 modifier = Modifier.padding(vertical = 15.dp)
             ) {
-                CuteText(
+                Text(
                     text = buildString {
                         nameOrNumber.fastForEachIndexed { index, text ->
                             append(text)
@@ -186,23 +185,23 @@ fun Conversation(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                CuteText(
+                Text(
                     text = if (cuteConversation.isSenderBlocked) {
                         stringResource(R.string.you_blocked_this_no)
                     } else {
-                        if (conversationSettings.draft.isNotEmpty()) {
-                            buildAnnotatedString {
-                                withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) { append("Draft:") }
-                                append(" ")
-                                append(conversationSettings.draft)
-                            }.text
-                        } else {
-                            cuteConversation.snippet
-                        }
+//                        if (conversationSettings.draft.isNotEmpty()) {
+//                            buildAnnotatedString {
+//                                withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) { append("Draft:") }
+//                                append(" ")
+//                                append(conversationSettings.draft)
+//                            }.text
+//                        } else {
+//                        }
+                        cuteConversation.snippet
                     },
                     maxLines = if (cuteConversation.read) 1 else Int.MAX_VALUE,
                     overflow = TextOverflow.Ellipsis,
-                    style = TextStyle(
+                    style = MaterialTheme.typography.bodyMediumEmphasized.copy(
                         fontStyle = if (cuteConversation.isSenderBlocked) FontStyle.Italic else FontStyle.Normal,
                         color = if (cuteConversation.read) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onBackground,
                     )

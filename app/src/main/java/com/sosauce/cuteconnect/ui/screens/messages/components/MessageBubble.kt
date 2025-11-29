@@ -69,11 +69,12 @@ import androidx.media3.ui.compose.PlayerSurface
 import androidx.media3.ui.compose.SURFACE_TYPE_TEXTURE_VIEW
 import coil3.compose.AsyncImage
 import com.sosauce.cuteconnect.R
-import com.sosauce.cuteconnect.data.actions.CommonAction
+
 import com.sosauce.cuteconnect.domain.model.CuteContact
 import com.sosauce.cuteconnect.domain.model.CuteMessage
 import com.sosauce.cuteconnect.ui.shared_components.AnimatedSlider
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
+import androidx.compose.material3.Text
+import com.sosauce.cuteconnect.ui.screens.messages.ConversationActions
 import com.sosauce.cuteconnect.utils.ImageUtils
 import com.sosauce.cuteconnect.utils.getMMSSize
 import com.sosauce.cuteconnect.utils.isEmoji
@@ -96,7 +97,7 @@ fun MessageBubble(
     isSelected: Boolean = false,
     isInSelectMode: Boolean = false,
     sandwichPosition: SandwichPosition = SandwichPosition.SOLO,
-    onHandleCommonAction: (CommonAction) -> Unit,
+    onHandleConversationActions: (ConversationActions) -> Unit
 ) {
 
     val configuration = LocalConfiguration.current
@@ -116,9 +117,13 @@ fun MessageBubble(
 
     LaunchedEffect(cuteMessage.id) {
         if (!cuteMessage.read) {
-            onHandleCommonAction(CommonAction.MarkMessageAsRead(cuteMessage.id))
+            onHandleConversationActions(
+                ConversationActions.MarkAsRead(cuteMessage.id)
+            )
         }
     }
+
+    val d = cuteMessage.copy()
 
 
 
@@ -141,7 +146,6 @@ fun MessageBubble(
         cuteMessage.attachment?.attachmentDetails?.let {
 
             it.fastForEachIndexed { index, details ->
-            println("Attachment: ${context.contentResolver.getType(details.uri)}")
 
                 CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.contentColorFor(bubbleColor)) {
                     // TODO: have separate components for each
@@ -282,12 +286,12 @@ fun MessageBubble(
                                     contentDescription = null
                                 )
                                 Column {
-                                    CuteText(
+                                    Text(
                                         text = cuteMessage.attachment.attachmentDetails[index].filename,
                                         maxLines = 1,
                                         modifier = Modifier.basicMarquee()
                                     )
-                                    CuteText(
+                                    Text(
                                         text = Formatter.formatFileSize(
                                             context,
                                             fileSize
@@ -326,7 +330,7 @@ fun MessageBubble(
                     }
 
             ) {
-                CuteText(
+                Text(
                     text = if (!cuteMessage.isMms) cuteMessage.body else cuteMessage.attachment?.body ?: "",
                     modifier = Modifier
                         .padding(10.dp),
@@ -345,17 +349,17 @@ fun MessageBubble(
                 .align(alignment)
                 .padding(horizontal = 10.dp)
         ) {
-            CuteText(
+            Text(
                 text = cuteMessage.date.toReadableDuration(DurationUnit.MILLISECONDS),
-                color = MaterialTheme.colorScheme.onBackground.copy(0.85f),
-                fontSize = 13.sp,
+                style = MaterialTheme.typography.bodyMediumEmphasized.copy(
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                ),
                 modifier = Modifier
                     .background(
                         color = MaterialTheme.colorScheme.background,
                         shape = RoundedCornerShape(10.dp)
                     )
-                    .padding(2.dp),
-                style = TextStyle()
+                    .padding(2.dp)
             )
         }
     }

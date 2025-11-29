@@ -23,8 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import com.sosauce.cuteconnect.R
 import com.sosauce.cuteconnect.ui.shared_components.CuteDropdownMenuItem
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
-
+import androidx.compose.material3.Text
 // TODO: Cleanup logic, we want a contacts detail class and just pass this here
 @Composable
 fun ContactTextField(

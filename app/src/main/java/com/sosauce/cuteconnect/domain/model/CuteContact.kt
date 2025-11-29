@@ -5,16 +5,16 @@ import android.net.Uri
 import android.provider.ContactsContract
 
 data class CuteContact(
-    val id: Long,
-    val name: String,
-    val photo: Uri,
-    val isFavorite: Boolean,
-    val phoneNumbers: List<Phone>,
-    val emails: List<Email>,
-    val addresses: List<Address>,
-    val websites: List<Website>,
-    val notes: List<Note>,
-    val events: List<Event>
+    val id: Long = 0,
+    val name: String = "",
+    val photo: Uri = Uri.EMPTY,
+    val isFavorite: Boolean = false,
+    val phoneNumbers: List<Phone> = emptyList(),
+    val emails: List<Email> = emptyList(),
+    val addresses: List<Address> = emptyList(),
+    val websites: List<Website> = emptyList(),
+    val notes: List<Note> = emptyList(),
+    val events: List<Event> = emptyList()
 ) {
     data class Email(
         val email: String,

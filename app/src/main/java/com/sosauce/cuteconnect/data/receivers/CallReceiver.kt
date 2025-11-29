@@ -12,14 +12,16 @@ import com.sosauce.cuteconnect.utils.getContactNameOrNothing
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-class CallReceiver: BroadcastReceiver() {
+class CallReceiver: BroadcastReceiver(), KoinComponent {
 
     override fun onReceive(context: Context, intent: Intent?) {
 
+        val callManager by inject<CallManager>()
+
         when (intent?.action) {
-            ACCEPT_INCOMING_CALL -> CallManager.answerCall()
-            DECLINE_INCOMING_CALL -> CallManager.declineCall()
-            HANGUP_ONGOING_CALL -> CallManager.hangupOngoingCall()
+            ACCEPT_INCOMING_CALL -> callManager.answerCall()
+            DECLINE_INCOMING_CALL -> callManager.declineCall()
+            HANGUP_ONGOING_CALL -> callManager.hangupOngoingCall()
         }
     }
 }

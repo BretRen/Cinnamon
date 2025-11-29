@@ -9,7 +9,6 @@ import android.provider.Telephony
 import androidx.core.content.contentValuesOf
 import com.klinker.android.send_message.MmsSentReceiver.EXTRA_CONTENT_URI
 import com.sosauce.cuteconnect.data.managers.MessageNotificationManager
-import com.sosauce.cuteconnect.domain.repository.CommonRepository
 import androidx.core.net.toUri
 
 class MmsReceiver: BroadcastReceiver() {

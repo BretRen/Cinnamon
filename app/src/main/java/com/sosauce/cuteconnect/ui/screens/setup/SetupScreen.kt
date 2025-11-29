@@ -45,7 +45,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.sosauce.cuteconnect.R
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
+import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.utils.requestRole
 
 @SuppressLint("InlinedApi")
@@ -89,7 +89,7 @@ fun SetupScreen(
 //                contentDescription = null,
 //                modifier = Modifier.size(64.dp)
 //            )
-            CuteText(
+            Text(
                 text = "Welcome to CuteConnect !",
                 style = MaterialTheme.typography.displayLargeEmphasized.copy(
                     fontWeight = FontWeight.Bold,
@@ -142,8 +142,8 @@ fun SetupScreen(
                     )
                     Spacer(Modifier.width(10.dp))
                     Column {
-                        CuteText(stringResource(R.string.set_as_sms_app))
-                        CuteText(
+                        Text(stringResource(R.string.set_as_sms_app))
+                        Text(
                             text = stringResource(
                                 if (isSmsRoleHeld) R.string.is_default_sms else R.string.not_default_sms
                             ),
@@ -177,8 +177,8 @@ fun SetupScreen(
                     )
                     Spacer(Modifier.width(10.dp))
                     Column {
-                        CuteText(stringResource(R.string.set_as_dialer_app))
-                        CuteText(
+                        Text(stringResource(R.string.set_as_dialer_app))
+                        Text(
                             text = stringResource(
                                 if (isDialerRoleHeld) R.string.is_default_dialer else R.string.not_default_dialer
                             ),

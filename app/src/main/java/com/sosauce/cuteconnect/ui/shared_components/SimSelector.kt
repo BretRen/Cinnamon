@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalHazeMaterialsApi::class)
+@file:OptIn(ExperimentalHazeMaterialsApi::class, ExperimentalMaterial3ExpressiveApi::class)
 
 package com.sosauce.cuteconnect.ui.shared_components
 
@@ -8,6 +8,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.SimCard
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -28,7 +30,8 @@ import com.sosauce.cuteconnect.R
 import com.sosauce.cuteconnect.data.datastore.rememberDefaultSimCard
 import com.sosauce.cuteconnect.domain.model.CuteSimCard
 import com.sosauce.cuteconnect.ui.navigation.LocalHazeState
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
+import androidx.compose.material3.Text
+import androidx.compose.ui.util.fastForEach
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
@@ -44,16 +47,16 @@ fun SimSelector(
     if (visible) {
         AlertDialog(
             modifier = Modifier
-                .clip(AlertDialogDefaults.shape)
-                .hazeEffect(
-                    state = LocalHazeState.current,
-                    style = HazeMaterials.thick(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer
-                    )
-                ),
-            containerColor = Color.Transparent,
+                .clip(AlertDialogDefaults.shape),
+//                .hazeEffect(
+//                    state = LocalHazeState.current,
+//                    style = HazeMaterials.thick(
+//                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+//                    )
+//                ),
+            //containerColor = Color.Transparent,
             onDismissRequest = onDismissRequest,
-            title = { CuteText("Select a default SIM") },
+            title = { Text("Select a default SIM") },
             icon = {
                 Icon(
                     imageVector = Icons.Rounded.SimCard,
@@ -62,13 +65,14 @@ fun SimSelector(
             },
             confirmButton = {
                 TextButton(
-                    onClick = onDismissRequest
+                    onClick = onDismissRequest,
+                    shapes = ButtonDefaults.shapes()
                 ) {
-                    CuteText(stringResource(R.string.okay))
+                    Text(stringResource(R.string.okay))
                 }
             },
             text = {
-                cuteSimCards.forEach { card ->
+                cuteSimCards.fastForEach { card ->
                     CuteDropdownMenuItem(
                         leadingIcon = {
                             RadioButton(
@@ -78,8 +82,8 @@ fun SimSelector(
                         },
                         text = {
                             Column {
-                                CuteText(card.name)
-                                CuteText(
+                                Text(card.name)
+                                Text(
                                     text = card.carrierName,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

@@ -14,9 +14,9 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sosauce.cuteconnect.ui.screens.phone.CallScreen
 import com.sosauce.cuteconnect.ui.theme.CuteConnectTheme
-import com.sosauce.cuteconnect.viewModels.CallViewModel
 import androidx.compose.runtime.getValue
 import com.sosauce.cuteconnect.domain.states.CallState
+import com.sosauce.cuteconnect.ui.screens.phone.CallingViewModel
 import com.sosauce.cuteconnect.ui.screens.phone.IncomingScreen
 import com.sosauce.cuteconnect.utils.APP_PACKAGE
 import org.koin.androidx.compose.koinViewModel
@@ -29,8 +29,8 @@ class CallActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             CuteConnectTheme {
-                val callViewModel = koinViewModel<CallViewModel>()
-                val callUiState by callViewModel.callUiState.collectAsStateWithLifecycle()
+                val callViewModel = koinViewModel<CallingViewModel>()
+                val callUiState by callViewModel.state.collectAsStateWithLifecycle()
 
 
                 if (callUiState.callState == CallState.ENDED) { finish() }
@@ -41,12 +41,12 @@ class CallActivity : ComponentActivity() {
 
                     if (callUiState.callState == CallState.RINGING) {
                         IncomingScreen(
-                            onCallActions = callViewModel::onHandleCallAction,
-                            callUiState = callUiState
+                            onCallActions = callViewModel::handleCallAction,
+                            callingState = callUiState
                         )
                     } else {
                         CallScreen(
-                            onCallAction = callViewModel::onHandleCallAction,
+                            onCallAction = callViewModel::handleCallAction,
                             callUiState = callUiState
                         )
                     }

@@ -2,6 +2,7 @@
 
 package com.sosauce.cuteconnect.ui.shared_components.toolbars
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -39,13 +40,14 @@ fun ToolbarSkeleton(
             .fillMaxWidth()
             .systemBarsPadding()
             .clip(FloatingToolbarDefaults.ContainerShape)
-            .hazeEffect(
-                state = LocalHazeState.current,
-                style = HazeMaterials.regular(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer
-                )
-            )
-            .clickable { onClick?.invoke() },
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+//            .hazeEffect(
+//                state = LocalHazeState.current,
+//                style = HazeMaterials.regular(
+//                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+//                )
+//            )
+            .clickable(enabled = onClick != null) { onClick?.invoke() },
         colors = FloatingToolbarDefaults.standardFloatingToolbarColors(
             toolbarContainerColor = Color.Transparent
         ),

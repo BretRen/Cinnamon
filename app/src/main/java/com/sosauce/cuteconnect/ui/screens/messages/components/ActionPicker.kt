@@ -16,8 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.sosauce.cuteconnect.R
 import com.sosauce.cuteconnect.ui.shared_components.CuteDropdownMenuItem
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
-
+import androidx.compose.material3.Text
 @Composable
 fun ActionPicker(
     expanded: Boolean,
@@ -75,7 +74,7 @@ fun ActionPicker(
                     item.onClick()
                     onDismissRequest()
                 },
-                text = { CuteText(stringResource(item.text)) },
+                text = { Text(stringResource(item.text)) },
                 leadingIcon = {
                     Icon(
                         painter = painterResource(item.icon),

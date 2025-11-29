@@ -60,25 +60,22 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.sosauce.cuteconnect.data.actions.CallAction
-import com.sosauce.cuteconnect.domain.states.CallUiState
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
+import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.ui.shared_components.DefaultContactIcon
 import com.sosauce.cuteconnect.ui.theme.CuteConnectTheme
 import com.sosauce.cuteconnect.utils.getContactNameOrNothing
-import com.sosauce.cuteconnect.viewModels.CallViewModel
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 @Composable
 fun IncomingScreen(
     onCallActions: (CallAction) -> Unit,
-    callUiState: CallUiState
+    callingState: CallingState
 ) {
     val context = LocalContext.current
     val interactionSources = List(2) { remember { MutableInteractionSource() } }
-    val displayName = remember(callUiState.number) {
-        callUiState.number.getContactNameOrNothing(context)
+    val displayName = remember(callingState.number) {
+        callingState.number.getContactNameOrNothing(context)
     }
 
     Scaffold { paddingValues ->
@@ -96,7 +93,7 @@ fun IncomingScreen(
                 color = MaterialTheme.colorScheme.surfaceContainer,
                 shape = MaterialShapes.Cookie12Sided.toShape()
             )
-            CuteText(
+            Text(
                 text = displayName,
                 style = MaterialTheme.typography.headlineLargeEmphasized.copy(
                     color = MaterialTheme.colorScheme.onBackground
@@ -159,15 +156,3 @@ fun IncomingScreen(
     }
 }
 
-@Preview
-@Composable
-private fun IncomingPreview() {
-    CuteConnectTheme {
-        Scaffold { _ ->
-            IncomingScreen(
-                onCallActions = {},
-                callUiState = CallUiState(number = "0767982150")
-            )
-        }
-    }
-}

@@ -15,8 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.sosauce.cuteconnect.R
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
-
+import androidx.compose.material3.Text
 /**
  * A delete dropdown menu item. Provides an alert dialog as one should always be shown before blocking someone.
  */
@@ -41,7 +40,7 @@ fun DropdownItemBlock(
             dismissButton = {
                 TextButton(
                     onClick = { showDialog = false }
-                ) { CuteText(stringResource(R.string.cancel)) }
+                ) { Text(stringResource(R.string.cancel)) }
             },
             confirmButton = {
                 TextButton(
@@ -49,7 +48,7 @@ fun DropdownItemBlock(
                         onBlock()
                         showDialog = false
                     }
-                ) { CuteText(stringResource(R.string.delete)) }
+                ) { Text(stringResource(R.string.delete)) }
             },
             text = dialogText,
             title = dialogTitle
@@ -58,7 +57,7 @@ fun DropdownItemBlock(
 
     CuteDropdownMenuItem(
         onClick = { showDialog = true },
-        text = { CuteText(stringResource(R.string.block)) },
+        text = { Text(stringResource(R.string.block)) },
         leadingIcon = {
             Icon(
                 imageVector = Icons.Rounded.Block,

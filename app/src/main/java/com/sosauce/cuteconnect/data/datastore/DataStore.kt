@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.sosauce.cuteconnect.data.datastore.PreferencesKeys.ARCHIVED_CONVOS
 import com.sosauce.cuteconnect.data.datastore.PreferencesKeys.BLOCKED_NUMBERS
 import com.sosauce.cuteconnect.data.datastore.PreferencesKeys.DEFAULT_SIM
 import com.sosauce.cuteconnect.data.datastore.PreferencesKeys.MMS_MAX_SIZE_LIMIT
@@ -21,15 +22,20 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(PREFERENCE
 
 data object PreferencesKeys {
     val PINNED_CONVOS = stringSetPreferencesKey("pinned_convos")
+    val ARCHIVED_CONVOS = stringSetPreferencesKey("pinned_convos")
     val MMS_MAX_SIZE_LIMIT = longPreferencesKey("MMS_MAX_SIZE_LIMIT")
     val BLOCKED_NUMBERS = stringSetPreferencesKey("BLOCKED_NUMBERS")
     val DEFAULT_SIM = intPreferencesKey("DEFAULT_SIM")
 }
 
 
-//@Composable
-//fun rememberPinnedConversations() =
-//    rememberPreference(key = PINNED_CONVOS, defaultValue = emptySet())
+@Composable
+fun rememberPinnedConversations() =
+    rememberPreference(key = PINNED_CONVOS, defaultValue = emptySet())
+
+@Composable
+fun rememberArchivedConversations() =
+    rememberPreference(key = ARCHIVED_CONVOS, defaultValue = emptySet())
 
 @Composable
 fun rememberMmsMaxSizeLimit() = rememberPreference(MMS_MAX_SIZE_LIMIT, MmsSize.FILE_SIZE_600_KB)
@@ -41,6 +47,8 @@ fun rememberBlockedNumbers() = rememberPreference(BLOCKED_NUMBERS, emptySet())
 fun rememberDefaultSimCard() = rememberPreference(DEFAULT_SIM, SubscriptionManager.getDefaultSubscriptionId())
 
 fun getBlockedNumber(context: Context) = getPreference(BLOCKED_NUMBERS, emptySet(), context)
+fun getPinnedConversations(context: Context) = getPreference(PINNED_CONVOS, emptySet(), context)
+fun getArchivedConversations(context: Context) = getPreference(ARCHIVED_CONVOS, emptySet(), context)
 
 suspend fun saveBlockedNumber(
     blockedNumbers: Set<String>,

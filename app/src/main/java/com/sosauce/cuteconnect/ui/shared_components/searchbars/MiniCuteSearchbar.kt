@@ -3,7 +3,6 @@
 package com.sosauce.cuteconnect.ui.shared_components.searchbars
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,7 +19,6 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -32,8 +30,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sosauce.cuteconnect.R
-import com.sosauce.cuteconnect.ui.shared_components.CuteNavigationButton
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
+import com.sosauce.cuteconnect.ui.shared_components.buttons.CuteNavigationButton
+import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.ui.theme.nunitoFontFamily
 import com.sosauce.cuteconnect.utils.rememberSearchbarMaxFloatValue
 import com.sosauce.cuteconnect.utils.rememberSearchbarRightPadding
@@ -78,7 +76,7 @@ fun MiniCuteSearchbar(
                     )
                 },
                 placeholder = {
-                    CuteText(
+                    Text(
                         text = "Search here",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1

@@ -37,7 +37,7 @@ import com.sosauce.cuteconnect.R
 import com.sosauce.cuteconnect.domain.model.CuteContact
 import com.sosauce.cuteconnect.ui.shared_components.CategoryCard
 import com.sosauce.cuteconnect.ui.shared_components.CuteDropdownMenuItem
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
+import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.ui.shared_components.text.HeaderText
 import com.sosauce.cuteconnect.utils.ICON_TEXT_SPACING
 import com.sosauce.cuteconnect.utils.formateEventDate
@@ -85,8 +85,8 @@ fun ContactInfos(
                         },
                         text = {
                             Column {
-                                CuteText(number.number)
-                                CuteText(
+                                Text(number.number)
+                                Text(
                                     text = buildString {
                                         append(ContactsContract.CommonDataKinds.Phone.getTypeLabel(resources, number.type, "Custom"))
                                         if (number.isDefault) {
@@ -113,8 +113,8 @@ fun ContactInfos(
 //                        },
 //                        text = {
 //                            Column {
-//                                CuteText(number.number)
-//                                CuteText(
+//                                Text(number.number)
+//                                Text(
 //                                    text = buildString {
 //                                        append(ContactsContract.CommonDataKinds.Phone.getTypeLabel(resources, number.type, "Custom"))
 //                                        if (number.isDefault) {
@@ -150,8 +150,8 @@ fun ContactInfos(
                         },
                         text = {
                             Column {
-                                CuteText(email.email)
-                                CuteText(
+                                Text(email.email)
+                                Text(
                                     text = buildString {
                                         append(ContactsContract.CommonDataKinds.Email.getTypeLabel(resources, email.type, "Custom"))
                                         if (email.isDefault) {
@@ -186,8 +186,8 @@ fun ContactInfos(
                         },
                         text = {
                             Column {
-                                CuteText(address.address)
-                                CuteText(
+                                Text(address.address)
+                                Text(
                                     text = buildString {
                                         append(ContactsContract.CommonDataKinds.StructuredPostal.getTypeLabel(resources, address.type, "Custom"))
                                         if (address.isDefault) {
@@ -231,7 +231,7 @@ fun ContactInfos(
                                 )
                             }
                         },
-                        text = { CuteText(website.website) }
+                        text = { Text(website.website) }
                     )
                 }
 
@@ -249,8 +249,8 @@ fun ContactInfos(
                         },
                         text = {
                             Column {
-                                CuteText(event.date.formateEventDate())
-                                CuteText(
+                                Text(event.date.formateEventDate())
+                                Text(
                                     text = ContactsContract.CommonDataKinds.Event.getTypeLabel(resources, event.type, "Custom").toString(),
                                     style = MaterialTheme.typography.bodyMediumEmphasized.copy(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -271,7 +271,7 @@ fun ContactInfos(
                                 )
                             }
                         },
-                        text = { CuteText(note.note) }
+                        text = { Text(note.note) }
                     )
                 }
             }

@@ -24,8 +24,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sosauce.cuteconnect.domain.model.AboutMe
-import com.sosauce.cuteconnect.ui.shared_components.CuteNavigationButton
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
+import com.sosauce.cuteconnect.ui.shared_components.buttons.CuteNavigationButton
+import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.ui.shared_components.DefaultContactIcon
 import com.sosauce.cuteconnect.utils.ICON_TEXT_SPACING
 
@@ -49,7 +49,7 @@ fun AboutMeScreen(
                     size = 170.dp
                 )
                 Spacer(Modifier.height(20.dp))
-                CuteText(
+                Text(
                     text = aboutMe.name,
                     fontSize = 20.sp,
                     modifier = Modifier.basicMarquee()
@@ -66,7 +66,7 @@ fun AboutMeScreen(
                     Column(
                         modifier = Modifier.padding(10.dp)
                     ) {
-                        CuteText("About")
+                        Text("About")
                         Spacer(Modifier.height(20.dp))
                         Row {
                             Icon(
@@ -78,8 +78,8 @@ fun AboutMeScreen(
                             ) {
                                 Spacer(Modifier.width(ICON_TEXT_SPACING.dp))
                                 Column {
-                                    CuteText(aboutMe.number)
-                                    CuteText(
+                                    Text(aboutMe.number)
+                                    Text(
                                         text = "Mobile",
                                         color = Color.Gray,
                                         fontSize = 13.sp

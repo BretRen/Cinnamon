@@ -14,20 +14,23 @@ import androidx.core.app.RemoteInput
 import com.sosauce.cuteconnect.R
 import com.sosauce.cuteconnect.data.receivers.MessageReplyReceiver
 import com.sosauce.cuteconnect.data.receivers.SmsReceiver
+import com.sosauce.cuteconnect.data.telephony.CuteTelephonyManager
 import com.sosauce.cuteconnect.domain.model.CuteMessage
-import com.sosauce.cuteconnect.domain.repository.CommonRepository
 import com.sosauce.cuteconnect.main.MainActivity
+import com.sosauce.cuteconnect.utils.CuteIntents
 import com.sosauce.cuteconnect.utils.RESULT_KEY
 import com.sosauce.cuteconnect.utils.THREAD_ID
 import com.sosauce.cuteconnect.utils.getAddressFromThreadId
 import com.sosauce.cuteconnect.utils.getContactNameOrNothing
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 class MessageNotificationManager(
     private val context: Context,
+    private val cuteTelephonyManager: CuteTelephonyManager
 ) {
 
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-    private val commonRepository by lazy { CommonRepository(context) }
     private val flag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         PendingIntent.FLAG_MUTABLE
     } else 0
@@ -68,17 +71,9 @@ class MessageNotificationManager(
                     .addAction(replyAction(threadId))
                     .build()
             )
-            commonRepository.sendMessage(
+            cuteTelephonyManager.sendSms(
                 address = threadId.getAddressFromThreadId(context),
                 message = message
-            )
-            commonRepository.saveSmsToDevice(
-                CuteMessage(
-                    body = message,
-                    threadId = threadId,
-                    address = threadId.getAddressFromThreadId(context),
-                    type = Telephony.Sms.MESSAGE_TYPE_SENT
-                )
             )
         }
     }
@@ -87,7 +82,7 @@ class MessageNotificationManager(
 
     fun sendOrAppendMessageNotification(
         threadId: Long,
-        message: CuteMessage,
+        message: String,
         number: String?,
         imageUri: Uri? = null
     ) {
@@ -95,7 +90,7 @@ class MessageNotificationManager(
         val person = Person.Builder()
             .setName(number?.getContactNameOrNothing(context) ?: "No one")
             .build()
-        val receivedMessage = NotificationCompat.MessagingStyle.Message(message.body, System.currentTimeMillis(), person).apply {
+        val receivedMessage = NotificationCompat.MessagingStyle.Message(message, System.currentTimeMillis(), person).apply {
             if (imageUri != null) {
                 setData("image/", imageUri)
             }
@@ -104,6 +99,12 @@ class MessageNotificationManager(
             .addMessage(receivedMessage)
 
         val threadIdAsNotif = notificationManager.activeNotifications.find { it.id == threadId.toInt() }
+
+        val intent = Intent(context, MainActivity::class.java).apply {
+            action = CuteIntents.NOTIFICATION_NAVIGATE_TO_THREAD
+            putExtra("threadId", threadId)
+        }
+        val pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT )
 
         threadIdAsNotif?.let { notification ->
             val activeStyle = NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(notification.notification)?.addMessage(receivedMessage)
@@ -118,6 +119,7 @@ class MessageNotificationManager(
                     .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                     .setStyle(activeStyle)
                     .addAction(replyAction(threadId))
+                    .setContentIntent(pendingIntent)
                     .build()
             )
         } ?: notificationManager.notify(
@@ -130,6 +132,7 @@ class MessageNotificationManager(
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                 .setStyle(notificationStyle)
                 .addAction(replyAction(threadId))
+                .setContentIntent(pendingIntent)
                 .build()
         )
     }

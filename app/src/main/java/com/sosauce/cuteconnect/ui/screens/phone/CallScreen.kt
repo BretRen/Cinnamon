@@ -60,7 +60,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.sosauce.cuteconnect.ui.shared_components.text.CuteText
+import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.ui.shared_components.DefaultContactIcon
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -69,9 +69,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.net.toUri
 import coil3.compose.AsyncImage
-import com.sosauce.cuteconnect.data.actions.CallAction
 import com.sosauce.cuteconnect.domain.states.CallState
-import com.sosauce.cuteconnect.domain.states.CallUiState
 import com.sosauce.cuteconnect.domain.states.DialerPaneContent
 import com.sosauce.cuteconnect.ui.screens.phone.components.AudioSwitcher
 import com.sosauce.cuteconnect.ui.screens.phone.components.Dialpad
@@ -80,7 +78,6 @@ import com.sosauce.cuteconnect.utils.ImageUtils
 import com.sosauce.cuteconnect.utils.getContactNameOrNothing
 import com.sosauce.cuteconnect.utils.toReadableTime
 import com.sosauce.cuteconnect.utils.toStopwatch
-import com.sosauce.cuteconnect.viewModels.CallViewModel
 import dev.chrisbanes.haze.hazeSource
 import kotlin.time.DurationUnit
 
@@ -88,7 +85,7 @@ import kotlin.time.DurationUnit
 @Composable
 fun CallScreen(
     onCallAction: (CallAction) -> Unit,
-    callUiState: CallUiState
+    callUiState: CallingState
 ) {
 
     val context = LocalContext.current
@@ -121,7 +118,7 @@ fun CallScreen(
                     color = MaterialTheme.colorScheme.surfaceContainer,
                 )
                 Spacer(Modifier.height(20.dp))
-                CuteText(
+                Text(
                     text = when(callUiState.callState) {
                         CallState.RINGING, CallState.DIALING  -> "Ringing..."
                         CallState.ONGOING -> displayName
@@ -135,7 +132,7 @@ fun CallScreen(
                 if (callUiState.callState == CallState.DIALING) {
                     ContainedLoadingIndicator()
                 } else {
-                    CuteText(
+                    Text(
                         text = callUiState.timeSpentInCall.toStopwatch(DurationUnit.SECONDS),
                         fontSize = 20.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -146,14 +143,16 @@ fun CallScreen(
                     enter = scaleIn(),
                     exit = scaleOut()
                 ) {
-                    CuteText(
+                    Text(
                         text = "On hold",
                         color = MaterialTheme.colorScheme.error,
                         fontSize = 20.sp
                     )
                 }
                 Spacer(Modifier.weight(1f))
-                Column {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
                     AnimatedVisibility(
                         visible = paneContent != DialerPaneContent.NOTHING,
                         enter = slideInVertically { it },
@@ -177,160 +176,125 @@ fun CallScreen(
 
                     }
                     ButtonGroup(
-                        overflowIndicator = {}
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
                     ) {
-                        customItem(
-                            {
-                                ToggleButton(
-                                    checked = callUiState.isMuted,
-                                    onCheckedChange = { onCallAction(CallAction.ToggleMute(!callUiState.isMuted)) },
-                                    enabled = callUiState.callState != CallState.ENDED,
-                                    interactionSource = interactionSources[0],
-                                    shapes = ToggleButtonDefaults.shapes(),
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
-                                        .animateWidth(interactionSources[0])
-                                ) {
-                                    AnimatedContent(
-                                        targetState = callUiState.isMuted
-                                    ) { isMuted ->
-                                        Icon(
-                                            imageVector = if (isMuted) Icons.Rounded.MicOff else Icons.Rounded.Mic,
-                                            contentDescription = null
-                                        )
-                                    }
+                        ToggleButton(
+                            checked = callUiState.isMuted,
+                            onCheckedChange = { onCallAction(CallAction.ToggleMute(!callUiState.isMuted)) },
+                            enabled = callUiState.callState != CallState.ENDED,
+                            interactionSource = interactionSources[0],
+                            shapes = ToggleButtonDefaults.shapes(),
+                            modifier = Modifier
+                                .weight(1f)
+                                .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
+                                .animateWidth(interactionSources[0])
+                        ) {
+                            Icon(
+                                imageVector = if (callUiState.isMuted) Icons.Rounded.MicOff else Icons.Rounded.Mic,
+                                contentDescription = null
+                            )
+                        }
+                        ToggleButton(
+                            checked = callUiState.currentAudioRoute.type != CallAudioState.ROUTE_EARPIECE,
+                            onCheckedChange = { paneContent = DialerPaneContent.AUDIO_SWITCHER },
+                            enabled = callUiState.callState != CallState.ENDED,
+                            interactionSource = interactionSources[1],
+                            shapes = ToggleButtonDefaults.shapes(),
+                            modifier = Modifier
+                                .weight(1f)
+                                .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
+                                .animateWidth(interactionSources[1])
+                        ) {
+                            AnimatedContent(
+                                targetState = callUiState.currentAudioRoute.type.routeToIcon()
+                            ) {
+                                Icon(
+                                    imageVector = it,
+                                    contentDescription = null
+                                )
+                            }
+                        }
+                        ToggleButton(
+                            checked = paneContent == DialerPaneContent.DIALPAD,
+                            onCheckedChange = {
+                                paneContent = if (paneContent != DialerPaneContent.DIALPAD) {
+                                    DialerPaneContent.DIALPAD
+                                } else {
+                                    DialerPaneContent.NOTHING
                                 }
                             },
-                            {}
-                        )
-                        customItem(
-                            {
-                                ToggleButton(
-                                    checked = callUiState.currentAudioRoute.type != CallAudioState.ROUTE_EARPIECE,
-                                    onCheckedChange = { paneContent = DialerPaneContent.AUDIO_SWITCHER },
-                                    enabled = callUiState.callState != CallState.ENDED,
-                                    interactionSource = interactionSources[1],
-                                    shapes = ToggleButtonDefaults.shapes(),
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
-                                        .animateWidth(interactionSources[1])
-                                ) {
-                                    AnimatedContent(
-                                        targetState = callUiState.currentAudioRoute.type.routeToIcon()
-                                    ) {
-                                        Icon(
-                                            imageVector = it,
-                                            contentDescription = null
-                                        )
-                                    }
-                                }
-                            },
-                            {}
-                        )
-                        customItem(
-                            {
-                                ToggleButton(
-                                    checked = paneContent == DialerPaneContent.DIALPAD,
-                                    onCheckedChange = {
-                                        paneContent = if (paneContent != DialerPaneContent.DIALPAD) {
-                                            DialerPaneContent.DIALPAD
-                                        } else {
-                                            DialerPaneContent.NOTHING
-                                        }
-                                    },
-                                    enabled = callUiState.callState != CallState.ENDED,
-                                    interactionSource = interactionSources[2],
-                                    shapes = ToggleButtonDefaults.shapes(),
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
-                                        .animateWidth(interactionSources[2])
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Dialpad,
-                                        contentDescription = null
-                                    )
-                                }
-                            },
-                            {}
-                        )
+                            enabled = callUiState.callState != CallState.ENDED,
+                            interactionSource = interactionSources[2],
+                            shapes = ToggleButtonDefaults.shapes(),
+                            modifier = Modifier
+                                .weight(1f)
+                                .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
+                                .animateWidth(interactionSources[2])
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Dialpad,
+                                contentDescription = null
+                            )
+                        }
                     }
-                    Spacer(Modifier.height(20.dp))
                     ButtonGroup(
-                        overflowIndicator = {}
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
                     ) {
-                        customItem(
-                            {
-                                ToggleButton(
-                                    checked = callUiState.isHolding,
-                                    onCheckedChange = { onCallAction(CallAction.ToggleHold) },
-                                    enabled = callUiState.callState != CallState.ENDED,
-                                    interactionSource = interactionSources2[0],
-                                    shapes = ToggleButtonDefaults.shapes(),
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Narrow))
-                                        .animateWidth(interactionSources2[0])
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Pause,
-                                        contentDescription = null
-                                    )
-                                }
-                            },
-                            {}
-                        )
-                        customItem(
-                            {
-                                IconButton(
-                                    onClick = { onCallAction(CallAction.HangUp) },
-                                    interactionSource = interactionSources2[1],
-                                    enabled = callUiState.callState != CallState.ENDED,
-                                    shapes = IconButtonDefaults.shapes(),
-                                    colors = IconButtonDefaults.iconButtonColors(
-                                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                                        contentColor = MaterialTheme.colorScheme.contentColorFor(MaterialTheme.colorScheme.errorContainer)
-                                    ),
-                                    modifier = Modifier
-                                        .weight(2f)
-                                        .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
-                                        .animateWidth(interactionSources2[1])
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Phone,
-                                        contentDescription = null,
-                                        modifier = Modifier.rotate(135f)
-                                    )
-                                }
-                            },
-                            {}
-                        )
-                        customItem(
-                            {
-                                FilledTonalIconButton(
-                                    onClick = {  },
-                                    interactionSource = interactionSources2[2],
-                                    enabled = callUiState.callState != CallState.ENDED,
-                                    shapes = IconButtonDefaults.shapes(),
-                                    colors = IconButtonDefaults.iconButtonColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                                        contentColor = MaterialTheme.colorScheme.contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
-                                    ),
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Narrow))
-                                        .animateWidth(interactionSources2[2])
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Add,
-                                        contentDescription = null
-                                    )
-                                }
-                            },
-                            {}
-                        )
+                        ToggleButton(
+                            checked = callUiState.isHolding,
+                            onCheckedChange = { onCallAction(CallAction.ToggleHold) },
+                            enabled = callUiState.callState != CallState.ENDED,
+                            interactionSource = interactionSources2[0],
+                            shapes = ToggleButtonDefaults.shapes(),
+                            modifier = Modifier
+                                .weight(1f)
+                                .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Narrow))
+                                .animateWidth(interactionSources2[0])
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Pause,
+                                contentDescription = null
+                            )
+                        }
+                        IconButton(
+                            onClick = { onCallAction(CallAction.HangUp) },
+                            interactionSource = interactionSources2[1],
+                            enabled = callUiState.callState != CallState.ENDED,
+                            shapes = IconButtonDefaults.shapes(),
+                            colors = IconButtonDefaults.iconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer,
+                                contentColor = MaterialTheme.colorScheme.contentColorFor(MaterialTheme.colorScheme.errorContainer)
+                            ),
+                            modifier = Modifier
+                                .weight(2f)
+                                .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
+                                .animateWidth(interactionSources2[1])
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Phone,
+                                contentDescription = null,
+                                modifier = Modifier.rotate(135f)
+                            )
+                        }
+                        FilledTonalIconButton(
+                            onClick = {  },
+                            interactionSource = interactionSources2[2],
+                            enabled = callUiState.callState != CallState.ENDED,
+                            shapes = IconButtonDefaults.shapes(),
+                            colors = IconButtonDefaults.iconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                contentColor = MaterialTheme.colorScheme.contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Narrow))
+                                .animateWidth(interactionSources2[2])
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Add,
+                                contentDescription = null
+                            )
+                        }
                     }
                 }
             }
