@@ -13,6 +13,20 @@ android {
     namespace = "com.sosauce.cuteconnect"
     compileSdk = 36
 
+    val keystoreFile = file("release_key.jks")
+    signingConfigs {
+        create("release") {
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = System.getenv("SIGNING_STORE_PASSWORD")
+                keyAlias = System.getenv("SIGNING_KEY_ALIAS")
+                keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
+            } else {
+                println("No keystore found, APK will be unsigned")
+            }
+        }
+    }
+
     defaultConfig {
         applicationId = "com.sosauce.cuteconnect"
         minSdk = 26
@@ -37,6 +51,7 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -69,6 +84,12 @@ android {
         resValues = false
         viewBinding = false
     }
+
+
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
 }
 
 dependencies {
@@ -92,7 +113,6 @@ dependencies {
     implementation(libs.androidx.foundation.layout)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
-    implementation(libs.androidx.material.icons.extended)
     debugImplementation(libs.androidx.ui.tooling)
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui)

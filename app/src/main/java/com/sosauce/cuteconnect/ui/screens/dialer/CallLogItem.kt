@@ -5,6 +5,7 @@ package com.sosauce.cuteconnect.ui.screens.dialer
 import android.content.ClipData
 import android.provider.CallLog
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,18 +14,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.CallMissed
-import androidx.compose.material.icons.automirrored.rounded.CallMissedOutgoing
-import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.icons.rounded.NorthEast
-import androidx.compose.material.icons.rounded.SouthWest
-import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuGroup
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenuPopup
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,32 +33,26 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEachIndexed
 import com.google.i18n.phonenumbers.NumberParseException
 import com.google.i18n.phonenumbers.PhoneNumberUtil
 import com.google.i18n.phonenumbers.geocoding.PhoneNumberOfflineGeocoder
 import com.sosauce.cuteconnect.R
-
 import com.sosauce.cuteconnect.domain.model.CuteCallLog
-import com.sosauce.cuteconnect.ui.shared_components.CuteDropdownMenuItem
-import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.ui.screens.phone.CallAction
 import com.sosauce.cuteconnect.ui.shared_components.DefaultContactIcon
-import com.sosauce.cuteconnect.ui.shared_components.DropdownItemDelete
 import com.sosauce.cuteconnect.utils.betterFormatNumber
 import com.sosauce.cuteconnect.utils.getContactNameOrNothing
-import com.sosauce.cuteconnect.utils.toReadableDate
+import com.sosauce.cuteconnect.utils.getItemShape
 import com.sosauce.cuteconnect.utils.toReadableDuration
-import com.sosauce.cuteconnect.utils.toReadableTime
 import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.time.DurationUnit
@@ -69,7 +63,8 @@ fun CallLogItem(
     modifier: Modifier = Modifier,
     callLog: CuteCallLog,
     numberOfAppearance: Int,
-    onCallAction: (CallAction) -> Unit
+    onCallAction: (CallAction) -> Unit,
+    shape: Shape = RoundedCornerShape(24.dp)
 ) {
 
     val context = LocalContext.current
@@ -98,10 +93,10 @@ fun CallLogItem(
     }
 
     val icon = when(callLog.callType) {
-        CallLog.Calls.INCOMING_TYPE, CallLog.Calls.MISSED_TYPE -> Icons.AutoMirrored.Rounded.CallMissed
-        CallLog.Calls.OUTGOING_TYPE -> Icons.Rounded.NorthEast
-        CallLog.Calls.REJECTED_TYPE -> Icons.Rounded.SouthWest
-        else -> Icons.AutoMirrored.Rounded.CallMissedOutgoing
+        CallLog.Calls.INCOMING_TYPE, CallLog.Calls.MISSED_TYPE -> R.drawable.call_missed
+        CallLog.Calls.OUTGOING_TYPE -> R.drawable.call_outgoing
+        CallLog.Calls.REJECTED_TYPE -> R.drawable.call_rejected
+        else -> R.drawable.call_missed
     }
 
     val actions = listOf(
@@ -127,30 +122,40 @@ fun CallLogItem(
             },
             icon = R.drawable.copy,
             text = R.string.copy_number
+        ),
+        CallLogAction(
+            onClick = {},
+            text = R.string.delete,
+            icon = R.drawable.delete,
+            tint = MaterialTheme.colorScheme.error
         )
     )
 
 
-    Row(
+    Surface(
+        onClick = { onCallAction(CallAction.LaunchCall(callLog.number)) },
+        shape = shape,
+        color = MaterialTheme.colorScheme.surfaceContainer,
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-//            .combinedClickable(
-//                onClick = { onNavigate(Screen.ContactDetails(contact.id)) }
-//            )
+            .padding(
+                vertical = 1.dp,
+                horizontal = 5.dp
+            )
     ) {
-
         Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.padding(vertical = 15.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             DefaultContactIcon(
-                firstLetter = numberOrName.firstOrNull() ?: '?',
-                modifier = Modifier
-                    .padding(start = 10.dp)
+                firstLetter = numberOrName.firstOrNull(),
+                modifier = Modifier.padding(start = 10.dp)
             )
             Column(
-                modifier = Modifier.padding(15.dp)
+                modifier = Modifier
+                    .padding(start = 15.dp)
+                    .weight(1f),
+                verticalArrangement = Arrangement.Center
             ) {
                 Text(
                     text = if (numberOfAppearance <= 1) numberOrName else "$numberOrName ($numberOfAppearance)",
@@ -161,7 +166,7 @@ fun CallLogItem(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = icon,
+                        painter = painterResource(icon),
                         contentDescription = null,
                         tint = iconColor,
                         modifier = Modifier.size(20.dp)
@@ -183,52 +188,44 @@ fun CallLogItem(
                     )
                 }
             }
-        }
-
-        Row {
-            IconButton(
-                onClick = { showMoreOptions = true }
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.MoreVert,
-                    contentDescription = null
-                )
-            }
-
-            DropdownMenu(
-                expanded = showMoreOptions,
-                onDismissRequest = { showMoreOptions = false },
-                shape = RoundedCornerShape(24.dp)
-            ) {
-                actions.forEach { action ->
-                    CuteDropdownMenuItem(
-                        onClick = action.onClick,
-                        text = {
-                            Text(
-                                text = stringResource(action.text)
-                            )
-                        },
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(action.icon),
-                                contentDescription = null
-                            )
-                        }
+            Row {
+                IconButton(
+                    onClick = { showMoreOptions = true }
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.more_vert),
+                        contentDescription = null
                     )
                 }
-                DropdownItemDelete(
-                    onDelete = {
-//                        onHandleCommonAction(
-//                            CommonAction.DeleteFromContentUri(
-//                                CallLog.Calls.CONTENT_URI,
-//                                callLog.id
-//                            )
-//                        )
-                    },
-                    dialogTitle = { Text(stringResource(R.string.delete_call_log)) },
-                    dialogText = { Text(stringResource(R.string.delete_call_log_u_sure)) }
-                )
 
+                DropdownMenuPopup(
+                    expanded = showMoreOptions,
+                    onDismissRequest = { showMoreOptions = false }
+                ) {
+                    DropdownMenuGroup(
+                        shapes = MenuDefaults.groupShapes()
+                    ) {
+                        actions.fastForEachIndexed { index, action ->
+                            DropdownMenuItem(
+                                onClick = action.onClick,
+                                shape = MenuDefaults.getItemShape(index, actions.lastIndex),
+                                text = {
+                                    Text(
+                                        text = stringResource(action.text),
+                                        color = action.tint ?: LocalContentColor.current
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        painter = painterResource(action.icon),
+                                        contentDescription = null,
+                                        tint = action.tint ?: LocalContentColor.current
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -237,5 +234,6 @@ fun CallLogItem(
 private data class CallLogAction(
     val onClick: () -> Unit,
     val icon: Int,
-    val text: Int
+    val text: Int,
+    val tint: Color? = null
 )

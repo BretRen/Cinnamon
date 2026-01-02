@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -25,10 +26,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.sosauce.cuteconnect.domain.model.CuteConversation
 import com.sosauce.cuteconnect.ui.navigation.Screen
-import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.ui.shared_components.DefaultContactIcon
 import com.sosauce.cuteconnect.utils.getContactNameOrNothing
 

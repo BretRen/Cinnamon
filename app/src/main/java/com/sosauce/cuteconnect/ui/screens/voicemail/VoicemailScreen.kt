@@ -2,16 +2,11 @@
 
 package com.sosauce.cuteconnect.ui.screens.voicemail
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,21 +17,12 @@ import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.sosauce.cuteconnect.data.managers.AudioManager
-import com.sosauce.cuteconnect.domain.model.CuteVoicemail
 import com.sosauce.cuteconnect.ui.shared_components.searchbars.MiniCuteSearchbar
-import com.sosauce.cuteconnect.utils.rememberSearchbarAlignment
-import com.sosauce.cuteconnect.utils.rememberSearchbarMaxFloatValue
-import com.sosauce.cuteconnect.utils.rememberSearchbarRightPadding
-import com.sosauce.cuteconnect.utils.showCuteSearchbar
 
 @Composable
 fun VoicemailScreen(

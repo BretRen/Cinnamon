@@ -6,45 +6,29 @@ import android.content.Intent
 import android.provider.ContactsContract
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import com.sosauce.cuteconnect.R
 import com.sosauce.cuteconnect.domain.model.CuteContact
-import com.sosauce.cuteconnect.ui.shared_components.CategoryCard
-import com.sosauce.cuteconnect.ui.shared_components.CuteDropdownMenuItem
-import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.ui.shared_components.text.HeaderText
-import com.sosauce.cuteconnect.utils.ICON_TEXT_SPACING
 import com.sosauce.cuteconnect.utils.formateEventDate
-import java.text.SimpleDateFormat
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 @Composable
 fun ContactInfos(
@@ -68,8 +52,8 @@ fun ContactInfos(
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(
-                modifier = Modifier.padding(10.dp),
-                verticalArrangement = Arrangement.spacedBy(15.dp)
+                modifier = Modifier.padding(vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 contact.phoneNumbers.forEachIndexed { index, number ->
 
@@ -131,7 +115,7 @@ fun ContactInfos(
 
 
                 contact.emails.forEachIndexed { index, email ->
-                    CuteDropdownMenuItem(
+                    DropdownMenuItem(
                         onClick = {
                             val intent = Intent(Intent.ACTION_SENDTO, "mailto:".toUri())
                                 .apply {
@@ -140,6 +124,7 @@ fun ContactInfos(
 
                             context.startActivity(intent)
                         },
+                        shape = MenuDefaults.standaloneItemShape,
                         leadingIcon = {
                             if (index == 0) {
                                 Icon(
@@ -168,7 +153,7 @@ fun ContactInfos(
                 }
 
                 contact.addresses.forEachIndexed { index, address ->
-                    CuteDropdownMenuItem(
+                    DropdownMenuItem(
                         onClick = {
                             val intent = Intent(Intent.ACTION_VIEW, "geo:0,0?q=${address.address}".toUri())
                                 .apply {
@@ -176,6 +161,7 @@ fun ContactInfos(
                                 }
                             context.startActivity(intent)
                         },
+                        shape = MenuDefaults.standaloneItemShape,
                         leadingIcon = {
                             if (index == 0) {
                                 Icon(
@@ -217,12 +203,13 @@ fun ContactInfos(
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(
-                modifier = Modifier.padding(10.dp),
-                verticalArrangement = Arrangement.spacedBy(15.dp)
+                modifier = Modifier.padding(vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 contact.websites.forEachIndexed { index, website ->
-                    CuteDropdownMenuItem(
+                    DropdownMenuItem(
                         onClick = { uriHandler.openUri(website.website) },
+                        shape = MenuDefaults.standaloneItemShape,
                         leadingIcon = {
                             if (index == 0) {
                                 Icon(
@@ -237,8 +224,9 @@ fun ContactInfos(
 
                 contact.events.forEachIndexed { index, event ->
 
-                    CuteDropdownMenuItem(
+                    DropdownMenuItem(
                         onClick = {},
+                        shape = MenuDefaults.standaloneItemShape,
                         leadingIcon = {
                             if (index == 0) {
                                 Icon(
@@ -261,8 +249,9 @@ fun ContactInfos(
                     )
                 }
                 contact.notes.forEachIndexed { index, note ->
-                    CuteDropdownMenuItem(
+                    DropdownMenuItem(
                         onClick = {},
+                        shape = MenuDefaults.standaloneItemShape,
                         leadingIcon = {
                             if (index == 0) {
                                 Icon(

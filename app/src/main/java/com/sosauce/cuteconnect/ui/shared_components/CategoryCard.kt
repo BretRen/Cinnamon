@@ -1,6 +1,5 @@
 package com.sosauce.cuteconnect.ui.shared_components
 
-import android.graphics.drawable.shapes.Shape
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding

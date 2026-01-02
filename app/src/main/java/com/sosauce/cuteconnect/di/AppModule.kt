@@ -1,7 +1,5 @@
 package com.sosauce.cuteconnect.di
 
-import android.app.NotificationManager
-import android.content.Context
 import androidx.room.Room
 import com.sosauce.cuteconnect.data.contact_settings.ContactSettingsDao
 import com.sosauce.cuteconnect.data.contact_settings.ContactSettingsDatabase
@@ -29,12 +27,10 @@ import com.sosauce.cuteconnect.ui.screens.messages.MessagesViewModel
 import com.sosauce.cuteconnect.ui.screens.phone.CallingViewModel
 import com.sosauce.cuteconnect.ui.screens.voicemail.VoicemailViewModel
 import com.sosauce.cuteconnect.ui.screens.wallpaper.ThemingViewModel
-import org.koin.android.ext.koin.androidApplication
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.singleOf
-import org.koin.dsl.module
-import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
+import org.koin.dsl.module
 
 val appModule = module {
 

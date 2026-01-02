@@ -2,7 +2,6 @@
 
 package com.sosauce.cuteconnect.domain.repository
 
-import android.content.ContentUris
 import android.content.Context
 import android.net.Uri
 import android.os.Build
@@ -12,10 +11,8 @@ import android.provider.Telephony.MmsSms
 import android.provider.Telephony.Sms
 import android.util.Xml
 import androidx.compose.ui.util.fastForEach
-import androidx.compose.ui.util.fastMap
 import androidx.core.net.toUri
 import com.sosauce.cuteconnect.domain.model.CuteAttachment
-import com.sosauce.cuteconnect.domain.model.CuteConversation
 import com.sosauce.cuteconnect.domain.model.CuteMessage
 import com.sosauce.cuteconnect.utils.PermissionUtils
 import com.sosauce.cuteconnect.utils.copyMutate
@@ -24,7 +21,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import org.xmlpull.v1.XmlPullParser
 

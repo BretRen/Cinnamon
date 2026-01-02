@@ -24,26 +24,21 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.AbsoluteRoundedCornerShape
-import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Pause
-import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,27 +49,21 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.media3.common.MediaItem
-import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.compose.PlayerSurface
 import androidx.media3.ui.compose.SURFACE_TYPE_TEXTURE_VIEW
 import coil3.compose.AsyncImage
 import com.sosauce.cuteconnect.R
-
-import com.sosauce.cuteconnect.domain.model.CuteContact
 import com.sosauce.cuteconnect.domain.model.CuteMessage
-import com.sosauce.cuteconnect.ui.shared_components.AnimatedSlider
-import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.ui.screens.messages.ConversationActions
+import com.sosauce.cuteconnect.ui.shared_components.AnimatedSlider
 import com.sosauce.cuteconnect.utils.ImageUtils
 import com.sosauce.cuteconnect.utils.getMMSSize
 import com.sosauce.cuteconnect.utils.isEmoji
@@ -82,8 +71,6 @@ import com.sosauce.cuteconnect.utils.isLink
 import com.sosauce.cuteconnect.utils.rememberInteractionSource
 import com.sosauce.cuteconnect.utils.thenIf
 import com.sosauce.cuteconnect.utils.toReadableDuration
-import com.sosauce.cuteconnect.utils.toReadableTime
-import java.io.File
 import kotlin.time.DurationUnit
 
 @UnstableApi
@@ -114,18 +101,6 @@ fun MessageBubble(
             Alignment.End
         } else Alignment.Start
     }
-
-    LaunchedEffect(cuteMessage.id) {
-        if (!cuteMessage.read) {
-            onHandleConversationActions(
-                ConversationActions.MarkAsRead(cuteMessage.id)
-            )
-        }
-    }
-
-    val d = cuteMessage.copy()
-
-
 
     Column(
         modifier = modifier
@@ -256,7 +231,7 @@ fun MessageBubble(
                                 onClick = { player.play() }
                             ) {
                                 Icon(
-                                    imageVector = Icons.Rounded.PlayArrow,
+                                    painter = painterResource(R.drawable.play_filled),
                                     contentDescription = null
                                 )
                             }
@@ -314,14 +289,13 @@ fun MessageBubble(
                         vertical = if (sandwichPosition == SandwichPosition.SOLO) 10.dp else 1.dp
                     )
                     .widthIn(max = configuration.screenWidthDp.dp * 0.8f)
-                    .clip(
-                        BubbleShape(
+                    .background(
+                        color = bubbleColor,
+                        shape = BubbleShape(
                             sandwichPosition = sandwichPosition,
                             messageType = cuteMessage.type
                         )
                     )
-
-                    .background(bubbleColor)
                     .align(alignment)
                     .thenIf(cuteMessage.body.isLink()) {
                         Modifier.clickable {
@@ -357,9 +331,9 @@ fun MessageBubble(
                 modifier = Modifier
                     .background(
                         color = MaterialTheme.colorScheme.background,
-                        shape = RoundedCornerShape(10.dp)
+                        shape = RoundedCornerShape(50)
                     )
-                    .padding(2.dp)
+                    .padding(5.dp)
             )
         }
     }
@@ -425,7 +399,7 @@ fun PlayPauseButton(
         interactionSource = interactionSource
     ) {
         Icon(
-            imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+            painter = if (isPlaying) painterResource(R.drawable.pause_filled) else painterResource(R.drawable.play_filled),
             contentDescription = null,
             modifier = modifier
                 .graphicsLayer {

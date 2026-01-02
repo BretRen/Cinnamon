@@ -19,6 +19,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -31,7 +32,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sosauce.cuteconnect.R
 import com.sosauce.cuteconnect.ui.shared_components.buttons.CuteNavigationButton
-import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.ui.theme.nunitoFontFamily
 import com.sosauce.cuteconnect.utils.rememberSearchbarMaxFloatValue
 import com.sosauce.cuteconnect.utils.rememberSearchbarRightPadding

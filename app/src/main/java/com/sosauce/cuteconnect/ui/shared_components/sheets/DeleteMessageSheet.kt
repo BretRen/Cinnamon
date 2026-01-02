@@ -2,7 +2,6 @@
 
 package com.sosauce.cuteconnect.ui.shared_components.sheets
 
-import android.provider.Telephony
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,6 +13,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,11 +23,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastForEach
 import com.sosauce.cuteconnect.R
-
 import com.sosauce.cuteconnect.ui.shared_components.buttons.DangerButton
-import androidx.compose.material3.Text
+
 @Composable
 fun DeleteMessageSheet(
     selectedMessages: Int,

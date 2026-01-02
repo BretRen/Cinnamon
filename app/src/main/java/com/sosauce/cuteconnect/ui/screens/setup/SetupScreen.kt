@@ -12,12 +12,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -25,6 +21,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -45,7 +42,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.sosauce.cuteconnect.R
-import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.utils.requestRole
 
 @SuppressLint("InlinedApi")
@@ -136,7 +132,7 @@ fun SetupScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = if (isSmsRoleHeld) Icons.Rounded.Check else Icons.Rounded.Close,
+                        painter = if (isSmsRoleHeld) painterResource(R.drawable.check) else painterResource(R.drawable.close),
                         contentDescription = null,
                         tint = if (isSmsRoleHeld) Color.Green.copy(0.85f) else Color.Red.copy(0.85f)
                     )
@@ -171,7 +167,7 @@ fun SetupScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = if (isDialerRoleHeld) Icons.Rounded.Check else Icons.Rounded.Close,
+                        painter = if (isDialerRoleHeld) painterResource(R.drawable.check) else painterResource(R.drawable.close),
                         contentDescription = null,
                         tint = if (isDialerRoleHeld) Color.Green.copy(0.85f) else Color.Red.copy(0.85f)
                     )

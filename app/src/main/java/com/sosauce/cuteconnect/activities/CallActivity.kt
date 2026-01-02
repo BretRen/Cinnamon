@@ -10,14 +10,14 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.sosauce.cuteconnect.ui.screens.phone.CallScreen
-import com.sosauce.cuteconnect.ui.theme.CuteConnectTheme
-import androidx.compose.runtime.getValue
 import com.sosauce.cuteconnect.domain.states.CallState
+import com.sosauce.cuteconnect.ui.screens.phone.CallScreen
 import com.sosauce.cuteconnect.ui.screens.phone.CallingViewModel
 import com.sosauce.cuteconnect.ui.screens.phone.IncomingScreen
+import com.sosauce.cuteconnect.ui.theme.CuteConnectTheme
 import com.sosauce.cuteconnect.utils.APP_PACKAGE
 import org.koin.androidx.compose.koinViewModel
 

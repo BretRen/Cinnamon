@@ -7,63 +7,53 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.Backspace
-import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ContainedLoadingIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.sosauce.cuteconnect.domain.model.CuteContact
-import com.sosauce.cuteconnect.ui.navigation.Screen
-import com.sosauce.cuteconnect.ui.screens.contacts.ContactListItem
-import com.sosauce.cuteconnect.ui.screens.phone.components.DisableSoftKeyboard
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastFirst
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import com.sosauce.cuteconnect.R
+import com.sosauce.cuteconnect.ui.navigation.Screen
+import com.sosauce.cuteconnect.ui.screens.contacts.groupedContactsList
 import com.sosauce.cuteconnect.ui.screens.phone.CallAction
-import com.sosauce.cuteconnect.ui.shared_components.CuteDropdownMenuItem
+import com.sosauce.cuteconnect.ui.screens.phone.components.DisableSoftKeyboard
 import com.sosauce.cuteconnect.utils.rememberFocusRequester
 
 @Composable
@@ -119,7 +109,12 @@ fun DialpadScreen(
                         modifier = Modifier.verticalScroll(rememberScrollState())
                     ) {
                         contact.phoneNumbers.fastForEachIndexed { index, number ->
-                            CuteDropdownMenuItem(
+                            DropdownMenuItem(
+                                shape = when(index) {
+                                    0 -> MenuDefaults.leadingItemShape
+                                    contact.phoneNumbers.lastIndex -> MenuDefaults.trailingItemShape
+                                    else -> MenuDefaults.middleItemShape
+                                },
                                 onClick = { onHandleCallAction(CallAction.LaunchCall(number.number)) },
                                 leadingIcon = { Text("${index + 1}.") },
                                 text = { Text(number.number) }
@@ -151,7 +146,7 @@ fun DialpadScreen(
                             shapes = IconButtonDefaults.shapes()
                         ) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                                painter = painterResource(R.drawable.back),
                                 contentDescription = null
                             )
                         }
@@ -211,7 +206,7 @@ fun DialpadScreen(
                             enabled = value.isNotEmpty() || value.isNotBlank()
                         ) {
                             Icon(
-                                imageVector = Icons.Rounded.Call,
+                                painter = painterResource(R.drawable.call),
                                 contentDescription = null
                             )
                         }
@@ -222,22 +217,16 @@ fun DialpadScreen(
             LazyColumn(
                 contentPadding = paddingValues
             ) {
-                items(
-                    items = state.contacts.fastFilter { it.phoneNumbers.any { it.number.indexOf(value) != -1 } },
-                    key = { it.id }
-                ) { contact ->
-                    ContactListItem(
-                        contact = contact,
-                        onContactClick = {
-                            if (contact.phoneNumbers.size > 1) {
-                                showMultiNumberSelection = Pair(true, contact.id)
-                            } else {
-                                onHandleCallAction(CallAction.LaunchCall(contact.phoneNumbers.first().number))
-                            }
-                        },
-                        showNumber = true
-                    )
-                }
+                groupedContactsList(
+                    groupedContacts = state.contacts.fastFilter { it.phoneNumbers.fastAny { number -> number.number.contains(value) } }.groupBy { it.name.first() },
+                    onContactClicked = { contact ->
+                        if (contact.phoneNumbers.size > 1) {
+                            showMultiNumberSelection = Pair(true, contact.id)
+                        } else {
+                            onHandleCallAction(CallAction.LaunchCall(contact.phoneNumbers.first().number))
+                        }
+                    }
+                )
             }
 
         }

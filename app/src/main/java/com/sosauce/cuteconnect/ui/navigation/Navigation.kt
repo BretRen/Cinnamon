@@ -1,80 +1,46 @@
 package com.sosauce.cuteconnect.ui.navigation
 
 import android.content.Intent
-import android.net.Uri
-import android.provider.Telephony
-import android.telecom.Call
-import android.telephony.PhoneNumberUtils
-import androidx.activity.compose.LocalActivity
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.sosauce.cuteconnect.ui.screens.contacts.ContactDetails
-import com.sosauce.cuteconnect.ui.screens.contacts.ContactsScreen
-import com.sosauce.cuteconnect.ui.screens.messages.ConversationScreen
-import com.sosauce.cuteconnect.ui.screens.messages.MessagesScreen
-import com.sosauce.cuteconnect.ui.screens.phone.CallScreen
-import com.sosauce.cuteconnect.utils.getContactNameOrNothing
-import org.koin.androidx.compose.koinViewModel
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.util.fastAny
-import androidx.compose.ui.util.fastFilter
-import androidx.compose.ui.util.fastFirst
-import androidx.compose.ui.util.fastFirstOrNull
-import androidx.compose.ui.util.fastForEach
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
-import com.sosauce.cuteconnect.domain.model.CuteContact
-import com.sosauce.cuteconnect.domain.model.CuteConversation
-import com.sosauce.cuteconnect.ui.screens.debug.DebugMmsScreen
-import com.sosauce.cuteconnect.utils.NAVIGATION_PREFIX
-import com.sosauce.cuteconnect.domain.model.CuteMms
 import com.sosauce.cuteconnect.ui.screens.archived.ArchivedThreads
 import com.sosauce.cuteconnect.ui.screens.archived.ArchivedViewModel
 import com.sosauce.cuteconnect.ui.screens.contacts.AboutMeScreen
+import com.sosauce.cuteconnect.ui.screens.contacts.ContactDetails
 import com.sosauce.cuteconnect.ui.screens.contacts.ContactDetailsViewModel
+import com.sosauce.cuteconnect.ui.screens.contacts.ContactsScreen
 import com.sosauce.cuteconnect.ui.screens.contacts.ContactsViewModel
 import com.sosauce.cuteconnect.ui.screens.dialer.DialerScreen
 import com.sosauce.cuteconnect.ui.screens.dialer.DialerViewModel
 import com.sosauce.cuteconnect.ui.screens.dialer.DialpadScreen
 import com.sosauce.cuteconnect.ui.screens.dialer.DialpadViewModel
+import com.sosauce.cuteconnect.ui.screens.messages.ConversationActions
 import com.sosauce.cuteconnect.ui.screens.messages.ConversationDetailsViewModel
+import com.sosauce.cuteconnect.ui.screens.messages.ConversationScreen
+import com.sosauce.cuteconnect.ui.screens.messages.MessagesScreen
 import com.sosauce.cuteconnect.ui.screens.messages.MessagesViewModel
 import com.sosauce.cuteconnect.ui.screens.messages.StartConversation
 import com.sosauce.cuteconnect.ui.screens.phone.CallingViewModel
-import com.sosauce.cuteconnect.ui.screens.phone.IncomingScreen
-import com.sosauce.cuteconnect.ui.screens.setup.SetupScreen
 import com.sosauce.cuteconnect.ui.screens.voicemail.VoicemailScreen
 import com.sosauce.cuteconnect.ui.screens.voicemail.VoicemailViewModel
 import com.sosauce.cuteconnect.ui.screens.wallpaper.ConversationTheming
 import com.sosauce.cuteconnect.ui.screens.wallpaper.ThemingViewModel
 import com.sosauce.cuteconnect.utils.LocalScreen
-import com.sosauce.cuteconnect.utils.addOrRemove
-import com.sosauce.cuteconnect.utils.copyMutate
-import com.sosauce.cuteconnect.utils.getThreadIdOrCreate
-import com.sosauce.cuteconnect.utils.hasBothRoles
 import com.sosauce.cuteconnect.utils.rememberHazeState
 import dev.chrisbanes.haze.HazeState
-import kotlinx.coroutines.flow.distinctUntilChanged
+import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
-import java.util.Locale
-import kotlin.system.measureTimeMillis
 
 
 @Composable
@@ -167,6 +133,8 @@ fun Nav(intent: Intent?) {
                     )
                     val callViewModel = koinViewModel<CallingViewModel>()
                     val state by viewModel.state.collectAsStateWithLifecycle()
+
+                    viewModel.handleConversationActions(ConversationActions.MarkAsRead)
 
                     ConversationScreen(
                         state = state,

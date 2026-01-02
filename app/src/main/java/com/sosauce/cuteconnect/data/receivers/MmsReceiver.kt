@@ -4,12 +4,10 @@ import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.provider.Telephony
 import androidx.core.content.contentValuesOf
-import com.klinker.android.send_message.MmsSentReceiver.EXTRA_CONTENT_URI
-import com.sosauce.cuteconnect.data.managers.MessageNotificationManager
 import androidx.core.net.toUri
+import com.klinker.android.send_message.MmsSentReceiver.EXTRA_CONTENT_URI
 
 class MmsReceiver: BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {

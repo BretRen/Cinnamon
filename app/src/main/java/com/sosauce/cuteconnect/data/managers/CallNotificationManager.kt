@@ -1,6 +1,5 @@
 package com.sosauce.cuteconnect.data.managers
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
@@ -10,29 +9,17 @@ import android.content.Context
 import android.content.Intent
 import android.media.AudioAttributes
 import android.media.RingtoneManager
-import android.os.Build
 import android.telecom.Call
-import androidx.annotation.RequiresPermission
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Call
-import androidx.compose.material.icons.rounded.CallMade
-import androidx.compose.runtime.collection.mutableVectorOf
-import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.Person
-import androidx.core.graphics.drawable.IconCompat
-import com.sosauce.cuteconnect.main.MainActivity
 import com.sosauce.cuteconnect.R
 import com.sosauce.cuteconnect.activities.CallActivity
 import com.sosauce.cuteconnect.data.receivers.CallReceiver
-import com.sosauce.cuteconnect.data.services.CallService
 import com.sosauce.cuteconnect.utils.ACCEPT_INCOMING_CALL
 import com.sosauce.cuteconnect.utils.DECLINE_INCOMING_CALL
-import com.sosauce.cuteconnect.utils.FULL_SCREEN_INTENT
 import com.sosauce.cuteconnect.utils.HANGUP_ONGOING_CALL
 import com.sosauce.cuteconnect.utils.getContactNameOrNothing
-import java.security.SecurityPermission
 
 class CallNotificationManager(
     private val context: Context,
@@ -79,6 +66,9 @@ class CallNotificationManager(
         callDetails: Call.Details
     ): Notification {
 
+        val number = callDetails.gatewayInfo?.originalAddress?.schemeSpecificPart ?:
+        callDetails.handle.schemeSpecificPart
+
         return NotificationCompat.Builder(context, CALLS_CHANNEL_ID)
             .setSmallIcon(R.drawable.round_call_received_24)
             .setCategory(Notification.CATEGORY_CALL)
@@ -88,10 +78,7 @@ class CallNotificationManager(
             .setStyle(
                 NotificationCompat.CallStyle.forIncomingCall(
                     Person.Builder()
-                        .setName(
-                            callDetails.gatewayInfo?.originalAddress?.schemeSpecificPart?.getContactNameOrNothing(context) ?:
-                            callDetails.handle.schemeSpecificPart.getContactNameOrNothing(context)
-                        )
+                        .setName(number.getContactNameOrNothing(context))
                         .build(),
                     declinePendingIntent,
                     acceptPendingIntent
@@ -104,6 +91,9 @@ class CallNotificationManager(
     fun createOngoingBuilder(
         call: Call
     ): Notification {
+        val number = call.details.gatewayInfo?.originalAddress?.schemeSpecificPart ?:
+        call.details.handle.schemeSpecificPart
+
         return NotificationCompat.Builder(context, CALLS_CHANNEL_ID)
             .setSmallIcon(R.drawable.call)
             .setCategory(Notification.CATEGORY_CALL)
@@ -115,10 +105,7 @@ class CallNotificationManager(
             .setStyle(
                 NotificationCompat.CallStyle.forOngoingCall(
                     Person.Builder()
-                        .setName(
-                            call.details.gatewayInfo?.originalAddress?.schemeSpecificPart?.getContactNameOrNothing(context) ?:
-                            call.details.handle.schemeSpecificPart.getContactNameOrNothing(context)
-                        )
+                        .setName(number.getContactNameOrNothing(context))
                         .build(),
                     hangupPendingIntent
 

@@ -2,12 +2,10 @@ package com.sosauce.cuteconnect.ui.screens.archived
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sosauce.cuteconnect.data.datastore.getArchivedConversations
 import com.sosauce.cuteconnect.domain.model.CuteConversation
 import com.sosauce.cuteconnect.domain.repository.ArchivedThreadsRepository
-import com.sosauce.cuteconnect.domain.repository.MessagesRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

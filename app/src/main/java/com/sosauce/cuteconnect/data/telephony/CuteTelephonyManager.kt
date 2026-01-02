@@ -3,11 +3,8 @@ package com.sosauce.cuteconnect.data.telephony
 import android.content.Context
 import android.os.Build
 import android.provider.Telephony.Sms
-import android.provider.Telephony
 import android.telephony.SmsManager
-import android.telephony.TelephonyManager
 import androidx.core.content.contentValuesOf
-import com.sosauce.cuteconnect.domain.model.CuteMessage
 import com.sosauce.cuteconnect.utils.getThreadIdOrCreate
 
 class CuteTelephonyManager(
@@ -19,13 +16,13 @@ class CuteTelephonyManager(
     } else SmsManager.getDefault()
 
 
-    fun markAsRead(messageId: Long) {
+    fun markConversationAsRead(threadId: Long) {
         val contentValues = contentValuesOf(
             Sms.READ to 1
         )
-        val selection = "${Sms._ID} = ?"
+        val selection = "${Sms.THREAD_ID} = ?"
 
-        context.contentResolver.update(Sms.CONTENT_URI, contentValues, selection, arrayOf(messageId.toString()))
+        context.contentResolver.update(Sms.CONTENT_URI, contentValues, selection, arrayOf(threadId.toString()))
     }
 
     fun sendSms(

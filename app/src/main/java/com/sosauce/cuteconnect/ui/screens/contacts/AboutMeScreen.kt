@@ -10,23 +10,23 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sosauce.cuteconnect.R
 import com.sosauce.cuteconnect.domain.model.AboutMe
-import com.sosauce.cuteconnect.ui.shared_components.buttons.CuteNavigationButton
-import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.ui.shared_components.DefaultContactIcon
+import com.sosauce.cuteconnect.ui.shared_components.buttons.CuteNavigationButton
 import com.sosauce.cuteconnect.utils.ICON_TEXT_SPACING
 
 @Composable
@@ -70,7 +70,7 @@ fun AboutMeScreen(
                         Spacer(Modifier.height(20.dp))
                         Row {
                             Icon(
-                                imageVector = Icons.Rounded.Call,
+                                painter = painterResource(R.drawable.call),
                                 contentDescription = null
                             )
                             Row(

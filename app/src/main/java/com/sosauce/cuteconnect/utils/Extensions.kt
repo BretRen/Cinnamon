@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.sosauce.cuteconnect.utils
 
 import android.app.Activity
@@ -8,104 +10,68 @@ import android.content.Intent
 import android.database.ContentObserver
 import android.net.Uri
 import android.os.Build
-import android.provider.BlockedNumberContract
 import android.provider.BlockedNumberContract.BlockedNumbers
-import android.provider.ContactsContract
 import android.provider.ContactsContract.PhoneLookup
-import android.provider.OpenableColumns
-import android.provider.Settings
 import android.provider.Telephony
 import android.provider.Telephony.Mms
 import android.provider.Telephony.Sms
 import android.telecom.TelecomManager
 import android.telephony.PhoneNumberUtils
 import android.telephony.SubscriptionManager
-import android.telephony.TelephonyManager
 import android.text.format.DateFormat
 import android.text.format.DateUtils
-import android.util.Log
-import android.util.Patterns
 import android.widget.Toast
-import androidx.activity.ComponentActivity
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.repeatable
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import com.sosauce.cuteconnect.data.datastore.rememberIsLandscape
-import com.sosauce.cuteconnect.domain.model.CuteContact
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import java.io.BufferedReader
-import java.io.IOException
-import java.io.InputStream
-import java.io.InputStreamReader
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
-import kotlin.random.Random
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.core.content.contentValuesOf
-import com.sosauce.cuteconnect.ui.navigation.Screen
+import androidx.core.net.toUri
+import com.sosauce.cuteconnect.data.datastore.rememberIsLandscape
 import dev.chrisbanes.haze.HazeEffectScope
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.hazeEffect
-import kotlin.text.matches
-import androidx.core.net.toUri
-import androidx.core.telephony.TelephonyManagerCompat
-import androidx.navigation3.runtime.NavKey
-import com.google.i18n.phonenumbers.PhoneNumberUtil
-import com.sosauce.cuteconnect.data.datastore.PreferencesKeys.DEFAULT_SIM
-import com.sosauce.cuteconnect.data.datastore.dataStore
-import com.sosauce.cuteconnect.data.datastore.getPreference
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.callbackFlow
+import java.io.BufferedReader
 import java.io.FileNotFoundException
+import java.io.IOException
+import java.io.InputStream
+import java.io.InputStreamReader
+import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalTime
 import java.time.MonthDay
 import java.time.Year
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import java.time.format.TextStyle
-import java.util.TimeZone
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
@@ -243,23 +209,28 @@ fun String.getContactId(context: Context): Long {
  */
 
 fun String.getContactPfpUri(context: Context): Uri {
-    val uri = Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI, Uri.encode(this))
 
-    context.contentResolver.query(
-        uri,
-        arrayOf(PhoneLookup.PHOTO_URI),
-        null,
-        null,
-        null
-    )?.use { cursor ->
-        val photoColumn = cursor.getColumnIndexOrThrow(PhoneLookup.PHOTO_URI)
-        if (cursor.moveToFirst()) {
-            val photoUri = cursor.getString(photoColumn)?.toUri() ?: Uri.EMPTY
+    try {
 
-            return photoUri
+        val normalized = PhoneNumberUtils.normalizeNumber(this)
+        val uri = Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI, Uri.encode(normalized))
+
+        context.contentResolver.query(
+            uri,
+            arrayOf(PhoneLookup.PHOTO_URI),
+            null,
+            null,
+            null
+        )?.use { cursor ->
+            val photoColumn = cursor.getColumnIndexOrThrow(PhoneLookup.PHOTO_URI)
+            if (cursor.moveToFirst()) {
+                val photoUri = cursor.getString(photoColumn)?.toUri() ?: Uri.EMPTY
+
+                return photoUri
+            }
         }
-    }
-    return Uri.EMPTY
+        return Uri.EMPTY
+    } catch (_: IllegalArgumentException) { return Uri.EMPTY }
 }
 
 // Arranged from Fossify
@@ -630,6 +601,10 @@ fun String.formateEventDate(): String {
 //    return 0
 //}
 
+fun CuteRoundedCornerShape(
+    top: Dp,
+    bottom: Dp
+): Shape = RoundedCornerShape(topStart = top, topEnd = top, bottomEnd = bottom, bottomStart = bottom)
 @Composable
 fun rememberFocusRequester(): FocusRequester {
     return remember { FocusRequester() }
@@ -695,4 +670,34 @@ fun rememberInteractionSource(): MutableInteractionSource {
 fun keyboardAsState(): State<Boolean> {
     val isImeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     return rememberUpdatedState(isImeVisible)
+}
+
+@Composable
+fun anyDarkColorScheme(): ColorScheme {
+    val context = LocalContext.current
+
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        dynamicDarkColorScheme(context)
+    } else {
+        darkColorScheme()
+    }
+}
+
+fun Modifier.selfAlignHorizontally(): Modifier = Modifier
+    .fillMaxWidth()
+    .wrapContentWidth()
+
+/**
+ * @param lastIndex Last index of the list the DropdownMenuItem is being iterated through
+ */
+@Composable
+fun MenuDefaults.getItemShape(
+    index: Int,
+    lastIndex: Int
+): Shape {
+    return when(index) {
+        0 -> leadingItemShape
+        lastIndex -> trailingItemShape
+        else -> middleItemShape
+    }
 }

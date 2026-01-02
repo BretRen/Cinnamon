@@ -7,7 +7,6 @@ package com.sosauce.cuteconnect.domain.model
  */
 data class CuteConversation(
     val threadId: Long = 0,
-    val contacts: List<CuteContact> = emptyList(),
     val recipients: List<String> = emptyList(),
     val snippet: String = "",
     val date: Long = 0,

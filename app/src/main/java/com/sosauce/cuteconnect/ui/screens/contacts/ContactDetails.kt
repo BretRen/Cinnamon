@@ -6,9 +6,6 @@ import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,9 +20,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -34,6 +28,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -48,22 +43,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.skydoves.cloudy.cloudy
 import com.sosauce.cuteconnect.R
 import com.sosauce.cuteconnect.data.contact_settings.ContactSettingsActions
-import com.sosauce.cuteconnect.domain.model.CuteContact
 import com.sosauce.cuteconnect.ui.navigation.Screen
 import com.sosauce.cuteconnect.ui.screens.contacts.components.ContactActionsRow
 import com.sosauce.cuteconnect.ui.screens.contacts.components.ContactInfos
-import com.sosauce.cuteconnect.ui.shared_components.BottomActionButtons
-import com.sosauce.cuteconnect.ui.shared_components.buttons.CuteNavigationButton
-import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.ui.screens.phone.CallAction
+import com.sosauce.cuteconnect.ui.shared_components.BottomActionButtons
 import com.sosauce.cuteconnect.ui.shared_components.DefaultContactIcon
-import org.koin.androidx.compose.koinViewModel
-import org.koin.core.parameter.parametersOf
+import com.sosauce.cuteconnect.ui.shared_components.buttons.CuteNavigationButton
 
 @Composable
 fun ContactDetails(
@@ -120,10 +110,10 @@ fun ContactDetails(
                                     targetState = isEditMode
                                 ) { editMode ->
                                     if (editMode) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Close,
-                                            contentDescription = null
-                                        )
+//                                        Icon(
+//                                            imageVector = Icons.Rounded.Close,
+//                                            contentDescription = null
+//                                        )
                                     } else {
                                         Icon(
                                             painter = painterResource(R.drawable.edit_filled),
@@ -152,14 +142,6 @@ fun ContactDetails(
                     .verticalScroll(scrollState)
                     .padding(pv)
             ) {
-                IconButton(
-                    onClick = { imagePicker.launch(arrayOf("image/*")) }
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Add,
-                        contentDescription = null
-                    )
-                }
                 Box(
                     modifier = Modifier
                         .padding(horizontal = 10.dp)
@@ -180,7 +162,7 @@ fun ContactDetails(
                             .padding(start = 10.dp),
                         size = 170.dp,
                         contactPfp = state.contact.photo,
-                        shape = MaterialShapes.Cookie12Sided.toShape()
+                        shape = MaterialShapes.Cookie9Sided.toShape()
                     )
 
                 }

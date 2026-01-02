@@ -8,15 +8,17 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.sosauce.cuteconnect.R
-import com.sosauce.cuteconnect.ui.shared_components.CuteDropdownMenuItem
-import androidx.compose.material3.Text
+
 @Composable
 fun ActionPicker(
     expanded: Boolean,
@@ -69,10 +71,15 @@ fun ActionPicker(
         shape = RoundedCornerShape(24.dp)
     ) {
         actionPickerItems.forEachIndexed { index, item ->
-            CuteDropdownMenuItem(
+            DropdownMenuItem(
                 onClick = {
                     item.onClick()
                     onDismissRequest()
+                },
+                shape = when (index) {
+                    0 -> MenuDefaults.leadingItemShape
+                    actionPickerItems.lastIndex -> MenuDefaults.trailingItemShape
+                    else -> MenuDefaults.middleItemShape
                 },
                 text = { Text(stringResource(item.text)) },
                 leadingIcon = {

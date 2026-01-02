@@ -7,18 +7,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AirplanemodeActive
-import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.sosauce.cuteconnect.R
-import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.utils.ICON_TEXT_SPACING
 
 @Composable
@@ -32,8 +30,8 @@ fun TextingUnavailableBar(
     }
 
     val reasonIcon = when (reason) {
-        TextingUnavailableReason.AIRPLANE_MODE_ON -> Icons.Rounded.AirplanemodeActive
-        TextingUnavailableReason.SHORT_CODE -> Icons.Rounded.Block
+        TextingUnavailableReason.AIRPLANE_MODE_ON -> R.drawable.airplane_mode
+        TextingUnavailableReason.SHORT_CODE -> R.drawable.block
     }
 
     HorizontalFloatingToolbar(
@@ -44,7 +42,7 @@ fun TextingUnavailableBar(
             .navigationBarsPadding()
     ) {
         Icon(
-            imageVector = reasonIcon,
+            painter = painterResource(reasonIcon),
             contentDescription = null
         )
         Spacer(Modifier.width(ICON_TEXT_SPACING.dp))

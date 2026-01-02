@@ -22,9 +22,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Sort
-import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -33,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -51,13 +49,11 @@ import androidx.compose.ui.unit.dp
 import com.sosauce.cuteconnect.R
 import com.sosauce.cuteconnect.ui.navigation.Screen
 import com.sosauce.cuteconnect.ui.shared_components.ScreenSelection
-import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.ui.theme.nunitoFontFamily
 import com.sosauce.cuteconnect.utils.LocalScreen
 import com.sosauce.cuteconnect.utils.rememberSearchbarMaxFloatValue
 import com.sosauce.cuteconnect.utils.rememberSearchbarRightPadding
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
-import kotlin.collections.get
 
 @Composable
 fun CuteSearchbar(
@@ -157,7 +153,6 @@ fun CuteSearchbar(
                                 },
                                 trailingIcon = {
                                     Row {
-
                                         DropdownMenu(
                                             expanded = showSortMenu,
                                             onDismissRequest = { showSortMenu = false },
@@ -170,7 +165,7 @@ fun CuteSearchbar(
                                             shapes = IconButtonDefaults.shapes()
                                         ) {
                                             Icon(
-                                                imageVector = Icons.AutoMirrored.Rounded.Sort,
+                                                painter = painterResource(R.drawable.sort),
                                                 contentDescription = stringResource(R.string.sort)
                                             )
                                         }
@@ -179,7 +174,7 @@ fun CuteSearchbar(
                                             shapes = IconButtonDefaults.shapes()
                                         ) {
                                             Icon(
-                                                imageVector = Icons.Rounded.Settings,
+                                                painter = painterResource(R.drawable.settings_filled),
                                                 contentDescription = stringResource(R.string.settings)
                                             )
                                         }

@@ -1,19 +1,15 @@
 package com.sosauce.cuteconnect.domain.repository
 
-import android.content.ContentUris
 import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.provider.ContactsContract
-import android.provider.ContactsContract.Contacts
 import android.provider.Telephony
 import android.provider.Telephony.Mms
 import android.provider.Telephony.MmsSms
 import android.provider.Telephony.Sms
 import androidx.compose.ui.util.fastForEach
-import androidx.compose.ui.util.fastMap
 import androidx.core.net.toUri
-import com.sosauce.cuteconnect.domain.model.CuteContact
 import com.sosauce.cuteconnect.domain.model.CuteConversation
 import com.sosauce.cuteconnect.utils.observe
 import kotlinx.coroutines.Dispatchers
@@ -71,17 +67,12 @@ class MessagesRepository(
                 val date = cursor.getLong(dateColumn)
                 val read = cursor.getInt(readColumn)
                 val isGroupChat = recipientsPhoneNumber.size > 1
-                val contactsId = recipientsPhoneNumber.fastMap { getContactIdForThread(it) }
-                val threadContact = if (!isGroupChat) { // TODO: allow this for GC
-                    fetchContactsForThread(contactsId)
-                } else emptyList()
 
                 conversations.add(
                     CuteConversation(
                         threadId = threadId,
                         snippet = snippet,
                         recipients = recipientsPhoneNumber,
-                        contacts = threadContact,
                         isSenderBlocked = if (recipientsPhoneNumber.size > 1) false else BlockedNumbersManager.isNumberBlocked(recipientsPhoneNumber.first(), context), // TODO: Checked if anyone in the group chat is blocked
                         date = date,
                         read = read == 1,
@@ -92,68 +83,6 @@ class MessagesRepository(
         }
         return conversations
     }
-
-    /**
-     * Only fetches minimal contact data for display on messages screen
-     */
-    private fun fetchContactsForThread(
-        contactIds: List<Long>
-    ): List<CuteContact> {
-
-
-        val contacts = mutableListOf<CuteContact>()
-
-
-        val projection = arrayOf(
-            ContactsContract.Data.CONTACT_ID,
-            ContactsContract.Data.DISPLAY_NAME
-        )
-
-        context.contentResolver.query(
-            ContactsContract.Data.CONTENT_URI,
-            projection,
-            "${ContactsContract.Data.CONTACT_ID} = ?",
-            contactIds.fastMap(Long::toString).toTypedArray(),
-            "${ContactsContract.Data.DISPLAY_NAME} ASC"
-        )?.use { cursor ->
-            val idColumn = cursor.getColumnIndexOrThrow(ContactsContract.Data.CONTACT_ID)
-            val nameColumn = cursor.getColumnIndexOrThrow(ContactsContract.Data.DISPLAY_NAME)
-
-            while (cursor.moveToNext()) {
-
-
-                val id = cursor.getLong(idColumn)
-                val name = cursor.getString(nameColumn)
-
-                contacts.add(
-                    CuteContact(
-                        id = id,
-                        name = name,
-                        photo = getContactPhoto(id)
-                    )
-                )
-            }
-        }
-        return contacts
-    }
-
-    // Since Coil takes care of loading the uri, we're fine passing the high res image
-    private fun getContactPhoto(contactId: Long): Uri {
-        val contactUri = ContentUris.withAppendedId(Contacts.CONTENT_URI, contactId.toLong())
-        val photoUri = Uri.withAppendedPath(contactUri, Contacts.Photo.DISPLAY_PHOTO)
-
-        val hasPhoto = try {
-            context.contentResolver.openInputStream(photoUri)?.use {
-                it.available() > 0
-            } == true
-        } catch (e: Exception) {
-            false
-        }
-        return if (hasPhoto) {
-            photoUri
-        } else Uri.EMPTY
-    }
-
     private fun getMmsThreadSnippet(threadId: Long): String {
         val latestMmsId = fetchLatestMmsId(threadId)
         var snippet = ""

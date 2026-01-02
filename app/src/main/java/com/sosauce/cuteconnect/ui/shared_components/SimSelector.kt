@@ -3,18 +3,16 @@
 package com.sosauce.cuteconnect.ui.shared_components
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.SimCard
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,17 +22,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastForEachIndexed
 import com.sosauce.cuteconnect.R
 import com.sosauce.cuteconnect.data.datastore.rememberDefaultSimCard
 import com.sosauce.cuteconnect.domain.model.CuteSimCard
-import com.sosauce.cuteconnect.ui.navigation.LocalHazeState
-import androidx.compose.material3.Text
-import androidx.compose.ui.util.fastForEach
-import dev.chrisbanes.haze.hazeEffect
+import com.sosauce.cuteconnect.utils.getItemShape
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
-import dev.chrisbanes.haze.materials.HazeMaterials
 
 @Composable
 fun SimSelector(
@@ -59,7 +53,7 @@ fun SimSelector(
             title = { Text("Select a default SIM") },
             icon = {
                 Icon(
-                    imageVector = Icons.Rounded.SimCard,
+                    painter = painterResource(R.drawable.sim_card_filled),
                     contentDescription = null
                 )
             },
@@ -72,8 +66,10 @@ fun SimSelector(
                 }
             },
             text = {
-                cuteSimCards.fastForEach { card ->
-                    CuteDropdownMenuItem(
+                cuteSimCards.fastForEachIndexed { index, card ->
+                    DropdownMenuItem(
+                        onClick = {},
+                        shape = MenuDefaults.getItemShape(index, cuteSimCards.lastIndex),
                         leadingIcon = {
                             RadioButton(
                                 selected = card.subId == defaultSimCard,
@@ -91,7 +87,7 @@ fun SimSelector(
                         },
                         trailingIcon = {
                             Icon(
-                                imageVector = Icons.Rounded.SimCard,
+                                painter = painterResource(R.drawable.sim_card),
                                 contentDescription = null,
                                 tint = Color(card.color)
                             )

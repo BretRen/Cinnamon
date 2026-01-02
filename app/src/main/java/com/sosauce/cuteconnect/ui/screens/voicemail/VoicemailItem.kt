@@ -1,14 +1,13 @@
 package com.sosauce.cuteconnect.ui.screens.voicemail
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -23,10 +22,7 @@ import com.sosauce.cuteconnect.data.managers.AudioManager
 import com.sosauce.cuteconnect.domain.model.CuteVoicemail
 import com.sosauce.cuteconnect.ui.screens.messages.components.PlayPauseButton
 import com.sosauce.cuteconnect.ui.shared_components.AnimatedSlider
-import com.sosauce.cuteconnect.ui.shared_components.CuteDropdownMenuItem
-import com.sosauce.cuteconnect.ui.shared_components.CuteDropdownMenuItemUnclickable
 import com.sosauce.cuteconnect.ui.shared_components.DefaultContactIcon
-import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.utils.getContactNameOrNothing
 import com.sosauce.cuteconnect.utils.getContactPfpUri
 import com.sosauce.cuteconnect.utils.toReadableDate
@@ -56,32 +52,33 @@ fun VoicemailItem(
         Column(
             modifier = Modifier.padding(innerPadding),
         ) {
-            CuteDropdownMenuItemUnclickable(
-                text = {
-                    Column {
-                        Text(nameOrNumber)
-                        Text(
-                            text = "${voicemail.date.toReadableDate()} · ${voicemail.duration.toReadableDuration()}",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                    }
-                },
-                leadingIcon = {
-                    DefaultContactIcon(
-                        firstLetter = nameOrNumber.firstOrNull(),
-                        contactPfp = voicemail.address.getContactPfpUri(context)
-                    )
-                },
-                trailingIcon = {
-                    PlayPauseButton(
-                        isPlaying = AudioManager.isPlaying
-                    ) {
-                        AudioManager.setMediaItem(voicemail.uri)
-                        AudioManager.playOrPause()
-                    }
-                }
-            )
+            // TODO
+//            DropdownMenuItemUnclickable(
+//                text = {
+//                    Column {
+//                        Text(nameOrNumber)
+//                        Text(
+//                            text = "${voicemail.date.toReadableDate()} · ${voicemail.duration.toReadableDuration()}",
+//                            color = MaterialTheme.colorScheme.onSurfaceVariant
+//                        )
+//
+//                    }
+//                },
+//                leadingIcon = {
+//                    DefaultContactIcon(
+//                        firstLetter = nameOrNumber.firstOrNull(),
+//                        contactPfp = voicemail.address.getContactPfpUri(context)
+//                    )
+//                },
+//                trailingIcon = {
+//                    PlayPauseButton(
+//                        isPlaying = AudioManager.isPlaying
+//                    ) {
+//                        AudioManager.setMediaItem(voicemail.uri)
+//                        AudioManager.playOrPause()
+//                    }
+//                }
+//            )
             if (expanded) {
                 AnimatedSlider(
                     value = 0f,

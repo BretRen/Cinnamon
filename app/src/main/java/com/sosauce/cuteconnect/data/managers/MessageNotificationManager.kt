@@ -5,25 +5,35 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.PorterDuff.Mode
+import android.graphics.PorterDuffXfermode
+import android.graphics.Rect
 import android.net.Uri
 import android.os.Build
-import android.provider.Telephony
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
 import androidx.core.app.RemoteInput
+import androidx.core.graphics.drawable.IconCompat
+import coil3.ImageLoader
+import coil3.request.ImageRequest
+import coil3.request.allowHardware
+import coil3.toBitmap
 import com.sosauce.cuteconnect.R
 import com.sosauce.cuteconnect.data.receivers.MessageReplyReceiver
-import com.sosauce.cuteconnect.data.receivers.SmsReceiver
 import com.sosauce.cuteconnect.data.telephony.CuteTelephonyManager
-import com.sosauce.cuteconnect.domain.model.CuteMessage
 import com.sosauce.cuteconnect.main.MainActivity
 import com.sosauce.cuteconnect.utils.CuteIntents
 import com.sosauce.cuteconnect.utils.RESULT_KEY
 import com.sosauce.cuteconnect.utils.THREAD_ID
 import com.sosauce.cuteconnect.utils.getAddressFromThreadId
 import com.sosauce.cuteconnect.utils.getContactNameOrNothing
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
+import com.sosauce.cuteconnect.utils.getContactPfpUri
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlin.math.min
 
 class MessageNotificationManager(
     private val context: Context,
@@ -80,6 +90,33 @@ class MessageNotificationManager(
 
 
 
+    // https://www.geeksforgeeks.org/kotlin/circular-crop-an-image-and-save-it-to-the-file-in-android/
+    private fun circleBitmap(bitmap: Bitmap): Bitmap {
+        val size = min(bitmap.width, bitmap.height)
+        val squaredBitmap = Bitmap.createBitmap(bitmap, 0, 0, size, size)
+
+        val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(output)
+
+        val paint = Paint()
+        val rect = Rect(0, 0, size, size)
+        val radius = (size / 2).toFloat()
+
+        paint.isAntiAlias = true
+        canvas.drawARGB(0, 0, 0, 0)
+
+        canvas.drawCircle(radius, radius, radius, paint)
+
+        paint.xfermode = PorterDuffXfermode(Mode.SRC_IN)
+
+        canvas.drawBitmap(squaredBitmap, rect, rect, paint)
+
+        bitmap.recycle()
+        squaredBitmap.recycle()
+
+        return output
+
+    }
     fun sendOrAppendMessageNotification(
         threadId: Long,
         message: String,
@@ -87,8 +124,22 @@ class MessageNotificationManager(
         imageUri: Uri? = null
     ) {
 
+        val request = ImageRequest.Builder(context)
+            .data(number?.getContactPfpUri(context))
+            .allowHardware(false)
+            .build()
+        val bitmap = runBlocking(Dispatchers.IO) {
+            ImageLoader.Builder(context)
+                .build()
+                .execute(request)
+                .image?.toBitmap()
+        }
+
+        val personIcon = bitmap?.let { IconCompat.createWithBitmap(circleBitmap(it)) }
+
         val person = Person.Builder()
-            .setName(number?.getContactNameOrNothing(context) ?: "No one")
+            .setIcon(personIcon)
+            .setName(number?.getContactNameOrNothing(context) ?: context.getString(R.string.unknown))
             .build()
         val receivedMessage = NotificationCompat.MessagingStyle.Message(message, System.currentTimeMillis(), person).apply {
             if (imageUri != null) {
@@ -120,6 +171,7 @@ class MessageNotificationManager(
                     .setStyle(activeStyle)
                     .addAction(replyAction(threadId))
                     .setContentIntent(pendingIntent)
+                    .setAutoCancel(true)
                     .build()
             )
         } ?: notificationManager.notify(
@@ -133,6 +185,7 @@ class MessageNotificationManager(
                 .setStyle(notificationStyle)
                 .addAction(replyAction(threadId))
                 .setContentIntent(pendingIntent)
+                .setAutoCancel(true)
                 .build()
         )
     }

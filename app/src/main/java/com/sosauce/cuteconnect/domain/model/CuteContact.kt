@@ -1,8 +1,6 @@
 package com.sosauce.cuteconnect.domain.model
 
-import android.graphics.Bitmap
 import android.net.Uri
-import android.provider.ContactsContract
 
 data class CuteContact(
     val id: Long = 0,

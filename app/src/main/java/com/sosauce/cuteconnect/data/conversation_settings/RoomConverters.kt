@@ -1,6 +1,5 @@
 package com.sosauce.cuteconnect.data.conversation_settings
 
-import androidx.compose.ui.graphics.Color
 import androidx.room.TypeConverter
 import kotlinx.serialization.json.Json
 

@@ -3,7 +3,6 @@ package com.sosauce.cuteconnect.data.contact_settings
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Upsert
-import com.sosauce.cuteconnect.domain.model.ConversationSettings
 import kotlinx.coroutines.flow.Flow
 
 @Dao

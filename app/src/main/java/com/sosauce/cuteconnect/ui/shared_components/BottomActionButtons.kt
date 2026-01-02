@@ -1,6 +1,5 @@
 package com.sosauce.cuteconnect.ui.shared_components
 
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme

@@ -5,7 +5,6 @@
 package com.sosauce.cuteconnect.ui.screens.messages.components
 
 import android.content.ClipData
-import android.provider.Telephony
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
@@ -13,11 +12,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.ContentCopy
-import androidx.compose.material.icons.rounded.CopyAll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,6 +22,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -41,22 +36,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastForEach
 import com.sosauce.cuteconnect.R
-
 import com.sosauce.cuteconnect.domain.model.CuteMessage
-import com.sosauce.cuteconnect.ui.navigation.LocalHazeState
-import com.sosauce.cuteconnect.ui.shared_components.sheets.DeleteMessageSheet
-import androidx.compose.material3.Text
-import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
-import dev.chrisbanes.haze.materials.HazeMaterials
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -129,7 +115,7 @@ fun SelectedTopBar(
                 shapes = IconButtonDefaults.shapes()
             ) {
                 Icon(
-                    imageVector = Icons.Rounded.Close,
+                    painter = painterResource(R.drawable.close),
                     contentDescription = null
                 )
             }

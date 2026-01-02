@@ -4,66 +4,52 @@
 
 package com.sosauce.cuteconnect.ui.screens.messages.components
 
-import android.net.Uri
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.outlined.Palette
-import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.icons.rounded.Phone
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuGroup
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenuPopup
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FloatingToolbarDefaults
-import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.sosauce.cuteconnect.R
-import com.sosauce.cuteconnect.domain.model.CuteConversation
-import com.sosauce.cuteconnect.ui.navigation.LocalHazeState
-import com.sosauce.cuteconnect.ui.navigation.Screen
-import com.sosauce.cuteconnect.ui.shared_components.CuteDropdownMenuItem
-import androidx.compose.material3.Text
-import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
-import com.sosauce.cuteconnect.domain.states.ConversationState
+import com.sosauce.cuteconnect.R
+import com.sosauce.cuteconnect.ui.navigation.Screen
 import com.sosauce.cuteconnect.ui.screens.messages.ConversationDetailsState
 import com.sosauce.cuteconnect.ui.screens.phone.CallAction
 import com.sosauce.cuteconnect.ui.shared_components.DefaultContactIcon
 import com.sosauce.cuteconnect.ui.shared_components.DefaultGroupChatIcon
-import com.sosauce.cuteconnect.ui.shared_components.DropdownItemBlock
-import com.sosauce.cuteconnect.ui.shared_components.DropdownItemDelete
 import com.sosauce.cuteconnect.ui.shared_components.toolbars.ToolbarSkeleton
 import com.sosauce.cuteconnect.utils.betterFormatNumber
 import com.sosauce.cuteconnect.utils.getContactId
 import com.sosauce.cuteconnect.utils.getContactNameOrNothing
-import com.sosauce.cuteconnect.utils.rememberSearchbarMaxFloatValue
-import dev.chrisbanes.haze.hazeEffect
+import com.sosauce.cuteconnect.utils.getContactPfpUri
+import com.sosauce.cuteconnect.utils.getItemShape
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
-import dev.chrisbanes.haze.materials.HazeMaterials
-import kotlin.collections.firstOrNull
-import kotlin.text.firstOrNull
 
 @Composable
 fun ConversationTopBar(
@@ -77,8 +63,82 @@ fun ConversationTopBar(
 
     val context = LocalContext.current
     var showMoreMenu by remember { mutableStateOf(false) }
+    var showBlockDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
     val nameOrNumber = remember { state.recipients.first().betterFormatNumber() }
     val isGroupChat = state.recipients.size > 1
+    val actions = listOf(
+        MoreActions(
+            onClick = { onNavigate(Screen.ConversationTheming(state.threadId)) },
+            text = R.string.customize,
+            icon = R.drawable.palette
+        ),
+        MoreActions(
+            onClick = { showBlockDialog = true },
+            text = R.string.block,
+            icon = R.drawable.block,
+            tint = MaterialTheme.colorScheme.error
+        ),
+        MoreActions(
+            onClick = { showDeleteDialog = true },
+            text = R.string.delete,
+            icon = R.drawable.delete,
+            tint = MaterialTheme.colorScheme.error
+        )
+    )
+
+    if (showBlockDialog) {
+        AlertDialog(
+            onDismissRequest = { showBlockDialog = false },
+            icon = {
+                Icon(
+                    painter = painterResource(R.drawable.block),
+                    contentDescription = stringResource(R.string.block)
+                )
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showBlockDialog = false }
+                ) { Text(stringResource(R.string.cancel)) }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        // TODO -> onBlock()
+                        showBlockDialog = false
+                    }
+                ) { Text(stringResource(R.string.delete)) }
+            },
+            text = { Text(stringResource(R.string.block)) },
+            title = { Text(stringResource(R.string.block)) },
+        )
+    }
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            icon = {
+                Icon(
+                    painter = painterResource(R.drawable.delete),
+                    contentDescription = stringResource(R.string.delete)
+                )
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteDialog = false }
+                ) { Text(stringResource(R.string.cancel)) }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDeleteConversation()
+                        showDeleteDialog = false
+                    }
+                ) { Text(stringResource(R.string.delete)) }
+            },
+            text = { Text(stringResource(R.string.delete_convo_u_sure)) },
+            title = { Text(stringResource(R.string.delete_convo)) },
+        )
+    }
 
 
 
@@ -96,7 +156,7 @@ fun ConversationTopBar(
                 shapes = IconButtonDefaults.shapes()
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                    painter = painterResource(R.drawable.back),
                     contentDescription = null
                 )
             }
@@ -109,7 +169,7 @@ fun ConversationTopBar(
                     firstLetter = nameOrNumber.firstOrNull(),
                     modifier = Modifier.padding(end = 10.dp),
                     size = 38.dp,
-                    contactPfp = Uri.EMPTY
+                    contactPfp = state.recipients.first().getContactPfpUri(context)
                 )
             }
             Text(
@@ -135,7 +195,7 @@ fun ConversationTopBar(
                     shapes = IconButtonDefaults.shapes()
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.Phone,
+                        painter = painterResource(R.drawable.call),
                         contentDescription = null
                     )
                 }
@@ -145,44 +205,46 @@ fun ConversationTopBar(
                 shapes = IconButtonDefaults.shapes()
             ) {
                 Icon(
-                    imageVector = Icons.Rounded.MoreVert,
+                    painter = painterResource(R.drawable.more_vert),
                     contentDescription = null
                 )
-                DropdownMenu(
+                DropdownMenuPopup(
                     expanded = showMoreMenu,
                     onDismissRequest = { showMoreMenu = false },
-                    shape = RoundedCornerShape(24.dp),
-//                    modifier = Modifier
-//                        .hazeEffect(
-//                            state = LocalHazeState.current,
-//                            style = HazeMaterials.regular(
-//                                containerColor = MaterialTheme.colorScheme.surfaceContainer
-//                            )
-//                        )
                 ) {
-                    CuteDropdownMenuItem(
-                        onClick = { onNavigate(Screen.ConversationTheming(state.threadId)) },
-                        text = { Text("Customize chat") },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Outlined.Palette,
-                                contentDescription = null
+                    DropdownMenuGroup(
+                        shapes = MenuDefaults.groupShapes()
+                    ) {
+                        actions.fastForEachIndexed { index, action ->
+                            DropdownMenuItem(
+                                onClick = action.onClick,
+                                shape = MenuDefaults.getItemShape(index, actions.lastIndex),
+                                text = {
+                                    Text(
+                                        text = stringResource(action.text),
+                                        color = action.tint ?: LocalContentColor.current
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        painter = painterResource(action.icon),
+                                        contentDescription = null,
+                                        tint = action.tint ?: LocalContentColor.current
+                                    )
+                                }
                             )
                         }
-                    )
-
-                    DropdownItemBlock(
-                        onBlock = {},
-                        dialogText = { Text(stringResource(R.string.block)) },
-                    )
-                    DropdownItemDelete(
-                        onDelete = onDeleteConversation,
-                        dialogTitle = { Text(stringResource(R.string.delete_convo)) },
-                        dialogText = { Text(stringResource(R.string.delete_convo_u_sure)) }
-                    )
+                    }
                 }
             }
 
         }
     }
 }
+
+data class MoreActions(
+    val onClick: () -> Unit,
+    val text: Int,
+    val icon: Int,
+    val tint: Color? = null
+)

@@ -1,18 +1,21 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.sosauce.cuteconnect.ui.screens.phone.components
 
-import android.telecom.CallAudioState
-import android.telecom.CallEndpoint
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.capitalize
+import androidx.compose.ui.res.painterResource
 import com.sosauce.cuteconnect.domain.model.AudioRoute
-import com.sosauce.cuteconnect.ui.shared_components.CuteDropdownMenuItem
-import androidx.compose.material3.Text
 import com.sosauce.cuteconnect.ui.screens.phone.CallAction
+import com.sosauce.cuteconnect.utils.getItemShape
 
 @Composable
 fun AudioSwitcher(
@@ -20,16 +23,16 @@ fun AudioSwitcher(
     routes: List<AudioRoute>
 ) {
     LazyColumn {
-        items(
+        itemsIndexed(
             items = routes
-        ) { route ->
-            CuteDropdownMenuItem(
-                modifier = Modifier.animateItem(),
+        ) { index, route ->
+            DropdownMenuItem(
                 onClick = { onCallAction(CallAction.SwitchAudioTarget(route)) },
+                shape = MenuDefaults.getItemShape(index, routes.lastIndex),
                 text = { Text(route.name.lowercase().replaceFirstChar { it.uppercase() }) },
                 leadingIcon = {
                     Icon(
-                        imageVector = route.type.routeToIcon(),
+                        painter = painterResource(route.type.routeToIcon()),
                         contentDescription = null
                     )
                 }

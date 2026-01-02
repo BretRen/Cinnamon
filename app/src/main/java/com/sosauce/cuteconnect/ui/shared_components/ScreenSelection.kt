@@ -3,35 +3,18 @@
 package com.sosauce.cuteconnect.ui.shared_components
 
 import androidx.annotation.DrawableRes
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.ButtonGroupDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ToggleButton
-import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastForEach
-import androidx.navigation3.runtime.NavKey
-import com.sosauce.cuteconnect.ui.navigation.Screen
-import com.sosauce.cuteconnect.R
-import androidx.compose.material3.Text
 import androidx.compose.ui.util.fastForEachIndexed
+import com.sosauce.cuteconnect.R
+import com.sosauce.cuteconnect.ui.navigation.Screen
 import com.sosauce.cuteconnect.utils.LocalScreen
 import com.sosauce.cuteconnect.utils.rememberInteractionSource
 

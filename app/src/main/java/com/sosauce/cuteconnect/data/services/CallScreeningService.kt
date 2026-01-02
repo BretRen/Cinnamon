@@ -5,9 +5,6 @@ import android.telecom.Call
 import android.telecom.CallScreeningService
 import android.telecom.Connection
 import androidx.annotation.RequiresApi
-import com.sosauce.cuteconnect.data.managers.CallNotificationManager
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 @RequiresApi(Build.VERSION_CODES.R)
 class CuteCallScreeningService: CallScreeningService() {
