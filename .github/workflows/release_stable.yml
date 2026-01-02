@@ -32,9 +32,6 @@ jobs:
         fileName: 'release_key.jks'
         fileDir: 'app/'
         encodedString: ${{ secrets.SIGNING_KEY }}
-      
-    - name: Clean Gradle
-      run: ./gradlew clean
 
     - name: Build Release APK
       run: ./gradlew assembleRelease
@@ -69,7 +66,7 @@ jobs:
           name: Vesion ${{ needs.build.outputs.versionName }}
           body_path: ${{ needs.build.outputs.versionName }}-changelog.txt
           prerelease: false
-          tag_name: ${{ needs.build.outputs.versionName }}
+          tag_name: v${{ needs.build.outputs.versionName }}
           files: |
             ./**/*.apk
         env:
