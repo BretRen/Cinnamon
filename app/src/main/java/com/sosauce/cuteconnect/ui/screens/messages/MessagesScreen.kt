@@ -2,6 +2,7 @@
 
 package com.sosauce.cuteconnect.ui.screens.messages
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -35,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -42,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -49,14 +52,17 @@ import androidx.compose.ui.util.fastForEach
 import com.sosauce.cuteconnect.R
 import com.sosauce.cuteconnect.data.datastore.rememberArchivedConversations
 import com.sosauce.cuteconnect.data.datastore.rememberPinnedConversations
+import com.sosauce.cuteconnect.domain.model.CuteConversation
 import com.sosauce.cuteconnect.ui.navigation.Screen
 import com.sosauce.cuteconnect.ui.screens.messages.components.Conversation
 import com.sosauce.cuteconnect.ui.screens.messages.components.PinnedConversation
+import com.sosauce.cuteconnect.ui.shared_components.NoXFound
 import com.sosauce.cuteconnect.ui.shared_components.SelectedBar
 import com.sosauce.cuteconnect.ui.shared_components.searchbars.CuteSearchbar
 import com.sosauce.cuteconnect.utils.CuteRoundedCornerShape
 import com.sosauce.cuteconnect.utils.addOrRemove
 import com.sosauce.cuteconnect.utils.copyMutate
+import com.sosauce.sweetselect.rememberSweetSelectState
 
 @Composable
 fun MessagesScreen(
@@ -76,84 +82,80 @@ fun MessagesScreen(
         val listState = rememberLazyListState()
         var pinnedConversations by rememberPinnedConversations()
         var archivedConversations by rememberArchivedConversations()
-        val selectedConversations = remember { mutableStateListOf<Long>() }
         var showDeleteConversationsDialog by remember { mutableStateOf(false) }
+        val sweetSelectState = rememberSweetSelectState<CuteConversation>()
         
 
         Scaffold(
             bottomBar = {
-//            AnimatedContent(
-//                targetState = selectedConversations.isEmpty(),
-//                transitionSpec = { scaleIn() togetherWith scaleOut() },
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .wrapContentWidth()
-//            ) {
-//            }
-                if (selectedConversations.isEmpty()) {
-                    CuteSearchbar(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentWidth(),
-                        sortingMenu = {},
-                        fab = {
-                            FloatingActionButton(
-                                onClick = { onNavigate(Screen.StartConversation) },
-                                shape = MaterialShapes.Cookie9Sided.toShape()
+                AnimatedContent(
+                    targetState = sweetSelectState.isInSelectionMode,
+                ) {
+                    if (!it) {
+                        CuteSearchbar(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .wrapContentWidth(),
+                            sortingMenu = {},
+                            fab = {
+                                FloatingActionButton(
+                                    onClick = { onNavigate(Screen.StartConversation) },
+                                    shape = MaterialShapes.Cookie9Sided.toShape()
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.add),
+                                        contentDescription = null
+                                    )
+                                }
+                            },
+                            onNavigate = onNavigate
+                        )
+                    } else {
+                        SelectedBar(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .wrapContentWidth(),
+                            numberOfSelectedElements = sweetSelectState.selectedItems.size,
+                            onClearSelected = sweetSelectState::clearSelected
+                        ) {
+                            IconButton(
+                                onClick = {
+                                    sweetSelectState.selectedItems.forEach {
+                                        pinnedConversations = pinnedConversations.copyMutate { addOrRemove(it.threadId.toString()) }
+                                    }
+                                    sweetSelectState.clearSelected()
+                                },
+                                shapes = IconButtonDefaults.shapes()
                             ) {
                                 Icon(
-                                    painter = painterResource(R.drawable.add),
-                                    contentDescription = null
+                                    painter = painterResource(R.drawable.pin_filled),
+                                    contentDescription = "pin conversations"
                                 )
                             }
-                        },
-                        onNavigate = onNavigate
-                    )
-                } else {
-                    SelectedBar(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentWidth(),
-                        numberOfSelectedElements = selectedConversations.size,
-                        onClearSelected = selectedConversations::clear
-                    ) {
-                        IconButton(
-                            onClick = {
-                                selectedConversations.fastForEach {
-                                    pinnedConversations = pinnedConversations.copyMutate { addOrRemove(it.toString()) }
-                                }
-                                selectedConversations.clear()
-                            },
-                            shapes = IconButtonDefaults.shapes()
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.pin_filled),
-                                contentDescription = "pin conversations"
-                            )
-                        }
-                        IconButton(
-                            onClick = {
-                                selectedConversations.fastForEach {
-                                    archivedConversations = archivedConversations.copyMutate { addOrRemove(it.toString()) }
-                                }
-                                selectedConversations.clear()
-                            },
-                            shapes = IconButtonDefaults.shapes()
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.archive),
-                                contentDescription = "archive conversations"
-                            )
-                        }
-                        IconButton(
-                            onClick = { showDeleteConversationsDialog = true },
-                            shapes = IconButtonDefaults.shapes()
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.delete_filled),
-                                contentDescription = "delete conversations",
-                                tint = MaterialTheme.colorScheme.error
-                            )
+                            IconButton(
+                                onClick = {
+                                    sweetSelectState.selectedItems.forEach {
+                                        archivedConversations = archivedConversations.copyMutate { addOrRemove(it.threadId.toString()) }
+                                    }
+                                    sweetSelectState.clearSelected()
+                                },
+                                shapes = IconButtonDefaults.shapes()
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.archive),
+                                    contentDescription = "archive conversations"
+                                )
+                            }
+                            IconButton(
+                                onClick = { showDeleteConversationsDialog = true },
+                                shapes = IconButtonDefaults.shapes()
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.delete_filled),
+                                    contentDescription = "delete conversations",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
                         }
                     }
                 }
@@ -173,7 +175,7 @@ fun MessagesScreen(
                     confirmButton = {
                         TextButton(
                             onClick = {
-                                selectedConversations.fastForEach(onDeleteConversation)
+                                sweetSelectState.selectedItems.forEach { onDeleteConversation(it.threadId) }
                                 showDeleteConversationsDialog = false
                             },
                             shapes = ButtonDefaults.shapes()
@@ -190,7 +192,7 @@ fun MessagesScreen(
                         }
                     },
                     text = {
-                        Text("Are you sure you want to delete ${selectedConversations.size} conversations ? This cannot be undone!")
+                        Text("Are you sure you want to delete ${sweetSelectState.selectedItems.size} conversations ? This cannot be undone!")
                     }
                 )
             }
@@ -227,33 +229,59 @@ fun MessagesScreen(
                     }
                 }
                 item("pinned convos") {
-                    LazyRow {
+                    LazyRow(modifier = Modifier.fillMaxWidth()) {
                         items(
                             items = state.pinnedConversations,
                             key = { it.threadId }
                         ) { cuteConversation ->
+
+                            val isSelected by remember {
+                                derivedStateOf { sweetSelectState.isSelected(cuteConversation) }
+                            }
+
                             PinnedConversation(
                                 cuteConversation = cuteConversation,
+                                isSelected = isSelected,
                                 onNavigate = { onNavigate(it) },
-                                onLongClick = { selectedConversations.addOrRemove(cuteConversation.threadId) }
+                                onLongClick = { sweetSelectState.toggle(cuteConversation) }
                             )
                         }
                     }
                 }
-                itemsIndexed(
-                    items = state.conversations,
-                    key = { _, conversation -> conversation.threadId }
-                ) { index, conversation ->
-                    Conversation(
-                        cuteConversation = conversation,
-                        modifier = Modifier.animateItem(),
-                        onClick = { onNavigate(Screen.Conversation(conversation.threadId)) },
-                        shape = CuteRoundedCornerShape(
-                            top = if (index == 0) 24.dp else 4.dp,
-                            bottom = if (index == state.conversations.lastIndex) 24.dp else 0.dp
+
+                if (state.conversations.isNotEmpty()) {
+                    items(
+                        items = state.conversations,
+                        key = { conversation -> conversation.threadId }
+                    ) { conversation ->
+
+                        val isSelected by remember {
+                            derivedStateOf { sweetSelectState.isSelected(conversation) }
+                        }
+
+                        Conversation(
+                            cuteConversation = conversation,
+                            modifier = Modifier.animateItem(),
+                            onClick = {
+                                if (sweetSelectState.isInSelectionMode) {
+                                    sweetSelectState.toggle(conversation)
+                                } else {
+                                    onNavigate(Screen.Conversation(conversation.threadId))
+                                }
+                            },
+                            onLongClick = { sweetSelectState.toggle(conversation) },
+                            backgroundColor = Color.Transparent,
+                            isSelected = isSelected
                         )
-                        //onLongClick = { selectedConversations.addOrRemove(cuteConversation.threadId) },
-                    )
+                    }
+                } else {
+                    item {
+                        NoXFound(
+                            headlineText = R.string.no_convo_found,
+                            bodyText = R.string.no_convo_found_desc,
+                            icon = R.drawable.message_rounded
+                        )
+                    }
                 }
             }
         }

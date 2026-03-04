@@ -4,7 +4,15 @@ import android.net.Uri
 
 data class CuteContact(
     val id: Long = 0,
-    val name: String = "",
+    val displayName: String = "",
+    val firstName: String = "",
+    val middleName: String = "",
+    val lastName: String = "",
+    val organization: String = "",
+    val nickname: String = "",
+    val jobPosition: String = "",
+    val accountName: String = "",
+    val accountType: String = "",
     val photo: Uri = Uri.EMPTY,
     val isFavorite: Boolean = false,
     val phoneNumbers: List<Phone> = emptyList(),
@@ -14,6 +22,8 @@ data class CuteContact(
     val notes: List<Note> = emptyList(),
     val events: List<Event> = emptyList()
 ) {
+
+
     data class Email(
         val email: String,
         val type: Int,

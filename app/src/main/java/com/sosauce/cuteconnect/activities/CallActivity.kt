@@ -9,16 +9,18 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.media3.ui.compose.state.rememberProgressStateWithTickInterval
 import com.sosauce.cuteconnect.domain.states.CallState
 import com.sosauce.cuteconnect.ui.screens.phone.CallScreen
 import com.sosauce.cuteconnect.ui.screens.phone.CallingViewModel
-import com.sosauce.cuteconnect.ui.screens.phone.IncomingScreen
 import com.sosauce.cuteconnect.ui.theme.CuteConnectTheme
 import com.sosauce.cuteconnect.utils.APP_PACKAGE
+import org.koin.android.ext.android.get
 import org.koin.androidx.compose.koinViewModel
 
 class CallActivity : ComponentActivity() {
@@ -32,26 +34,12 @@ class CallActivity : ComponentActivity() {
                 val callViewModel = koinViewModel<CallingViewModel>()
                 val callUiState by callViewModel.state.collectAsStateWithLifecycle()
 
-
                 if (callUiState.callState == CallState.ENDED) { finish() }
 
-                Scaffold(
-                    modifier = Modifier.fillMaxSize()
-                ) { _ ->
-
-                    if (callUiState.callState == CallState.RINGING) {
-                        IncomingScreen(
-                            onCallActions = callViewModel::handleCallAction,
-                            callingState = callUiState
-                        )
-                    } else {
-                        CallScreen(
-                            onCallAction = callViewModel::handleCallAction,
-                            callUiState = callUiState
-                        )
-                    }
-
-                }
+                CallScreen(
+                    onCallAction = callViewModel::handleCallAction,
+                    callUiState = callUiState
+                )
             }
         }
     }

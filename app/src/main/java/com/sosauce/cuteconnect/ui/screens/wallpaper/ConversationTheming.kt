@@ -2,24 +2,36 @@
 
 package com.sosauce.cuteconnect.ui.screens.wallpaper
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
@@ -32,37 +44,76 @@ import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.luminance
+import coil3.compose.AsyncImage
+import coil3.request.CachePolicy
+import coil3.request.ImageRequest
+import com.skydoves.cloudy.cloudy
 import com.sosauce.cuteconnect.R
 import com.sosauce.cuteconnect.data.conversation_settings.ConversationSettingActions
 import com.sosauce.cuteconnect.ui.shared_components.AnimatedSlider
 import com.sosauce.cuteconnect.ui.shared_components.CategoryCard
+import com.sosauce.cuteconnect.ui.shared_components.ImagePickerCard
 import com.sosauce.cuteconnect.ui.shared_components.buttons.CuteNavigationButton
 import com.sosauce.cuteconnect.ui.shared_components.text.HeaderText
 import com.sosauce.cuteconnect.utils.addOrNot
 import com.sosauce.cuteconnect.utils.copyMutate
+import com.sosauce.cuteconnect.utils.selfAlignHorizontally
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.io.File
+import kotlin.time.Clock
 
 @Composable
 fun ConversationTheming(
     state: ThemingState,
+    threadId: Long,
     onHandleConversationSettingsActions: (ConversationSettingActions) -> Unit,
     onNavigateBack: () -> Unit
 ) {
 
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var blurIntensityValue by remember(state.settings.wallpaperBlurIntensity) { mutableIntStateOf(state.settings.wallpaperBlurIntensity) }
     var showColorPicker by remember { mutableStateOf(false) }
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+
+        if (uri == null) return@rememberLauncherForActivityResult
+
+        scope.launch(Dispatchers.IO) {
+
+            File(state.settings.wallpaper).delete()
+
+            val file = File(context.filesDir, "wallpaper_${threadId}_${System.currentTimeMillis()}.jpg")
+
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                file.outputStream().use { output -> input.copyTo(output) }
+            }
+
+            onHandleConversationSettingsActions(
+                ConversationSettingActions.UpsertConversationSettings(
+                    state.settings.copy(
+                        wallpaper = file.path
+                    )
+                )
+            )
+        }
+    }
 
     if (showColorPicker) {
         ColorPickerDialog(
@@ -79,185 +130,119 @@ fun ConversationTheming(
         )
     }
 
-    Scaffold { paddingValues ->
-        Box(
-            modifier = Modifier.fillMaxSize()
+    Scaffold(
+        bottomBar = {
+            CuteNavigationButton(
+                modifier = Modifier
+                    .selfAlignHorizontally(Alignment.Start)
+                    .navigationBarsPadding(),
+                onNavigateUp = onNavigateBack
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            Modifier
+                .verticalScroll(rememberScrollState())
+                .padding(paddingValues)
         ) {
-            Column(
-                Modifier
-                    .verticalScroll(rememberScrollState())
-                    .padding(paddingValues)
-            ) {
-                HeaderText("Wallpaper")
-                CategoryCard(
-                    topDp = 24.dp,
-                    bottomDp = 24.dp
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(5.dp)
-                    ) {
+            HeaderText("Wallpaper")
 
-                        AddWallpaperItem(
-                            onAddNewWallpaper = { wallpaperUri ->
-                                onHandleConversationSettingsActions(
-                                    ConversationSettingActions.UpsertConversationSettings(
-                                        state.settings.copy(
-                                            allWallpapers = state.settings.allWallpapers.copyMutate { addOrNot(wallpaperUri.toString()) },
-                                        )
-                                    )
+            ImagePickerCard(
+                onClick = { imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                onRemoveImage = {
+                    scope.launch(Dispatchers.IO) {
+                        File(context.filesDir, state.settings.wallpaper).delete()
+                        onHandleConversationSettingsActions(
+                            ConversationSettingActions.UpsertConversationSettings(
+                                state.settings.copy(
+                                    wallpaper = ""
                                 )
-                            }
+                            )
                         )
-
-                        FilledIconButton(
-                            onClick = {
-                                onHandleConversationSettingsActions(
-                                    ConversationSettingActions.UpsertConversationSettings(
-                                        state.settings.copy(
-                                            wallpaper = ""
-                                        )
-                                    )
+                    }
+                },
+                imagePath = state.settings.wallpaper,
+                modifier = Modifier
+                    .padding(horizontal = 16.dp, vertical = 2.dp)
+                    .height(300.dp)
+                    .width(150.dp)
+            )
+            HeaderText(stringResource(R.string.blur_intensity) + " (${blurIntensityValue}%)")
+            CategoryCard(
+                topDp = 24.dp,
+                bottomDp = 24.dp
+            ) {
+                AnimatedSlider(
+                    value = blurIntensityValue.toFloat(),
+                    onValueChanged = { blurIntensityValue = it.toInt() },
+                    onValueChangeFinished = {
+                        onHandleConversationSettingsActions(
+                            ConversationSettingActions.UpsertConversationSettings(
+                                state.settings.copy(
+                                    wallpaperBlurIntensity = blurIntensityValue,
                                 )
-                            },
-                            shapes = IconButtonDefaults.shapes(),
+                            )
+                        )
+                    },
+                    valueRange = 0f..100f,
+                    modifier = Modifier
+                        .padding(10.dp)
+                )
+            }
+
+            HeaderText("Chat color")
+            CategoryCard(
+                topDp = 24.dp,
+                bottomDp = 24.dp
+            ) {
+                LazyRow {
+                    item {
+                        IconButton(
+                            onClick = { showColorPicker = true },
                             colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer,
-                                contentColor = contentColorFor(MaterialTheme.colorScheme.errorContainer)
+                                containerColor = MaterialTheme.colorScheme.primary
                             ),
-                            modifier = Modifier.size(IconButtonDefaults.smallContainerSize(
-                                IconButtonDefaults.IconButtonWidthOption.Wide))
+                            modifier = Modifier.padding(5.dp)
                         ) {
                             Icon(
-                                painter = painterResource(R.drawable.delete_filled),
+                                painter = painterResource(R.drawable.colorize),
                                 contentDescription = null
                             )
                         }
                     }
 
-                    HorizontalMultiBrowseCarousel(
-                        state = rememberCarouselState { state.settings.allWallpapers.count() },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight()
-                            .padding(top = 16.dp, bottom = 16.dp),
-                        preferredItemWidth = 186.dp,
-                        itemSpacing = 8.dp,
-                        contentPadding = PaddingValues(horizontal = 16.dp)
-                    ) { index ->
-                        val wallpaper = state.settings.allWallpapers[index]
-                        WallpaperItem(
-                            wallpaper = wallpaper,
-                            isCurrentWallpaper = wallpaper == state.settings.wallpaper,
-                            onSetAsWallpaper = {
+                    items(
+                        items = state.settings.allColors.reversed(),
+                        key = { it }
+                    ) { color ->
+                        IconButton(
+                            onClick = {
                                 onHandleConversationSettingsActions(
                                     ConversationSettingActions.UpsertConversationSettings(
-                                        state.settings.copy(
-                                            wallpaper = wallpaper
-                                        )
+                                        state.settings.copy(color = color)
                                     )
                                 )
                             },
-                            onDeleteWallpaper = {
-                                onHandleConversationSettingsActions(
-                                    ConversationSettingActions.UpsertConversationSettings(
-                                        state.settings.copy(
-                                            allWallpapers = state.settings.allWallpapers.copyMutate { remove(wallpaper) }
-                                        )
-                                    )
-                                )
-                            },
-                            blurIntensity = state.settings.wallpaperBlurIntensity
-                        )
-                    }
-
-                }
-                HeaderText("Blur intensity (${blurIntensityValue}%)")
-                CategoryCard(
-                    topDp = 24.dp,
-                    bottomDp = 24.dp
-                ) {
-                    AnimatedSlider(
-                        value = blurIntensityValue.toFloat(),
-                        onValueChanged = { blurIntensityValue = it.toInt() },
-                        onValueChangeFinished = {
-                            onHandleConversationSettingsActions(
-                                ConversationSettingActions.UpsertConversationSettings(
-                                    state.settings.copy(
-                                        wallpaperBlurIntensity = blurIntensityValue,
-                                    )
-                                )
-                            )
-                        },
-                        valueRange = 0f..100f,
-                        modifier = Modifier
-                            .padding(10.dp)
-                    )
-                }
-
-                HeaderText("Chat color")
-                CategoryCard(
-                    topDp = 24.dp,
-                    bottomDp = 24.dp
-                ) {
-                    LazyRow {
-                        item {
-                            IconButton(
-                                onClick = { showColorPicker = true },
-                                colors = IconButtonDefaults.filledIconButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary
-                                ),
-                                modifier = Modifier.padding(5.dp)
+                            colors = IconButtonDefaults.filledIconButtonColors(
+                                containerColor = Color(color)
+                            ),
+                            modifier = Modifier.padding(5.dp)
+                        ) {
+                            AnimatedVisibility(
+                                visible = color == state.settings.color,
+                                enter = scaleIn(),
+                                exit = scaleOut()
                             ) {
                                 Icon(
-                                    painter = painterResource(R.drawable.colorize),
-                                    contentDescription = null
+                                    painter = painterResource(R.drawable.check),
+                                    contentDescription = null,
+                                    tint = if (state.settings.color.luminance > 0.5f) Color.Black else Color.White
                                 )
-                            }
-                        }
-
-                        items(
-                            items = state.settings.allColors.reversed(),
-                            key = { it }
-                        ) { color ->
-                            IconButton(
-                                onClick = {
-                                    onHandleConversationSettingsActions(
-                                        ConversationSettingActions.UpsertConversationSettings(
-                                            state.settings.copy(color = color)
-                                        )
-                                    )
-                                },
-                                colors = IconButtonDefaults.filledIconButtonColors(
-                                    containerColor = Color(color)
-                                ),
-                                modifier = Modifier.padding(5.dp)
-                            ) {
-                                AnimatedVisibility(
-                                    visible = color == state.settings.color,
-                                    enter = scaleIn(),
-                                    exit = scaleOut()
-                                ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.check),
-                                        contentDescription = null,
-                                        tint = if (state.settings.color.luminance > 0.5f) Color.Black else Color.White
-                                    )
-                                }
                             }
                         }
                     }
                 }
             }
-
-            CuteNavigationButton(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .navigationBarsPadding(),
-                onNavigateUp = onNavigateBack
-            )
         }
     }
 

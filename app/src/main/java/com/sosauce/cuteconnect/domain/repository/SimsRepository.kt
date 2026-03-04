@@ -11,7 +11,6 @@ class SimsRepository(
 
     private val subscriptionManager = context.getSystemService(SubscriptionManager::class.java)
 
-
     @SuppressLint("MissingPermission")
     fun fetchSims(): List<CuteSimCard> {
         val simCards = mutableListOf<CuteSimCard>()

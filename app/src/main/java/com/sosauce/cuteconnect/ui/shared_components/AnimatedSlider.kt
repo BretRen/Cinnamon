@@ -8,6 +8,7 @@ import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderColors
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -22,7 +23,8 @@ fun AnimatedSlider(
     value: Float,
     onValueChanged: (Float) -> Unit,
     onValueChangeFinished: (() -> Unit)? = null,
-    valueRange: ClosedFloatingPointRange<Float>
+    valueRange: ClosedFloatingPointRange<Float>,
+    colors: SliderColors = SliderDefaults.colors()
 ) {
     val interactionSource = rememberInteractionSource()
     val isDragging by interactionSource.collectIsDraggedAsState()
@@ -54,6 +56,7 @@ fun AnimatedSlider(
             )
         },
         valueRange = valueRange,
-        interactionSource = interactionSource
+        interactionSource = interactionSource,
+        colors = colors
     )
 }

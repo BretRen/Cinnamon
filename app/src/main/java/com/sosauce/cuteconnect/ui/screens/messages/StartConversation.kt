@@ -43,7 +43,7 @@ fun StartConversation(
             contentPadding = paddingValues
         ) {
             items(
-                items = contacts.fastFilter { it.name.lowercase().contains(textState.text.toString().lowercase()) || it.phoneNumbers.firstOrNull()?.number?.contains(textState.text) == true },
+                items = contacts.fastFilter { it.firstName.lowercase().contains(textState.text.toString().lowercase()) || it.phoneNumbers.firstOrNull()?.number?.contains(textState.text) == true },
                 key = { it.id }
             ) { contact ->
                 ContactListItem(

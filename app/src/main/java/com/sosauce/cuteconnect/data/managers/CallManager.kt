@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.telecom.TelecomManager
 import com.sosauce.cuteconnect.domain.model.AudioRoute
+import com.sosauce.cuteconnect.domain.model.CuteSimCard
 import com.sosauce.cuteconnect.domain.states.CallState
 import com.sosauce.cuteconnect.ui.screens.phone.CallingState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,7 +15,6 @@ import kotlinx.coroutines.flow.update
 
 /**
  * A bridge between an InCallService (CallService) and the ViewModel.
- * It's easier having it as an object as InCallService has a hard time with DI
  */
 class CallManager(
     private val context: Context
@@ -26,8 +26,8 @@ class CallManager(
     val telecomManager = context.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
 
 
-    private val _callingState = MutableStateFlow(CallingState())
-    val callingState = _callingState.asStateFlow()
+    val _callingState = MutableStateFlow(CallingState())
+
 
     fun registerCallServiceCallback(cb: CallServiceCallback) {
         callServiceCallback = cb
@@ -101,6 +101,12 @@ class CallManager(
     fun updateNumber(number: String) {
         _callingState.update {
             it.copy(number = number)
+        }
+    }
+
+    fun updateActiveSim(sim: CuteSimCard) {
+        _callingState.update {
+            it.copy(activeSim = sim)
         }
     }
 }

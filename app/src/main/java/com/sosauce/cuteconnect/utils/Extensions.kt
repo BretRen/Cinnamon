@@ -3,15 +3,20 @@
 package com.sosauce.cuteconnect.utils
 
 import android.app.Activity
+import android.app.WallpaperManager
 import android.app.role.RoleManager
 import android.content.ContentResolver
+import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
 import android.database.ContentObserver
 import android.net.Uri
 import android.os.Build
 import android.provider.BlockedNumberContract.BlockedNumbers
+import android.provider.ContactsContract
+import android.provider.ContactsContract.Contacts
 import android.provider.ContactsContract.PhoneLookup
+import android.provider.OpenableColumns
 import android.provider.Telephony
 import android.provider.Telephony.Mms
 import android.provider.Telephony.Sms
@@ -20,6 +25,7 @@ import android.telephony.PhoneNumberUtils
 import android.telephony.SubscriptionManager
 import android.text.format.DateFormat
 import android.text.format.DateUtils
+import android.util.Patterns
 import android.widget.Toast
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.WindowInsets
@@ -34,6 +40,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.remember
@@ -49,61 +57,88 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.content.contentValuesOf
 import androidx.core.net.toUri
+import com.sosauce.cuteconnect.R
 import com.sosauce.cuteconnect.data.datastore.rememberIsLandscape
+import com.sosauce.cuteconnect.ui.navigation.Screen
 import dev.chrisbanes.haze.HazeEffectScope
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.hazeEffect
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.serialization.StringFormat
 import java.io.BufferedReader
+import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader
-import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDate
 import java.time.MonthDay
 import java.time.Year
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
-import java.util.Calendar
-import java.util.Date
 import java.util.Locale
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
-fun Long.parsedDate(): String {
-    val date = Date(this)
-    val format = SimpleDateFormat("dd/MMM/yyyy HH:mm", Locale.getDefault())
 
-    return format.format(date)
-}
-
-fun Int.toReadableTime(): String {
-    val totalSeconds = this / 1000
-    val minutes = totalSeconds / 60
-    val seconds = totalSeconds % 60
-    return String.format(Locale.getDefault(), "%d:%02d", minutes, seconds)
-}
-
+val Context.appVersion
+    get() = packageManager.getPackageInfo(packageName, 0).versionName
 fun Long.toDate(): String {
-    val date = LocalDate.ofInstant(
-        Instant.ofEpochMilli(this),
-        ZoneId.systemDefault()
-    )
-    val currentYear = Year.now().value
-    val isFromPreviousYear = date.year != currentYear
-    val formatStyle = if (!isFromPreviousYear) {
-        FormatStyle.MEDIUM
-    } else FormatStyle.SHORT
 
-    return date.format(DateTimeFormatter.ofLocalizedDate(formatStyle))
 
+    val locale = Locale.getDefault()
+    val zoneId = ZoneId.systemDefault()
+    val currentYear = Year.now(zoneId)
+    val localDate = LocalDate.now(zoneId)
+    val dateTime = Instant.ofEpochMilli(this).atZone(zoneId).toLocalDate()
+    val year = dateTime.year
+    val skeleton = if (year == currentYear.value) "MMMd" else "MMMdy"
+    val pattern = DateFormat.getBestDateTimePattern(locale, skeleton)
+    val formatter = DateTimeFormatter.ofPattern(pattern, locale)
+
+    return when {
+        dateTime.isEqual(localDate) -> "Today"
+        dateTime.isEqual(localDate.minusDays(1)) -> "Yesterday"
+        else -> dateTime.format(formatter)
+    }
 }
 
+fun Long.toDateAndTime(): String {
+    return "${toDate()}, ${toTime()}"
+}
+
+fun Long.toTime(): String {
+    val zoneId = ZoneId.systemDefault()
+    val locale = Locale.getDefault()
+    val dateTime = Instant.ofEpochMilli(this).atZone(zoneId).toLocalTime()
+    val skeleton = "jm"
+    val pattern = DateFormat.getBestDateTimePattern(locale, skeleton)
+    val formatter = DateTimeFormatter.ofPattern(pattern, locale)
+
+    return dateTime.format(formatter)
+}
+
+fun Long.secondsToDuration(): String {
+
+    var finalTime = ""
+    val rawSeconds = this
+    val hours = rawSeconds / 3600
+    val minutes = (this % 3600) / 60
+    val seconds = rawSeconds % 60
+
+    if (hours > 0) {
+        finalTime += "${hours}h "
+    }
+
+    if (minutes > 0) {
+        finalTime += "${minutes}m "
+    }
+
+    return "$finalTime${seconds}s"
+}
 // I have way too many functions to convert time and date lmao needs cleanup
 fun Long.toStopwatch(
     durationUnit: DurationUnit = DurationUnit.MILLISECONDS
@@ -151,18 +186,17 @@ fun String.getContactNameOrNothing(context: Context): String {
 /**
  * Formats the number this function is called on, if it's called on a non-number, it will do nothing.
  */
-fun String.betterFormatNumber(): String {
-    return if (PhoneNumberUtils.isWellFormedSmsAddress(this)) {
-        PhoneNumberUtils.formatNumber(this, Locale.getDefault().country) ?: this
-    } else {
-        this
-    }
-}
+fun String.beautifyNumber() = PhoneNumberUtils.formatNumber(this, Locale.getDefault().country) ?: this
 
 /**
- * Gets or creates a thread ID based on the number this function is called on. Wrapper around Threads.getThreadIdOrCreate
+ * Gets or creates a thread ID based on the number this function is called on. Wrapper around [Telephony.Threads.getOrCreateThreadId]
  */
 fun String.getThreadIdOrCreate(context: Context) = Telephony.Threads.getOrCreateThreadId(context, setOf(this))
+
+/**
+ * Gets or creates a thread ID based on the number this function is called on but this one is multiple addresses. Wrapper around [Telephony.Threads.getOrCreateThreadId]
+ */
+fun List<String>.getThreadIdOrCreate(context: Context) = Telephony.Threads.getOrCreateThreadId(context, this.toSet())
 
 fun Long.getAddressFromThreadId(context: Context): String {
     context.contentResolver.query(
@@ -204,33 +238,10 @@ fun String.getContactId(context: Context): Long {
     return -1
 }
 
-/**
- * Returns the contact associated to the number this function is called on, if no contact is found, it will build on with the number.
- */
-
-fun String.getContactPfpUri(context: Context): Uri {
-
-    try {
-
-        val normalized = PhoneNumberUtils.normalizeNumber(this)
-        val uri = Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI, Uri.encode(normalized))
-
-        context.contentResolver.query(
-            uri,
-            arrayOf(PhoneLookup.PHOTO_URI),
-            null,
-            null,
-            null
-        )?.use { cursor ->
-            val photoColumn = cursor.getColumnIndexOrThrow(PhoneLookup.PHOTO_URI)
-            if (cursor.moveToFirst()) {
-                val photoUri = cursor.getString(photoColumn)?.toUri() ?: Uri.EMPTY
-
-                return photoUri
-            }
-        }
-        return Uri.EMPTY
-    } catch (_: IllegalArgumentException) { return Uri.EMPTY }
+fun Long.getContactPfpUriFromId(): Uri {
+    val contactUri = ContentUris.withAppendedId(Contacts.CONTENT_URI, this)
+    val photoUri = Uri.withAppendedPath(contactUri, Contacts.Photo.DISPLAY_PHOTO)
+    return photoUri
 }
 
 // Arranged from Fossify
@@ -243,67 +254,10 @@ fun Context.getMMSSize(uri: Uri): Long {
     }
 
     val length = assetFileDescriptor?.use { it.length } ?: -1
-    if (length != -1L) {
-        return length
-    }
 
-    return -1
+    return length
 }
 
-
-fun Long.toReadableDate(): String {
-
-    val todayCalendar = Calendar.getInstance().apply {
-        set(Calendar.HOUR_OF_DAY, 0)
-        set(Calendar.MINUTE, 0)
-        set(Calendar.SECOND, 0)
-        set(Calendar.MILLISECOND, 0)
-    }
-    val yesterdayCalendar = Calendar.getInstance().apply {
-        add(Calendar.DAY_OF_YEAR, -1)
-        set(Calendar.HOUR_OF_DAY, 0)
-        set(Calendar.MINUTE, 0)
-        set(Calendar.SECOND, 0)
-        set(Calendar.MILLISECOND, 0)
-    }
-
-    val dateMidnight = Calendar.getInstance().apply {
-        timeInMillis = this@toReadableDate
-        set(Calendar.HOUR_OF_DAY, 0)
-        set(Calendar.MINUTE, 0)
-        set(Calendar.SECOND, 0)
-        set(Calendar.MILLISECOND, 0)
-    }
-
-    if (dateMidnight.timeInMillis == todayCalendar.timeInMillis) return "Today"
-    if (dateMidnight.timeInMillis == yesterdayCalendar.timeInMillis) return "Yesterday"
-
-    val format = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-    return format.format(Date(this))
-}
-
-
-
-fun Long.millisToDate(
-    pattern: String = "MMMM d, yyyy"
-): String {
-    val formatter = SimpleDateFormat(pattern, Locale.getDefault())
-    val calendar = Calendar.getInstance().apply {
-        timeInMillis = this@millisToDate
-    }
-
-    return formatter.format(calendar.time)
-}
-
-fun Long.toReadableDuration(
-    durationUnit: DurationUnit = DurationUnit.SECONDS
-): String {
-    val duration = this.toDuration(durationUnit)
-
-    return duration.toComponents { _, minutes, seconds, _, _ ->
-        "%02d:%02d".format(minutes, seconds)
-    }
-}
 
 
 fun Modifier.thenIf(
@@ -402,10 +356,7 @@ fun String.isEmoji(): Boolean {
     return this.matches(regex)
 }
 
-fun String.isLink(): Boolean {
-    val regex = LINK_REGEX.toRegex()
-    return this.matches(regex)
-}
+fun String.isLink() = Patterns.WEB_URL.matcher(this).matches()
 
 @Composable
 fun Modifier.cuteHazeEffect(
@@ -424,18 +375,6 @@ fun Modifier.cuteHazeEffect(
     block = block
 )
 
-val LazyListState.showCuteSearchbar
-    get() =
-        if (layoutInfo.totalItemsCount == 0) {
-            true
-        } else if (
-            layoutInfo.visibleItemsInfo.firstOrNull()?.index == 0 &&
-            layoutInfo.visibleItemsInfo.lastOrNull()?.index == layoutInfo.totalItemsCount - 1
-        ) {
-            true
-        } else {
-            layoutInfo.visibleItemsInfo.lastOrNull()?.index != layoutInfo.totalItemsCount - 1
-        }
 
 
 
@@ -683,9 +622,33 @@ fun anyDarkColorScheme(): ColorScheme {
     }
 }
 
-fun Modifier.selfAlignHorizontally(): Modifier = Modifier
-    .fillMaxWidth()
-    .wrapContentWidth()
+@Composable
+fun anyLightColorScheme(): ColorScheme {
+    val context = LocalContext.current
+
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        dynamicLightColorScheme(context)
+    } else {
+        lightColorScheme()
+    }
+}
+
+fun Modifier.selfAlignHorizontally(align: Alignment.Horizontal = Alignment.CenterHorizontally): Modifier {
+    return fillMaxWidth().wrapContentWidth(align)
+}
+
+fun Context.getAdaptivePrimaryColor(fallbackColor: Color): Color {
+    val color = when {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> dynamicDarkColorScheme(this).primary
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1 -> {
+            val manager = WallpaperManager.getInstance(this)
+            manager.getWallpaperColors(WallpaperManager.FLAG_SYSTEM)?.primaryColor?.toArgb()?.let { Color(it) } ?: fallbackColor
+        }
+        else -> fallbackColor
+    }
+
+    return color
+}
 
 /**
  * @param lastIndex Last index of the list the DropdownMenuItem is being iterated through
@@ -701,3 +664,47 @@ fun MenuDefaults.getItemShape(
         else -> middleItemShape
     }
 }
+
+fun Uri.isImage(context: Context): Boolean = context.contentResolver.getType(this)?.startsWith("image/") == true
+fun Uri.isAudio(context: Context): Boolean = context.contentResolver.getType(this)?.startsWith("audio/") == true
+fun Uri.isVideo(context: Context): Boolean = context.contentResolver.getType(this)?.startsWith("video/") == true
+
+// Source - https://stackoverflow.com/a/25005243
+// Posted by Stefan Haustein
+// Retrieved 2026-02-25, License - CC BY-SA 3.0
+fun Uri.getFileName(context: Context): String? {
+
+    var result: String? = null
+    if (scheme == "content") {
+        context.contentResolver.query(this, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                result = cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
+            }
+        }
+    }
+    if (result == null) {
+        result = path
+        val cut = result?.lastIndexOf('/') ?: -1
+        if (cut != -1) result = result?.substring(cut + 1)
+    }
+    return result
+}
+
+fun Context.toLocalizedTab(tab: String): String {
+    return when(tab) {
+        DefaultTabOption.MESSAGES -> getString(R.string.messages)
+        DefaultTabOption.CONTACTS -> getString(R.string.contacts)
+        DefaultTabOption.DIALER -> getString(R.string.dialer)
+        DefaultTabOption.DIALPAD -> getString(R.string.dialpad)
+        else -> throw IllegalArgumentException("Not a valid tab!")
+    }
+}
+
+fun String.tabToScreen(): Screen {
+    return when(this) {
+        DefaultTabOption.MESSAGES -> Screen.Messages
+        DefaultTabOption.CONTACTS -> Screen.Contacts
+        DefaultTabOption.DIALER -> Screen.Dialer
+        DefaultTabOption.DIALPAD -> Screen.Dialpad
+        else -> throw IllegalArgumentException("Not a valid tab!")
+    }}

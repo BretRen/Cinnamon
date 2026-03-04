@@ -10,13 +10,10 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun BottomActionButtons(
-    modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
     SmallFloatingActionButton(
         onClick = {},
-        modifier = modifier
-            .padding(end = 15.dp),
         shape = RoundedCornerShape(14.dp),
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         content = content

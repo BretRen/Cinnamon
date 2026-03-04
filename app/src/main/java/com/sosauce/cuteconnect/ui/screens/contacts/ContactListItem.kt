@@ -20,7 +20,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 import com.sosauce.cuteconnect.domain.model.CuteContact
 import com.sosauce.cuteconnect.ui.shared_components.DefaultContactIcon
-import com.sosauce.cuteconnect.utils.betterFormatNumber
+import com.sosauce.cuteconnect.utils.beautifyNumber
 
 @Composable
 fun ContactListItem(
@@ -47,7 +47,7 @@ fun ContactListItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             DefaultContactIcon(
-                firstLetter = contact.name.first(),
+                firstLetter = contact.displayName.first(),
                 modifier = Modifier
                     .padding(start = 10.dp),
                 contactPfp = contact.photo
@@ -58,13 +58,21 @@ fun ContactListItem(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = contact.name,
+                    text = buildString {
+                        append(contact.displayName)
+                        if (contact.middleName.isNotEmpty()) {
+                            append(" ${contact.middleName}")
+                        }
+                        if (contact.lastName.isNotEmpty()) {
+                            append(" ${contact.lastName}")
+                        }
+                    },
                     maxLines = 1,
                     modifier = Modifier.basicMarquee()
                 )
                 if (showNumber) {
                     Text(
-                        text = contact.phoneNumbers.first().number.betterFormatNumber(),
+                        text = contact.phoneNumbers.first().number.beautifyNumber(),
                         maxLines = 1,
                         modifier = Modifier.basicMarquee(),
                         color = MaterialTheme.colorScheme.onSurfaceVariant

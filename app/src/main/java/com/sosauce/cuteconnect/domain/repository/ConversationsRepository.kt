@@ -2,6 +2,7 @@
 
 package com.sosauce.cuteconnect.domain.repository
 
+import android.content.ContentUris
 import android.content.Context
 import android.net.Uri
 import android.os.Build
@@ -11,11 +12,13 @@ import android.provider.Telephony.MmsSms
 import android.provider.Telephony.Sms
 import android.util.Xml
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastMap
 import androidx.core.net.toUri
+import com.sosauce.cuteconnect.R
 import com.sosauce.cuteconnect.domain.model.CuteAttachment
 import com.sosauce.cuteconnect.domain.model.CuteMessage
 import com.sosauce.cuteconnect.utils.PermissionUtils
-import com.sosauce.cuteconnect.utils.copyMutate
+import com.sosauce.cuteconnect.utils.beautifyNumber
 import com.sosauce.cuteconnect.utils.observe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -27,14 +30,20 @@ import org.xmlpull.v1.XmlPullParser
 class ConversationsRepository(
     private val context: Context
 ) {
-    fun fetchLatestMessagesForThread(threadId: Long): Flow<List<CuteMessage>> {
+    fun fetchLatestSmsForThread(threadId: Long): Flow<List<CuteMessage>> {
         return context.contentResolver.observe(Sms.CONTENT_URI).mapLatest {
-            fetchMessagesForThread(threadId)
+            fetchSmsForThread(threadId)
+        }.flowOn(Dispatchers.IO)
+    }
+
+    fun fetchLatestMmsForThread(threadId: Long): Flow<List<CuteMessage>> {
+        return context.contentResolver.observe(MmsSms.CONTENT_URI).mapLatest {
+            fetchMmsForThread(threadId)
         }.flowOn(Dispatchers.IO)
     }
 
 
-    private fun fetchMessagesForThread(threadId: Long): List<CuteMessage> {
+    private fun fetchSmsForThread(threadId: Long): List<CuteMessage> {
 
         if (!PermissionUtils.hasSmsPermission(context)) return emptyList()
 
@@ -50,6 +59,7 @@ class ConversationsRepository(
             Sms.BODY,
             Sms.TYPE,
             Sms.READ,
+            Sms.STATUS
         )
 
         val selection = "${Sms.THREAD_ID} = ?"
@@ -69,6 +79,7 @@ class ConversationsRepository(
             val bodyColumn = cursor.getColumnIndexOrThrow(Sms.BODY)
             val typeColumn = cursor.getColumnIndexOrThrow(Sms.TYPE)
             val readColumn = cursor.getColumnIndexOrThrow(Sms.READ)
+            val statusColumn = cursor.getColumnIndexOrThrow(Sms.STATUS)
 
 
             while (cursor.moveToNext()) {
@@ -80,30 +91,37 @@ class ConversationsRepository(
                         threadId = cursor.getLong(threadIdColumn),
                         address = cursor.getString(addressColumn),
                         date = cursor.getLong(dateColumn),
-                        read = cursor.getInt(readColumn) == 1
+                        read = cursor.getInt(readColumn) == 1,
+                        delivered = cursor.getInt(statusColumn) == Sms.STATUS_COMPLETE
                     )
                 )
             }
-
-            messages.addAll(fetchThreadMms(threadId))
         }
-        return messages.sortedBy { it.date }
+        return messages
     }
 
-    private fun fetchThreadMms(threadId: Long): List<CuteMessage> {
-        val mms = mutableListOf<CuteMessage>()
+    private fun fetchMmsForThread(threadId: Long): List<CuteMessage> {
 
         val projection = arrayOf(
             Mms._ID,
-            Mms.THREAD_ID,
             Mms.MESSAGE_BOX,
             Mms.READ,
-            Mms.DATE
+            Mms.DATE,
+            Mms.STATUS // this is what smsmms updates for MMS delivery reports
         )
 
         val selection = "${Mms.THREAD_ID} = ?"
-
         val selectionArgs = arrayOf(threadId.toString())
+
+        data class Row(
+            val id: Long,
+            val type: Int,
+            val date: Long,
+            val read: Boolean,
+            val delivered: Boolean
+        )
+
+        val rows = mutableListOf<Row>()
 
 
         context.contentResolver.query(
@@ -114,36 +132,53 @@ class ConversationsRepository(
             null
         )?.use { cursor ->
             val idColumn = cursor.getColumnIndexOrThrow(Mms._ID)
-            val threadIdColumn = cursor.getColumnIndexOrThrow(Mms.THREAD_ID)
             val typeColumn = cursor.getColumnIndexOrThrow(Mms.MESSAGE_BOX)
             val dateColumn = cursor.getColumnIndexOrThrow(Mms.DATE)
             val readColumn = cursor.getColumnIndexOrThrow(Mms.READ)
+            val statusColumn = cursor.getColumnIndexOrThrow(Mms.STATUS)
 
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
-                val threadId = cursor.getLong(threadIdColumn)
                 val type = cursor.getInt(typeColumn)
                 val rawDate = cursor.getLong(dateColumn)
                 val date = if (rawDate > 1_000L) rawDate * 1000 else System.currentTimeMillis()
-                val attachment = getMmsAttachment(id)
                 val read = cursor.getInt(readColumn) == 1
+                val delivered = cursor.getInt(statusColumn) == Sms.STATUS_COMPLETE
 
-                mms.add(
-                    CuteMessage(
+                rows.add(
+                    Row(
                         id = id,
-                        body = attachment.body,
-                        type = type,
-                        threadId = threadId,
-                        address = "", // TODO() get address
                         date = date,
                         read = read,
-                        attachment = attachment,
-                        isMms = true
+                        type = type,
+                        delivered = delivered
                     )
                 )
             }
         }
-        return mms
+
+        if (rows.isEmpty()) return emptyList()
+
+        val ids = rows.fastMap { it.id }
+        val allMmsAttachment = getAllMmsAttachment(ids)
+
+
+        return rows.fastMap { row ->
+            val attachment = allMmsAttachment[row.id]
+
+            CuteMessage(
+                id = row.id,
+                body = attachment?.body ?: "",
+                type = row.type,
+                address = "", // TODO, get address
+                date = row.date,
+                threadId = threadId,
+                read = row.read,
+                delivered = row.delivered,
+                isMms = true,
+                attachment = attachment
+            )
+        }
     }
 
     fun fetchThreadRecipients(threadId: Long): List<String> {
@@ -166,19 +201,13 @@ class ConversationsRepository(
 
                 val recipientIds = cursor.getString(recipientIdsColumn)
                 val recipientIdsAsLongs = recipientIds.split(" ").map { it.toLongOrNull() ?: 0 }
-                recipients.addAll(getListOfAddresses(recipientIdsAsLongs))
+                val rawRecipients = recipientIdsAsLongs.fastMap { getPhoneNumberOfRecipientId(it) }
+                recipients.addAll(rawRecipients)
             }
         }
         return recipients
     }
 
-    private fun getListOfAddresses(ids: List<Long>): List<String> {
-        val list = mutableListOf<String>()
-        ids.fastForEach {
-            list.add(getPhoneNumberOfRecipientId(it))
-        }
-        return list
-    }
     private fun getPhoneNumberOfRecipientId(id: Long): String {
         val uri = Uri.withAppendedPath(MmsSms.CONTENT_URI, "canonical-addresses")
         val projection = arrayOf(
@@ -196,75 +225,9 @@ class ConversationsRepository(
         return ""
     }
 
-
-    private fun fetchMms(threadId: Long = -1): List<CuteMessage> {
-        val mms = mutableListOf<CuteMessage>()
-
-        val projection = arrayOf(
-            Mms._ID,
-            Mms.THREAD_ID,
-            Mms.MESSAGE_BOX,
-            Mms.READ,
-            Mms.DATE
-        )
-
-        val selection = if (threadId != -1L) {
-            "${Mms.THREAD_ID} = ?"
-        } else null
-
-        val selectionArgs = if (threadId != -1L) {
-            arrayOf(threadId.toString())
-        } else null
-
-        val sortOrder = if (threadId != -1L) {
-            "${Mms.DATE} DESC LIMIT 1"
-        } else null
-
-        context.contentResolver.query(
-            Mms.CONTENT_URI,
-            projection,
-            selection,
-            selectionArgs,
-            sortOrder
-        )?.use { cursor ->
-            val idColumn = cursor.getColumnIndexOrThrow(Mms._ID)
-            val threadIdColumn = cursor.getColumnIndexOrThrow(Mms.THREAD_ID)
-            val typeColumn = cursor.getColumnIndexOrThrow(Mms.MESSAGE_BOX)
-            val dateColumn = cursor.getColumnIndexOrThrow(Mms.DATE)
-            val readColumn = cursor.getColumnIndexOrThrow(Mms.READ)
-
-            while (cursor.moveToNext()) {
-                val id = cursor.getLong(idColumn)
-                val threadId = cursor.getLong(threadIdColumn)
-                val type = cursor.getInt(typeColumn)
-                val rawDate = cursor.getLong(dateColumn)
-                val date = if (rawDate > 1_000L) rawDate * 1000 else System.currentTimeMillis()
-                val attachment = getMmsAttachment(id)
-                val read = cursor.getInt(readColumn) == 1
-
-                mms.add(
-                    CuteMessage(
-                        id = id,
-                        body = attachment.body,
-                        type = type,
-                        threadId = threadId,
-                        address = "", // TODO() get address
-                        date = date,
-                        read = read,
-                        attachment = attachment,
-                        isMms = true
-                    )
-                )
-            }
-        }
-        return mms
-    }
-
-    // Inspired by https://github.com/FossifyOrg/Messages/blob/8c5bb9a32c990773259b4d95d698b83d31939171/app/src/main/kotlin/org/fossify/messages/extensions/Context.kt#L477
-    private fun getMmsAttachment(
-        messageId: Long,
-    ): CuteAttachment {
-        var attachment = CuteAttachment(messageId)
+    private fun getAllMmsAttachment(
+        mmsIds: List<Long>,
+    ): Map<Long, CuteAttachment> {
 
         val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             Mms.Part.CONTENT_URI
@@ -272,70 +235,106 @@ class ConversationsRepository(
             "content://mms/part".toUri()
         }
 
+
         val projection = arrayOf(
             Mms.Part._ID,
+            Mms.Part.MSG_ID,
             Mms.Part.CONTENT_TYPE,
             Mms.Part.TEXT
         )
-        val selection = "${Mms.Part.MSG_ID} = ?"
-        val selectionArgs = arrayOf(messageId.toString())
+        val placeholders = mmsIds.joinToString(",") { "?" }
+        val selection = "${Mms.Part.MSG_ID} in ($placeholders)"
 
-        var attachmentNames: List<String>? = null
-        var attachmentCount = 0
+
+        data class RawPart(
+            val partId: Long,
+            val mimeType: String,
+            val text: String
+        )
+        val idToParts = mutableMapOf<Long, MutableList<RawPart>>()
+
+
 
         context.contentResolver.query(
             uri,
             projection,
             selection,
-            selectionArgs,
+            mmsIds.fastMap { it.toString() }.toTypedArray(),
             null
         )?.use { cursor ->
 
+            val partIdColumn = cursor.getColumnIndexOrThrow(Mms._ID)
+            val messageIdColumn = cursor.getColumnIndexOrThrow(Mms.Part.MSG_ID)
+            val mimeTypeColumn = cursor.getColumnIndexOrThrow(Mms.Part.CONTENT_TYPE)
+            val textColumn = cursor.getColumnIndexOrThrow(Mms.Part.TEXT)
+
             while (cursor.moveToNext()) {
-                val partId = cursor.getLong(cursor.getColumnIndexOrThrow(Mms._ID)) // Id meant to get the data uri of MMS if any
-                val mimeType = cursor.getString(cursor.getColumnIndexOrThrow(Mms.Part.CONTENT_TYPE))
+                val partId = cursor.getLong(partIdColumn)
+                val messageId = cursor.getLong(messageIdColumn)
+                val mimeType = cursor.getString(mimeTypeColumn)
+                val text = cursor.getString(textColumn) ?: ""
 
-                if (mimeType == "text/plain") {
-                    val bodyText = cursor.getString(cursor.getColumnIndexOrThrow(Mms.Part.TEXT))
-                    attachment = attachment.copy(
-                        body = bodyText
+                idToParts.getOrPut(messageId) { mutableListOf() }.add(
+                    RawPart(
+                        partId = partId,
+                        mimeType = mimeType,
+                        text = text,
                     )
-                } else if (mimeType.startsWith("image/") || mimeType.startsWith("video/")) {
-                    val fileUri = Uri.withAppendedPath(uri, partId.toString())
-                    val attachmentDetail = CuteAttachment.AttachmentDetails(
-                        id = partId,
-                        uri = fileUri,
-                        filename = ""
-                    )
+                )
 
-                    attachment = attachment.copy(
-                        attachmentDetails = attachment.attachmentDetails.copyMutate { add(attachmentDetail) },
-                    )
-                } else if (mimeType != "application/smil") {
-                    val fileUri = Uri.withAppendedPath(uri, partId.toString())
-                    val attachmentName = attachmentNames?.getOrNull(attachmentCount) ?: ""
+            }
+        }
 
-                    val attachmentDetail = CuteAttachment.AttachmentDetails(
-                        id = partId,
-                        uri = fileUri,
-                        filename = attachmentName
-                    )
+        return idToParts.mapValues { (id, parts) ->
+            var body = ""
+            val attachmentDetails = mutableListOf<CuteAttachment.AttachmentDetails>()
+            var filename = ""
 
-                    attachment = attachment.copy(
-                        attachmentDetails = attachment.attachmentDetails.copyMutate { add(attachmentDetail) }
-                    )
-                    attachmentCount++
-                } else {
-                    val text = cursor.getString(cursor.getColumnIndexOrThrow(Mms.Part.TEXT))
-                    attachmentNames = parseAttachmentNames(text)
+            parts.fastForEach { part ->
+                when {
+                    part.mimeType == "text/plain" -> body = part.text
+                    part.mimeType.startsWith("image/") || part.mimeType.startsWith("video/") -> {
+                        val fileUri = ContentUris.withAppendedId(uri, part.partId)
+                        attachmentDetails.add(
+                            CuteAttachment.AttachmentDetails(
+                                id = part.partId,
+                                uri = fileUri,
+                                filename =  context.getString(R.string.unknown) // TODO get filename
+                            )
+                        )
+                    }
+                    part.mimeType == "application/smil" -> {
+                        // parse SMIL to get filenames if u need em
+                        filename = parseAttachmentNames(part.text).firstOrNull() ?: "idk"
+                        // but tbh u already have the URIs from other parts so u might not even need this
+                    }
+                    else -> {
+                        println("luffy duffy: mimeType=${part.mimeType} partId=${part.partId}")
+                        val fileUri = ContentUris.withAppendedId(uri, part.partId)
+                        attachmentDetails.add(
+                            CuteAttachment.AttachmentDetails(
+                                id = part.partId,
+                                uri = fileUri,
+                                filename = filename
+                            )
+                        )
+                    }
 
                 }
             }
+
+            CuteAttachment(
+                id = id,
+                body = body,
+                attachmentDetails = attachmentDetails
+            )
         }
-        return attachment
     }
 
     private fun parseAttachmentNames(text: String): List<String> {
+
+        if (text.isBlank()) return emptyList() // 👈 this is the vibe check
+
         val parser = Xml.newPullParser()
         parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
         parser.setInput(text.reader())

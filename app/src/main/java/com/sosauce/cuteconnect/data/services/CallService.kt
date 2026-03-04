@@ -4,6 +4,8 @@ package com.sosauce.cuteconnect.data.services
 
 import android.annotation.SuppressLint
 import android.app.KeyguardManager
+import android.app.Notification
+import android.content.Context
 import android.content.Intent
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
@@ -14,13 +16,17 @@ import android.os.Looper
 import android.telecom.Call
 import android.telecom.CallAudioState
 import android.telecom.InCallService
+import android.telecom.TelecomManager
 import android.telecom.VideoProfile
+import android.telephony.SubscriptionManager
+import com.sosauce.cuteconnect.R
 import com.sosauce.cuteconnect.activities.CallActivity
 import com.sosauce.cuteconnect.data.managers.AndroidCallCallback
 import com.sosauce.cuteconnect.data.managers.CallManager
 import com.sosauce.cuteconnect.data.managers.CallNotificationManager
 import com.sosauce.cuteconnect.data.managers.CallServiceCallback
 import com.sosauce.cuteconnect.domain.model.AudioRoute
+import com.sosauce.cuteconnect.domain.model.CuteSimCard
 import com.sosauce.cuteconnect.domain.states.CallState
 import kotlinx.coroutines.Runnable
 import org.koin.core.component.KoinComponent
@@ -34,6 +40,7 @@ class CallService: InCallService(), CallServiceCallback, AndroidCallCallback, Ko
     val callNotificationManager by inject<CallNotificationManager>()
     val callManager by inject<CallManager>()
     private var cuteCall: Call? = null
+
     private val handler = Handler(Looper.getMainLooper())
     private val runnable = object : Runnable {
         var i = 0L
@@ -46,36 +53,35 @@ class CallService: InCallService(), CallServiceCallback, AndroidCallCallback, Ko
 
     private val callback = object : Call.Callback() {
 
-        @SuppressLint("MissingPermission")
         override fun onStateChanged(call: Call, state: Int) {
             super.onStateChanged(call, state)
 
-            val notification = when(state) {
-                Call.STATE_ACTIVE -> callNotificationManager.createOngoingBuilder(call)
-                Call.STATE_RINGING, Call.STATE_DIALING -> callNotificationManager.createOutgoingBuilder(call)
-                else -> callNotificationManager.createOngoingBuilder(call)
+            when (state) {
+                Call.STATE_RINGING -> {
+                    callManager.updateCallState(CallState.RINGING)
+                    callNotificationManager.createIncomingNotification(call.details)
+                }
+                Call.STATE_DIALING, Call.STATE_CONNECTING -> {
+                    callManager.updateCallState(CallState.DIALING)
+                    callNotificationManager.createOutgoingNotification(call.details)
+                }
+                Call.STATE_ACTIVE -> {
+                    handler.post(runnable)
+                    callManager.updateCallState(CallState.ONGOING)
+                    callNotificationManager.createOngoingNotification(call.details)
+                }
+                Call.STATE_DISCONNECTED, Call.STATE_DISCONNECTING -> callManager.updateCallState(CallState.ENDED)
+                Call.STATE_HOLDING -> callManager.updateIsHolding(true)
+                else -> return
             }
 
-            val callState = when(state) {
-                Call.STATE_ACTIVE -> CallState.ONGOING
-                Call.STATE_RINGING -> CallState.RINGING
-                Call.STATE_DIALING -> CallState.DIALING
-                Call.STATE_DISCONNECTED, Call.STATE_DISCONNECTING -> CallState.ENDED
-                else -> CallState.ONGOING
-            }
-            callManager.updateCallState(callState)
             callManager.updateIsHolding(state == Call.STATE_HOLDING)
-
-            callNotificationManager.sendNotification(notification)
-
         }
 
         override fun onDetailsChanged(call: Call?, details: Call.Details?) {
             super.onDetailsChanged(call, details)
-            callManager.updateNumber(details?.handle?.schemeSpecificPart ?: "Undetermined")
+            callManager.updateNumber(details?.handle?.schemeSpecificPart ?: getString(R.string.unknown))
         }
-
-
     }
 
     private val audioFocus = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
@@ -102,88 +108,76 @@ class CallService: InCallService(), CallServiceCallback, AndroidCallCallback, Ko
 
 
 
+    @SuppressLint("MissingPermission")
     override fun onCallAdded(call: Call) {
         super.onCallAdded(call)
         cuteCall = call
+
+        val state = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            call.details.state
+        } else {
+            call.state
+        }
+
+        val telecomManager = getSystemService(TelecomManager::class.java)
+        val subscriptionManager = getSystemService(SubscriptionManager::class.java)
+
+
+        val subId = call.details.accountHandle?.id?.toIntOrNull() ?: -1
+        println("luffy duffy: accountHandle id = ${call.details.accountHandle?.id}")
+        val activeSubInfo = subscriptionManager.getActiveSubscriptionInfo(subId)
+        val sim = CuteSimCard(
+            subId = activeSubInfo.subscriptionId,
+            name = activeSubInfo.displayName.toString(),
+            carrierName = activeSubInfo.carrierName.toString(),
+            color = activeSubInfo.iconTint
+        )
+
+        callManager.updateActiveSim(sim)
+
+
+        val notification = when (state) {
+            Call.STATE_RINGING -> {
+                callManager.updateCallState(CallState.RINGING)
+                callManager.updateNumber(call.details?.handle?.schemeSpecificPart ?: getString(R.string.unknown))
+                callNotificationManager.createIncomingNotification(call.details)
+            }
+            Call.STATE_DIALING, Call.STATE_CONNECTING -> {
+                callManager.updateCallState(CallState.DIALING)
+                callNotificationManager.createOutgoingNotification(call.details)
+            }
+            Call.STATE_ACTIVE -> {
+                handler.post(runnable)
+                callManager.updateCallState(CallState.ONGOING)
+                callNotificationManager.createOngoingNotification(call.details)
+            }
+            Call.STATE_DISCONNECTED, Call.STATE_DISCONNECTING -> {
+                callManager.updateCallState(CallState.ENDED)
+                null
+            }
+            Call.STATE_HOLDING -> {
+                callManager.updateIsHolding(true)
+                null
+            }
+            else -> null
+        }
+
+        notification?.let { startForeground(CallNotificationManager.CALL_NOTIF_ID, it) }
         callManager.registerCallServiceCallback(this)
         callManager.registerAndroidCallCallback(this)
         cuteCall?.registerCallback(callback)
-        handler.post(runnable)
-
-
-
-        // Launch the CallActivity whenever we get a call, no matter the state of the application
-        val intent = Intent(this, CallActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                    Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT or
-                    Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-        }
-        startActivity(intent)
-
-        val isIncoming = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                call.details.state == Call.STATE_RINGING
-            } else {
-                call.state == Call.STATE_RINGING
-            }
-
-        if (isIncoming) {
-            val isScreenLocked = (getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isDeviceLocked
-
-            val notification = callNotificationManager.createIncomingBuilder(call.details)
-            callNotificationManager.sendNotification(notification)
-
-            if (isScreenLocked) {
-                val intent = Intent(this, CallActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-                }
-                startActivity(intent)
-            }
-
-        }
-
-        println("hey im cool: $cuteCall")
     }
+
 
     override fun onCallRemoved(call: Call?) {
         super.onCallRemoved(call)
         cuteCall?.unregisterCallback(callback)
         callManager.unregisterCallServiceCallback()
         callManager.unregisterAndroidCallCallback()
-        //handler.removeCallbacks(runnable)
-        callNotificationManager.clearCallNotifications()
+        handler.removeCallbacks(runnable)
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
     }
-
-    // A14+ ???
-//    override fun onAvailableCallEndpointsChanged(availableEndpoints: List<CallEndpoint?>) {
-//        super.onAvailableCallEndpointsChanged(availableEndpoints)
-//
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-//            val endpoints = availableEndpoints.map {
-//                CompatCallEndpoint(
-//                    id = it?.identifier ?: ParcelUuid.fromString(Uuid.random().toString()),
-//                    name = it?.endpointName?.toString() ?: "No name",
-//                    type = it?.endpointType ?: CallEndpoint.TYPE_EARPIECE
-//                )
-//            }
-//            CallManager.updateAvailableEndpoints(endpoints)
-//        }
-//    }
-
-
-    // Android 14+
-//    override fun onCallEndpointChanged(callEndpoint: CallEndpoint) {
-//        super.onCallEndpointChanged(callEndpoint)
-//
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-//            CallManager.updateCurrentEndpoint(
-//                endpoint = CompatCallEndpoint(
-//                    name = callEndpoint.endpointName.toString(),
-//                    type = callEndpoint.endpointType,
-//                    id = callEndpoint.identifier
-//                )
-//            )
-//        }
-//    }
 
 
     // A13 and below
@@ -195,39 +189,18 @@ class CallService: InCallService(), CallServiceCallback, AndroidCallCallback, Ko
 
 
         val supportedRoutes = audioState?.supportedRouteMask ?: 0
-        val availableRoutes = mutableListOf<AudioRoute>().apply {
-            if (supportedRoutes and CallAudioState.ROUTE_BLUETOOTH != 0) {
-                add(
-                    AudioRoute(
-                        name = CallAudioState.audioRouteToString(CallAudioState.ROUTE_BLUETOOTH),
-                        type = CallAudioState.ROUTE_BLUETOOTH
-                    )
+        val availableRoutes = listOf(
+            CallAudioState.ROUTE_BLUETOOTH,
+            CallAudioState.ROUTE_EARPIECE,
+            CallAudioState.ROUTE_SPEAKER,
+            CallAudioState.ROUTE_WIRED_HEADSET
+        ).mapNotNull { route ->
+            if (supportedRoutes and route != 0) {
+                AudioRoute(
+                    name = CallAudioState.audioRouteToString(route),
+                    type = route
                 )
-            }
-            if (supportedRoutes and CallAudioState.ROUTE_EARPIECE != 0) {
-                add(
-                    AudioRoute(
-                        name = CallAudioState.audioRouteToString(CallAudioState.ROUTE_EARPIECE),
-                        type = CallAudioState.ROUTE_EARPIECE
-                    )
-                )
-            }
-            if (supportedRoutes and CallAudioState.ROUTE_SPEAKER != 0) {
-                add(
-                    AudioRoute(
-                        name = CallAudioState.audioRouteToString(CallAudioState.ROUTE_SPEAKER),
-                        type = CallAudioState.ROUTE_SPEAKER
-                    )
-                )
-            }
-            if (supportedRoutes and CallAudioState.ROUTE_WIRED_HEADSET != 0) {
-                add(
-                    AudioRoute(
-                        name = CallAudioState.audioRouteToString(CallAudioState.ROUTE_WIRED_HEADSET),
-                        type = CallAudioState.ROUTE_WIRED_HEADSET
-                    )
-                )
-            }
+            } else null
         }
         val endpoint = AudioRoute(
             name = CallAudioState.audioRouteToString(audioState?.route ?: CallAudioState.ROUTE_EARPIECE),

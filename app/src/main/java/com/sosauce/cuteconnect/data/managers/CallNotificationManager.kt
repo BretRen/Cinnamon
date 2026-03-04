@@ -27,7 +27,7 @@ class CallNotificationManager(
 
     val notificationManager = NotificationManagerCompat.from(context)
     val ringtone = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-    val channel = NotificationChannel(CALLS_CHANNEL_ID, "Calls", NotificationManager.IMPORTANCE_HIGH).apply {
+    val incomingChannel = NotificationChannel(INCOMING_CHANNEL_ID, "Incoming calls", NotificationManager.IMPORTANCE_HIGH).apply {
         setSound(
             ringtone,
             AudioAttributes.Builder()
@@ -35,7 +35,6 @@ class CallNotificationManager(
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                 .build()
         )
-        importance = NotificationManager.IMPORTANCE_HIGH
     }
 
     val intent = Intent(Intent.ACTION_MAIN, null).apply {
@@ -62,14 +61,16 @@ class CallNotificationManager(
     private val acceptPendingIntent = PendingIntent.getBroadcast(context, ACCEPT_CALL_CODE, acceptIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     private val hangupPendingIntent = PendingIntent.getBroadcast(context, HANGUP_ONGOING_CALL_CODE, hangupIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
-    fun createIncomingBuilder(
+
+    @SuppressLint("MissingPermission")
+    fun createIncomingNotification(
         callDetails: Call.Details
     ): Notification {
 
         val number = callDetails.gatewayInfo?.originalAddress?.schemeSpecificPart ?:
         callDetails.handle.schemeSpecificPart
 
-        return NotificationCompat.Builder(context, CALLS_CHANNEL_ID)
+        val builder = NotificationCompat.Builder(context, INCOMING_CHANNEL_ID)
             .setSmallIcon(R.drawable.round_call_received_24)
             .setCategory(Notification.CATEGORY_CALL)
             .setOngoing(true)
@@ -86,22 +87,28 @@ class CallNotificationManager(
                 )
             )
             .build()
+
+        notificationManager.notify(CALL_NOTIF_ID, builder)
+
+        return builder
     }
 
-    fun createOngoingBuilder(
-        call: Call
+    @SuppressLint("MissingPermission")
+    fun createOngoingNotification(
+        callDetails: Call.Details
     ): Notification {
-        val number = call.details.gatewayInfo?.originalAddress?.schemeSpecificPart ?:
-        call.details.handle.schemeSpecificPart
 
-        return NotificationCompat.Builder(context, CALLS_CHANNEL_ID)
+        val number = callDetails.gatewayInfo?.originalAddress?.schemeSpecificPart ?:
+        callDetails.handle.schemeSpecificPart
+
+        val builder = NotificationCompat.Builder(context, INCOMING_CHANNEL_ID)
             .setSmallIcon(R.drawable.call)
             .setCategory(Notification.CATEGORY_CALL)
             .setOngoing(true)
-            .setSilent(true)
             .setContentIntent(pendingIntent)
-            .setFullScreenIntent(pendingIntent, true)
+            .setSilent(true)
             .setUsesChronometer(true)
+            .setFullScreenIntent(pendingIntent, false)
             .setStyle(
                 NotificationCompat.CallStyle.forOngoingCall(
                     Person.Builder()
@@ -112,60 +119,56 @@ class CallNotificationManager(
                 )
             )
             .build()
+
+        notificationManager.notify(CALL_NOTIF_ID, builder)
+
+        return builder
     }
 
-    fun createOutgoingBuilder(
-        call: Call
+    @SuppressLint("MissingPermission")
+    fun createOutgoingNotification(
+        callDetails: Call.Details
     ): Notification {
-        return NotificationCompat.Builder(context, CALLS_CHANNEL_ID)
+
+        val number = callDetails.gatewayInfo?.originalAddress?.schemeSpecificPart ?:
+        callDetails.handle.schemeSpecificPart
+
+        val builder = NotificationCompat.Builder(context, INCOMING_CHANNEL_ID)
             .setSmallIcon(R.drawable.round_call_made_24)
             .setCategory(Notification.CATEGORY_CALL)
-            .setContentText("Ringing...")
+            .setContentText(context.getString(R.string.ringing))
             .setOngoing(true)
-            .setSilent(true)
             .setContentIntent(pendingIntent)
-            .setFullScreenIntent(pendingIntent, true)
-            .setUsesChronometer(true)
+            .setSilent(true)
+            .setFullScreenIntent(pendingIntent, false)
             .setStyle(
                 NotificationCompat.CallStyle.forOngoingCall(
                     Person.Builder()
-                        .setName(
-                            call.details.gatewayInfo?.originalAddress?.schemeSpecificPart?.getContactNameOrNothing(context) ?:
-                            call.details.handle.schemeSpecificPart.getContactNameOrNothing(context)
-                        )
+                        .setName(number.getContactNameOrNothing(context))
                         .build(),
                     hangupPendingIntent
 
                 )
             )
             .build()
-    }
 
-    @SuppressLint("MissingPermission")
-    fun sendNotification(notification: Notification) {
-        notificationManager.notify(
-            IN_CALL_CHANNEL_ID,
-            notification
-        )
-    }
-    fun clearCallNotifications() {
-        notificationManager.cancel(IN_CALL_CHANNEL_ID)
-    }
+        notificationManager.notify(CALL_NOTIF_ID, builder)
 
-
+        return builder
+    }
 
     init {
-        notificationManager.createNotificationChannel(channel)
+        notificationManager.createNotificationChannel(incomingChannel)
     }
 
 
 
-    internal companion object {
+    companion object {
         private const val DECLINE_CALL_CODE = 0
         private const val ACCEPT_CALL_CODE = 1
         private const val HANGUP_ONGOING_CALL_CODE = 2
-        private const val CALLS_CHANNEL_ID = "calls"
-        private const val IN_CALL_CHANNEL_ID = 10
+        private const val INCOMING_CHANNEL_ID = "incoming calls"
+        const val CALL_NOTIF_ID = 1
     }
 }
 

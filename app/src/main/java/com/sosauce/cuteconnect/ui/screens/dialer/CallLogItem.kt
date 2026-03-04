@@ -4,8 +4,11 @@ package com.sosauce.cuteconnect.ui.screens.dialer
 
 import android.content.ClipData
 import android.provider.CallLog
+import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,7 +26,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,6 +35,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.ClipEntry
@@ -42,20 +45,21 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
-import com.google.i18n.phonenumbers.NumberParseException
-import com.google.i18n.phonenumbers.PhoneNumberUtil
-import com.google.i18n.phonenumbers.geocoding.PhoneNumberOfflineGeocoder
 import com.sosauce.cuteconnect.R
 import com.sosauce.cuteconnect.domain.model.CuteCallLog
+import com.sosauce.cuteconnect.ui.navigation.Screen
 import com.sosauce.cuteconnect.ui.screens.phone.CallAction
 import com.sosauce.cuteconnect.ui.shared_components.DefaultContactIcon
-import com.sosauce.cuteconnect.utils.betterFormatNumber
-import com.sosauce.cuteconnect.utils.getContactNameOrNothing
+import com.sosauce.cuteconnect.utils.getContactId
+import com.sosauce.cuteconnect.utils.getContactPfpUriFromId
 import com.sosauce.cuteconnect.utils.getItemShape
-import com.sosauce.cuteconnect.utils.toReadableDuration
+import com.sosauce.cuteconnect.utils.getThreadIdOrCreate
+import com.sosauce.cuteconnect.utils.secondsToDuration
+import com.sosauce.cuteconnect.utils.toTime
+import com.sosauce.sweetselect.SweetSelectState
+import com.sosauce.sweetselect.sweetClickable
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.util.Locale
-import kotlin.time.DurationUnit
 
 
 @Composable
@@ -64,25 +68,15 @@ fun CallLogItem(
     callLog: CuteCallLog,
     numberOfAppearance: Int,
     onCallAction: (CallAction) -> Unit,
-    shape: Shape = RoundedCornerShape(24.dp)
+    onNavigate: (Screen) -> Unit,
+    shape: Shape = RoundedCornerShape(24.dp),
+    onDeleteCallLog: () -> Unit,
+    sweetSelectState: SweetSelectState<CuteCallLog>
 ) {
 
     val context = LocalContext.current
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
-    val phoneUtil = remember(context) { PhoneNumberUtil.getInstance(context) }
-    val geocodingUtil = remember(context) { PhoneNumberOfflineGeocoder.getInstance(context) }
-    val numberCountry = remember {
-        try {
-            val numberProto = phoneUtil.parse(callLog.number, Locale.getDefault().country)
-            geocodingUtil.getDescriptionForNumber(numberProto, Locale.getDefault())
-        } catch (e: NumberParseException) {
-           null
-        }
-    }?.ifEmpty { null } // In this case empty and null both mean no country
-    val numberOrName = remember {
-        callLog.number.getContactNameOrNothing(context).betterFormatNumber()
-    }
     var showMoreOptions by remember { mutableStateOf(false) }
 
     val iconColor = when(callLog.callType) {
@@ -101,12 +95,21 @@ fun CallLogItem(
 
     val actions = listOf(
         CallLogAction(
-            onClick = { onCallAction(CallAction.LaunchCall(callLog.number)) },
+            onClick = {
+                onCallAction(CallAction.LaunchCall(callLog.rawNumber))
+                showMoreOptions = false
+            },
             icon = R.drawable.phone,
             text = R.string.call
         ),
         CallLogAction(
-            onClick = {  },
+            onClick = {
+                scope.launch(Dispatchers.IO) {
+                    val threadId = callLog.rawNumber.getThreadIdOrCreate(context)
+                    onNavigate(Screen.Conversation(threadId))
+                    showMoreOptions = false
+                }
+            },
             icon = R.drawable.message_rounded,
             text = R.string.send_msg
         ),
@@ -115,32 +118,37 @@ fun CallLogItem(
                 scope.launch {
                     clipboard.setClipEntry(
                         ClipEntry(
-                            ClipData.newPlainText(callLog.number, callLog.number)
+                            ClipData.newPlainText(callLog.rawNumber, callLog.rawNumber)
                         )
                     )
+                    Toast.makeText(context, "Copied!", Toast.LENGTH_SHORT).show()
+                    showMoreOptions = false
                 }
             },
             icon = R.drawable.copy,
             text = R.string.copy_number
         ),
         CallLogAction(
-            onClick = {},
+            onClick = onDeleteCallLog,
             text = R.string.delete,
             icon = R.drawable.delete,
             tint = MaterialTheme.colorScheme.error
         )
     )
 
-
-    Surface(
-        onClick = { onCallAction(CallAction.LaunchCall(callLog.number)) },
-        shape = shape,
-        color = MaterialTheme.colorScheme.surfaceContainer,
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .padding(
                 vertical = 1.dp,
                 horizontal = 5.dp
+            )
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .sweetClickable(
+                item = callLog,
+                state = sweetSelectState,
+                onClick = { onCallAction(CallAction.LaunchCall(callLog.rawNumber)) }
             )
     ) {
         Row(
@@ -148,8 +156,9 @@ fun CallLogItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             DefaultContactIcon(
-                firstLetter = numberOrName.firstOrNull(),
-                modifier = Modifier.padding(start = 10.dp)
+                firstLetter = callLog.beautifiedNumberOrName.firstOrNull(),
+                modifier = Modifier.padding(start = 10.dp),
+                contactPfp = callLog.rawNumber.getContactId(context).getContactPfpUriFromId()
             )
             Column(
                 modifier = Modifier
@@ -158,7 +167,7 @@ fun CallLogItem(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = if (numberOfAppearance <= 1) numberOrName else "$numberOrName ($numberOfAppearance)",
+                    text = if (numberOfAppearance <= 1) callLog.beautifiedNumberOrName else "${callLog.beautifiedNumberOrName} ($numberOfAppearance)",
                     maxLines = 1,
                     modifier = Modifier.basicMarquee()
                 )
@@ -174,11 +183,10 @@ fun CallLogItem(
                     Spacer(Modifier.width(5.dp))
                     Text(
                         text = buildString {
-                            append(callLog.date.toReadableDuration(DurationUnit.MILLISECONDS))
-                            append(" · ")
-                            append("${callLog.duration.toReadableDuration()}s")
-                            numberCountry?.let {
-                                append(" ($it)")
+                            append(callLog.date.toTime())
+                            if (callLog.duration > 0 && (callLog.callType == CallLog.Calls.INCOMING_TYPE || callLog.callType == CallLog.Calls.OUTGOING_TYPE)) {
+                                append(" · ")
+                                append(callLog.duration.secondsToDuration())
                             }
                         },
                         modifier = Modifier.basicMarquee(),
@@ -186,6 +194,15 @@ fun CallLogItem(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     )
+                    callLog.country?.let { country ->
+                        Spacer(Modifier.weight(1f))
+                        Text(
+                            text = country,
+                            style = MaterialTheme.typography.bodySmallEmphasized.copy(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        )
+                    }
                 }
             }
             Row {
@@ -228,7 +245,9 @@ fun CallLogItem(
                 }
             }
         }
+
     }
+
 }
 
 private data class CallLogAction(

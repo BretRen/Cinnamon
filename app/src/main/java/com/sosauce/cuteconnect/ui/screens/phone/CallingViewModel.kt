@@ -1,18 +1,22 @@
 package com.sosauce.cuteconnect.ui.screens.phone
 
+import android.annotation.SuppressLint
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import com.sosauce.cuteconnect.data.managers.CallManager
 import com.sosauce.cuteconnect.domain.model.AudioRoute
+import com.sosauce.cuteconnect.domain.model.CuteSimCard
 import com.sosauce.cuteconnect.domain.states.CallState
+import kotlinx.coroutines.flow.asStateFlow
 
 class CallingViewModel(
     private val callManager: CallManager
 ): ViewModel() {
 
 
-    val state = callManager.callingState
+    val state = callManager._callingState.asStateFlow()
 
+    @SuppressLint("MissingPermission")
     fun handleCallAction(action: CallAction) {
         when(action) {
             is CallAction.LaunchCall -> {
@@ -35,6 +39,9 @@ class CallingViewModel(
 }
 
 
+/**
+ * @param activeSim Sim used for the ongoing call, for incoming calls for example, it's the sim that's getting called + is gonna get used for the call
+ */
 data class CallingState(
     val callState: CallState = CallState.DIALING,
     val number: String = "",
@@ -43,7 +50,9 @@ data class CallingState(
     val timeSpentInCall: Long = 0,
     val availableAudioRoutes: List<AudioRoute> = emptyList(),
     val currentAudioRoute: AudioRoute = AudioRoute(),
-    val poster: String = "" // contact that may or may nor be associated with the caller
+    val poster: String = "", // contact that may or may nor be associated with the caller
+    val activeSim: CuteSimCard = CuteSimCard()
+
 )
 
 sealed interface CallAction {

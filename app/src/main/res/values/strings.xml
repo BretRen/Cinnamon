@@ -3,6 +3,10 @@
         name="app_name"
         translatable="false">CuteConnect</string>
     <string name="empty" />
+    <string name="ccnt_by_sosauce">CuteConnect by sosauce</string>
+    <string name="version">Version</string>
+    <string name="check_updates">Check updates</string>
+    <string name="support">Support</string>
     <string name="reply">Reply</string>
     <string name="okay">Okay</string>
     <string name="me">Me</string>
@@ -48,6 +52,32 @@
     <string name="archived">Archived</string>
     <string name="unknown">Unknown</string>
     <string name="customize">Customize</string>
+    <string name="blur_intensity">Blur intensity</string>
+    <string name="camera">Camera</string>
+    <string name="gallery">Gallery</string>
+    <string name="look_and_feel">Look &amp; feel</string>
+    <string name="look_and_feel_desc">Your friends, your style, right ?</string>
+    <string name="system">System</string>
+    <string name="dark">Dark</string>
+    <string name="light">Light</string>
+    <string name="amoled">Amoled</string>
+    <string name="theme">Theme</string>
+    <string name="ringing">Ringing…</string>
+    <string name="schedule_message">Schedule message</string>
+    <string name="next">Next</string>
+    <string name="image">Image</string>
+    <string name="video">Video</string>
+    <string name="attachment">Attachment</string>
+    <string name="no_convo_found">No conversation found!</string>
+    <string name="no_convo_found_desc">Not a single soul checking on you, that\'s sad…</string>
+    <string name="behavior">Behavior</string>
+    <string name="behavior_desc">Configure how everything should behave!</string>
+    <string name="general">General</string>
+    <string name="default_tab">Default tab to open at launch</string>
+    <string name="dialpad">Dialpad</string>
+    <string name="phone">Phone</string>
+    <string name="migration">Migration</string>
+    <string name="migration_desc">Migrate everything to get going with CuteConnect!</string>
 
 
 

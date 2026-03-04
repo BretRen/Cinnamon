@@ -1,12 +1,17 @@
 @file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
 
 package com.sosauce.cuteconnect.ui.theme
-
+import android.app.WallpaperManager
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialExpressiveTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
@@ -14,26 +19,33 @@ import androidx.compose.ui.text.font.FontWeight
 import com.materialkolor.DynamicMaterialExpressiveTheme
 import com.materialkolor.PaletteStyle
 import com.materialkolor.dynamiccolor.ColorSpec
+import com.materialkolor.rememberDynamicColorScheme
 import com.materialkolor.rememberDynamicMaterialThemeState
 import com.sosauce.cuteconnect.R
+import com.sosauce.cuteconnect.data.datastore.rememberAppTheme
+import com.sosauce.cuteconnect.utils.CuteTheme
 import com.sosauce.cuteconnect.utils.anyDarkColorScheme
 
 @Composable
-fun CuteConnectTheme(content: @Composable () -> Unit) {
+fun CuteConnectTheme(
+    seedColor: Color = MaterialTheme.colorScheme.primary,
+    content: @Composable () -> Unit
+) {
 
-    val state = rememberDynamicMaterialThemeState(
-        seedColor = anyDarkColorScheme().primary,
-        //seedColor = MaterialTheme.colorScheme.primary,
-        isDark = isSystemInDarkTheme(), // TODO settings
-        isAmoled = false,
+
+    val theme by rememberAppTheme()
+    val isSystemInDarkTheme = isSystemInDarkTheme()
+
+    val colorScheme = rememberDynamicColorScheme(
+        seedColor = seedColor,
+        isDark = if (theme == CuteTheme.SYSTEM) isSystemInDarkTheme else if (theme == CuteTheme.AMOLED) true else theme == CuteTheme.DARK,
+        isAmoled = theme == CuteTheme.AMOLED,
         specVersion = ColorSpec.SpecVersion.SPEC_2025,
         style = PaletteStyle.Vibrant
     )
 
-    DynamicMaterialExpressiveTheme(
-        state = state,
-        motionScheme = MotionScheme.expressive(),
-        animate = false,
+    MaterialExpressiveTheme(
+        colorScheme = colorScheme,
         typography = NunitoTypography,
         content = content
     )

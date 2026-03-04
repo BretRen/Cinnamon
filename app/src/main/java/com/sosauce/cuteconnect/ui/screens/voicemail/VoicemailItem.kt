@@ -7,7 +7,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -18,15 +17,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.sosauce.cuteconnect.data.managers.AudioManager
 import com.sosauce.cuteconnect.domain.model.CuteVoicemail
-import com.sosauce.cuteconnect.ui.screens.messages.components.PlayPauseButton
 import com.sosauce.cuteconnect.ui.shared_components.AnimatedSlider
-import com.sosauce.cuteconnect.ui.shared_components.DefaultContactIcon
 import com.sosauce.cuteconnect.utils.getContactNameOrNothing
-import com.sosauce.cuteconnect.utils.getContactPfpUri
-import com.sosauce.cuteconnect.utils.toReadableDate
-import com.sosauce.cuteconnect.utils.toReadableDuration
 
 @Composable
 fun VoicemailItem(

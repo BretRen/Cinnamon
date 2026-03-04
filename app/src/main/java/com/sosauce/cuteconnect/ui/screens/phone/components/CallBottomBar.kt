@@ -11,7 +11,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -33,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.sosauce.cuteconnect.R
@@ -40,6 +43,7 @@ import com.sosauce.cuteconnect.domain.states.CallState
 import com.sosauce.cuteconnect.domain.states.DialerPaneContent
 import com.sosauce.cuteconnect.ui.screens.phone.CallAction
 import com.sosauce.cuteconnect.ui.screens.phone.CallingState
+import com.sosauce.cuteconnect.utils.selfAlignHorizontally
 
 @Composable
 fun CallBottomBar(
@@ -91,7 +95,7 @@ fun CallBottomBar(
         }
         ButtonGroup(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             ToggleButton(
                 checked = callUiState.isMuted,
@@ -104,6 +108,7 @@ fun CallBottomBar(
                     contentColor = contentColorFor(MaterialTheme.colorScheme.surface)
                 ),
                 modifier = Modifier
+                    .weight(1f)
                     .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
                     .animateWidth(interactionSources[0])
             ) {
@@ -114,7 +119,11 @@ fun CallBottomBar(
             }
             ToggleButton(
                 checked = callUiState.currentAudioRoute.type != CallAudioState.ROUTE_EARPIECE,
-                onCheckedChange = { paneContent = DialerPaneContent.AUDIO_SWITCHER },
+                onCheckedChange = {
+                    paneContent = if (paneContent == DialerPaneContent.AUDIO_SWITCHER) {
+                        DialerPaneContent.NOTHING
+                    } else DialerPaneContent.AUDIO_SWITCHER
+                },
                 enabled = callUiState.callState != CallState.ENDED,
                 interactionSource = interactionSources[1],
                 shapes = ToggleButtonDefaults.shapes(),
@@ -123,6 +132,7 @@ fun CallBottomBar(
                     contentColor = contentColorFor(MaterialTheme.colorScheme.surface)
                 ),
                 modifier = Modifier
+                    .weight(1f)
                     .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
                     .animateWidth(interactionSources[1])
             ) {
@@ -146,6 +156,7 @@ fun CallBottomBar(
                     contentColor = contentColorFor(MaterialTheme.colorScheme.surface)
                 ),
                 modifier = Modifier
+                    .weight(1f)
                     .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
                     .animateWidth(interactionSources[2])
             ) {
@@ -171,6 +182,7 @@ fun CallBottomBar(
                     contentColor = contentColorFor(MaterialTheme.colorScheme.surface)
                 ),
                 modifier = Modifier
+                    .weight(1f)
                     .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
                     .animateWidth(interactionSources[3])
             ) {
@@ -180,18 +192,19 @@ fun CallBottomBar(
                 )
             }
         }
+        Spacer(Modifier.height(15.dp))
         IconButton(
             onClick = { onCallAction(CallAction.HangUp) },
             enabled = callUiState.callState != CallState.ENDED,
             shapes = IconButtonDefaults.shapes(),
             colors = IconButtonDefaults.iconButtonColors(
-                containerColor = MaterialTheme.colorScheme.errorContainer,
-                contentColor = MaterialTheme.colorScheme.contentColorFor(MaterialTheme.colorScheme.errorContainer)
+                containerColor = MaterialTheme.colorScheme.error,
+                contentColor = MaterialTheme.colorScheme.contentColorFor(MaterialTheme.colorScheme.error)
             ),
             modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentWidth()
-                .size(IconButtonDefaults.largeContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
+                .selfAlignHorizontally()
+                .fillMaxWidth(0.4f)
+                .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
         ) {
             Icon(
                 painter = painterResource(R.drawable.phone_filled),

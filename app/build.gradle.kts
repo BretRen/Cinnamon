@@ -3,15 +3,23 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.serialization)
     alias(libs.plugins.ksp)
 }
-
+//androidComponents {
+//    onVariants { variant ->
+//        variant.outputsDir
+//        variant.outputs.forEach { output ->
+//            //output.out
+//        }
+//    }
+//}
 android {
     namespace = "com.sosauce.cuteconnect"
-    compileSdk = 36
+    compileSdk {
+        version = release(36)
+    }
 
     val keystoreFile = file("release_key.jks")
     signingConfigs {
@@ -37,15 +45,15 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    applicationVariants.all {
-        val variant = this
-        variant.outputs
-            .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
-            .forEach { output ->
-                val outputFileName = "CCNT_${variant.versionName}.apk"
-                output.outputFileName = outputFileName
-            }
-    }
+//    applicationVariants.all {
+//        val variant = this
+//        variant.outputs
+//            .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
+//            .forEach { output ->
+//                val outputFileName = "CCNT_${variant.versionName}.apk"
+//                output.outputFileName = outputFileName
+//            }
+//    }
 
     buildTypes {
         release {
@@ -58,31 +66,19 @@ android {
             )
         }
         debug {
+            isDebuggable = true
             applicationIdSuffix = ".debug"
             versionNameSuffix = "debug"
         }
     }
     compileOptions {
-        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-
-    kotlin {
-        compilerOptions {
-            jvmTarget = JvmTarget.JVM_17
-        }
-    }
-
     buildFeatures {
         compose = true
-        aidl = false
-        //renderScript = false
-        shaders = false
-        buildConfig = false
-        resValues = false
-        viewBinding = false
+        buildConfig = true
     }
 
 
@@ -125,10 +121,12 @@ dependencies {
     implementation(libs.coil.video)
     implementation(libs.geocoder)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
-    implementation("com.klinkerapps:android-smsmms:5.2.6")
-    coreLibraryDesugaring(libs.desugar.jdk.libs)
-
-
-
+    implementation(libs.sweetselect.compose)
+    implementation("androidx.paging:paging-compose:3.4.1")
+    implementation("androidx.paging:paging-runtime:3.4.1")
+    implementation(libs.sweetselect.compose)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.ez.vcard)
+    implementation(project(":smsmms"))
 
 }

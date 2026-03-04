@@ -192,7 +192,7 @@ fun ContactInfos(
             }
         }
 
-        HeaderText("About ${contact.name}")
+        HeaderText("About ${contact.firstName}")
         Card(
             modifier = Modifier
                 .padding(horizontal = 10.dp)

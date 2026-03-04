@@ -1,6 +1,8 @@
 package com.sosauce.cuteconnect.ui.navigation
 
 import androidx.navigation3.runtime.NavKey
+import com.sosauce.cuteconnect.domain.model.CuteContact
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -53,9 +55,19 @@ sealed class Screen: NavKey {
         val id: Long
     ) : Screen()
 
+    /**
+     * @param isEdit Used to know if we're creating or editing a contact
+     */
+    @Serializable
+    data class ContactEditor(
+        val id: Long,
+        val isEdit: Boolean
+    ) : Screen()
+
     @Serializable
     data class Conversation(
         val threadId: Long
     ) : Screen()
+
 
 }

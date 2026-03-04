@@ -186,8 +186,7 @@ fun CuteSearchbar(
                                 ),
                                 lineLimits = TextFieldLineLimits.SingleLine,
                                 shape = FloatingToolbarDefaults.ContainerShape,
-                                modifier = Modifier
-                                    .fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth()
                             )
                         }
 

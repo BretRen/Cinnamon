@@ -5,15 +5,27 @@ import android.telephony.SubscriptionManager
 import androidx.compose.runtime.Composable
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.sosauce.cuteconnect.data.datastore.PreferencesKeys.ARCHIVED_CONVOS
 import com.sosauce.cuteconnect.data.datastore.PreferencesKeys.BLOCKED_NUMBERS
-import com.sosauce.cuteconnect.data.datastore.PreferencesKeys.DEFAULT_SIM
+import com.sosauce.cuteconnect.data.datastore.PreferencesKeys.DEFAULT_MESSAGES_SIM
+import com.sosauce.cuteconnect.data.datastore.PreferencesKeys.DEFAULT_PHONE_SIM
+import com.sosauce.cuteconnect.data.datastore.PreferencesKeys.DEFAULT_TAB
+import com.sosauce.cuteconnect.data.datastore.PreferencesKeys.ENABLE_DELIVERY_REPORTS
+import com.sosauce.cuteconnect.data.datastore.PreferencesKeys.GROUP_SUBSEQUENT_CALLS
 import com.sosauce.cuteconnect.data.datastore.PreferencesKeys.MMS_MAX_SIZE_LIMIT
 import com.sosauce.cuteconnect.data.datastore.PreferencesKeys.PINNED_CONVOS
+import com.sosauce.cuteconnect.data.datastore.PreferencesKeys.SEND_GROUP_AS_MMS
+import com.sosauce.cuteconnect.data.datastore.PreferencesKeys.SEND_LONG_AS_MMS
+import com.sosauce.cuteconnect.data.datastore.PreferencesKeys.SHOW_CHAR_COUNT
+import com.sosauce.cuteconnect.data.datastore.PreferencesKeys.THEME
+import com.sosauce.cuteconnect.utils.CuteTheme
+import com.sosauce.cuteconnect.utils.DefaultTabOption
 import com.sosauce.cuteconnect.utils.MmsSize
 
 private const val PREFERENCES_NAME = "settings"
@@ -21,14 +33,27 @@ private const val PREFERENCES_NAME = "settings"
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(PREFERENCES_NAME)
 
 data object PreferencesKeys {
+    val THEME = stringPreferencesKey("theme")
+
     val PINNED_CONVOS = stringSetPreferencesKey("pinned_convos")
-    val ARCHIVED_CONVOS = stringSetPreferencesKey("pinned_convos")
+    val ARCHIVED_CONVOS = stringSetPreferencesKey("archived_convos")
     val MMS_MAX_SIZE_LIMIT = longPreferencesKey("MMS_MAX_SIZE_LIMIT")
     val BLOCKED_NUMBERS = stringSetPreferencesKey("BLOCKED_NUMBERS")
-    val DEFAULT_SIM = intPreferencesKey("DEFAULT_SIM")
+    val DEFAULT_MESSAGES_SIM = intPreferencesKey("DEFAULT_MESSAGES_SIM")
+    val DEFAULT_PHONE_SIM = intPreferencesKey("DEFAULT_PHONE_SIM")
+    val SEND_LONG_AS_MMS = booleanPreferencesKey("SEND_LONG_AS_MMS")
+    val SHOW_CHAR_COUNT = booleanPreferencesKey("DISPLAY_CHAR_COUNT")
+    val SEND_GROUP_AS_MMS = booleanPreferencesKey("SEND_GROUP_AS_MMS")
+    val ENABLE_DELIVERY_REPORTS = booleanPreferencesKey("ENABLE_DELIVERY_REPORTS")
+    val DEFAULT_TAB = stringPreferencesKey("DEFAULT_TAB")
+
+    val GROUP_SUBSEQUENT_CALLS = booleanPreferencesKey("GROUP_SUBSEQUENT_CALLS")
 }
 
 
+@Composable
+fun rememberAppTheme() =
+    rememberPreference(key = THEME, defaultValue = CuteTheme.SYSTEM)
 @Composable
 fun rememberPinnedConversations() =
     rememberPreference(key = PINNED_CONVOS, defaultValue = emptySet())
@@ -44,19 +69,25 @@ fun rememberMmsMaxSizeLimit() = rememberPreference(MMS_MAX_SIZE_LIMIT, MmsSize.F
 fun rememberBlockedNumbers() = rememberPreference(BLOCKED_NUMBERS, emptySet())
 
 @Composable
-fun rememberDefaultSimCard() = rememberPreference(DEFAULT_SIM, SubscriptionManager.getDefaultSubscriptionId())
+fun rememberDefaultMessagesSim() = rememberPreference(DEFAULT_MESSAGES_SIM, SubscriptionManager.getDefaultSmsSubscriptionId())
 
-fun getBlockedNumber(context: Context) = getPreference(BLOCKED_NUMBERS, emptySet(), context)
-fun getPinnedConversations(context: Context) = getPreference(PINNED_CONVOS, emptySet(), context)
-fun getArchivedConversations(context: Context) = getPreference(ARCHIVED_CONVOS, emptySet(), context)
+@Composable
+fun rememberDefaultPhoneSim() = rememberPreference(DEFAULT_PHONE_SIM, SubscriptionManager.getDefaultVoiceSubscriptionId())
 
-suspend fun saveBlockedNumber(
-    blockedNumbers: Set<String>,
-    context: Context
-) {
-    savePreference(
-        key = BLOCKED_NUMBERS,
-        newValue = blockedNumbers,
-        context = context
-    )
-}
+@Composable
+fun rememberShowCharCount() = rememberPreference(SHOW_CHAR_COUNT, false)
+
+@Composable
+fun rememberSendGroupAsMms() = rememberPreference(SEND_GROUP_AS_MMS, false)
+
+@Composable
+fun rememberEnableDeliveryReports() = rememberPreference(ENABLE_DELIVERY_REPORTS, false)
+
+@Composable
+fun rememberSendLongAsMms() = rememberPreference(SEND_LONG_AS_MMS, false)
+
+@Composable
+fun rememberDefaultTab() = rememberPreference(DEFAULT_TAB, DefaultTabOption.MESSAGES)
+
+@Composable
+fun rememberGroupSubsequentCalls() = rememberPreference(GROUP_SUBSEQUENT_CALLS, false)

@@ -1,15 +1,22 @@
 package com.sosauce.cuteconnect.di
 
 import androidx.room.Room
+import androidx.work.WorkManager
+import com.google.i18n.phonenumbers.PhoneNumberUtil
+import com.google.i18n.phonenumbers.geocoding.PhoneNumberOfflineGeocoder
 import com.sosauce.cuteconnect.data.contact_settings.ContactSettingsDao
 import com.sosauce.cuteconnect.data.contact_settings.ContactSettingsDatabase
 import com.sosauce.cuteconnect.data.conversation_settings.ConversationSettingsDao
 import com.sosauce.cuteconnect.data.conversation_settings.ConversationSettingsDatabase
+import com.sosauce.cuteconnect.data.datastore.UserPreferences
 import com.sosauce.cuteconnect.data.managers.CallManager
 import com.sosauce.cuteconnect.data.managers.CallNotificationManager
 import com.sosauce.cuteconnect.data.managers.MessageNotificationManager
+import com.sosauce.cuteconnect.data.schedulers.scheduled_messages.ScheduledMessagesDao
+import com.sosauce.cuteconnect.data.schedulers.scheduled_messages.ScheduledMessagesDatabase
 import com.sosauce.cuteconnect.data.telephony.CuteTelephonyManager
 import com.sosauce.cuteconnect.domain.repository.ArchivedThreadsRepository
+import com.sosauce.cuteconnect.domain.repository.BlockedNumbersManager
 import com.sosauce.cuteconnect.domain.repository.ContactDetailsRepository
 import com.sosauce.cuteconnect.domain.repository.ContactsRepository
 import com.sosauce.cuteconnect.domain.repository.ConversationsRepository
@@ -24,9 +31,14 @@ import com.sosauce.cuteconnect.ui.screens.dialer.DialerViewModel
 import com.sosauce.cuteconnect.ui.screens.dialer.DialpadViewModel
 import com.sosauce.cuteconnect.ui.screens.messages.ConversationDetailsViewModel
 import com.sosauce.cuteconnect.ui.screens.messages.MessagesViewModel
+import com.sosauce.cuteconnect.ui.screens.messages.components.bottombar.BottomBarViewModel
 import com.sosauce.cuteconnect.ui.screens.phone.CallingViewModel
+import com.sosauce.cuteconnect.ui.screens.settings.MigrationViewModel
 import com.sosauce.cuteconnect.ui.screens.voicemail.VoicemailViewModel
 import com.sosauce.cuteconnect.ui.screens.wallpaper.ThemingViewModel
+import com.sosauce.cuteconnect.ui.shared_components.SimsViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf
@@ -42,6 +54,14 @@ val appModule = module {
         ).build().dao
     }
 
+    single<ScheduledMessagesDao> {
+        Room.databaseBuilder(
+            context = androidContext(),
+            klass = ScheduledMessagesDatabase::class.java,
+            name = "scheduledMessages.db"
+        ).build().dao
+    }
+
     single<ContactSettingsDao> {
         Room.databaseBuilder(
             context = androidContext(),
@@ -50,6 +70,13 @@ val appModule = module {
         ).build().dao
     }
 
+    single { CoroutineScope(SupervisorJob()) }
+    single { PhoneNumberOfflineGeocoder.getInstance(androidContext()) }
+    single { PhoneNumberUtil.getInstance(androidContext()) }
+    single { WorkManager.getInstance(androidContext()) }
+
+    singleOf(::UserPreferences)
+    singleOf(::BlockedNumbersManager)
     singleOf(::CallManager)
     singleOf(::MessageNotificationManager)
     singleOf(::CallNotificationManager)
@@ -63,6 +90,7 @@ val appModule = module {
     singleOf(::DialerRepository)
     singleOf(::VoicemailsRepository)
 
+
     viewModelOf(::ContactsViewModel)
     viewModelOf(::ContactDetailsViewModel)
     viewModelOf(::ConversationDetailsViewModel)
@@ -71,6 +99,9 @@ val appModule = module {
     viewModelOf(::ArchivedViewModel)
     viewModelOf(::DialerViewModel)
     viewModelOf(::VoicemailViewModel)
-    viewModelOf(::CallingViewModel)
     viewModelOf(::DialpadViewModel)
+    viewModelOf(::CallingViewModel)
+    viewModelOf(::BottomBarViewModel)
+    viewModelOf(::SimsViewModel)
+    viewModelOf(::MigrationViewModel)
 }

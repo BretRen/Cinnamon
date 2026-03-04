@@ -12,7 +12,8 @@ import androidx.core.net.toUri
 import com.sosauce.cuteconnect.domain.model.CuteConversation
 
 class ArchivedThreadsRepository(
-    private val context: Context
+    private val context: Context,
+    private val blockedNumbersManager: BlockedNumbersManager
 ) {
 
     fun fetchArchivedThreads(
@@ -78,7 +79,7 @@ class ArchivedThreadsRepository(
                         threadId = threadId,
                         snippet = snippet,
                         recipients = recipientsPhoneNumber,
-                        isSenderBlocked = if (recipientsPhoneNumber.size > 1) false else BlockedNumbersManager.isNumberBlocked(recipientsPhoneNumber.first(), context), // TODO: Checked if anyone in the group chat is blocked
+                        isSenderBlocked = if (recipientsPhoneNumber.size > 1) false else blockedNumbersManager.isNumberBlocked(recipientsPhoneNumber.first()), // TODO: Checked if anyone in the group chat is blocked
                         date = date,
                         read = read == 1,
                         isGroupChat = isGroupChat

@@ -1,20 +1,31 @@
 package com.sosauce.cuteconnect.main
 
 import android.os.Bundle
+import android.os.StrictMode
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
+import androidx.work.Constraints
+import androidx.work.OneTimeWorkRequestBuilder
+import com.sosauce.cuteconnect.BuildConfig
+import com.sosauce.cuteconnect.data.datastore.rememberAppTheme
+import com.sosauce.cuteconnect.data.schedulers.SendMessageWorker
 import com.sosauce.cuteconnect.ui.navigation.Nav
 import com.sosauce.cuteconnect.ui.screens.setup.SetupScreen
 import com.sosauce.cuteconnect.ui.theme.CuteConnectTheme
+import com.sosauce.cuteconnect.utils.CuteTheme
+import com.sosauce.cuteconnect.utils.getAdaptivePrimaryColor
 import com.sosauce.cuteconnect.utils.hasBothRoles
+import java.util.concurrent.TimeUnit
 
 class MainActivity : ComponentActivity() {
 
@@ -24,18 +35,32 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
-            CuteConnectTheme {
+
+            val context = LocalContext.current
+            val theme by rememberAppTheme()
+            val isSystemInDarkTheme = isSystemInDarkTheme()
+            val primary = MaterialTheme.colorScheme.primary
+            var seedColor by remember { mutableStateOf(context.getAdaptivePrimaryColor(primary)) }
+
+            CuteConnectTheme(seedColor) {
 
                 WindowCompat
-                .getInsetsController(window, window.decorView)
-                .apply {
-                    isAppearanceLightStatusBars = !isSystemInDarkTheme()
-                    isAppearanceLightNavigationBars = !isSystemInDarkTheme()
-                }
+                    .getInsetsController(window, window.decorView)
+                    .apply {
+
+                        val isLight =
+                            if (theme == CuteTheme.SYSTEM) !isSystemInDarkTheme else theme == CuteTheme.LIGHT
+
+                        isAppearanceLightStatusBars = isLight
+                        isAppearanceLightNavigationBars = isLight
+                    }
 
                 var hasBothRoles by remember { mutableStateOf(hasBothRoles()) }
                 if (hasBothRoles) {
-                    Nav(intent = intent)
+                    Nav(
+                        intent = intent,
+                        onUpdateSeedColor = { seedColor = it }
+                    )
                 } else {
                     SetupScreen { hasBothRoles = hasBothRoles() }
                 }

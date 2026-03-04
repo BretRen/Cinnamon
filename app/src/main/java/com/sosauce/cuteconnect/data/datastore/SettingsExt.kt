@@ -48,28 +48,6 @@ fun <T> rememberPreference(
     }
 }
 
-fun <T> getPreference(
-    key: Preferences.Key<T>,
-    defaultValue: T,
-    context: Context
-): Flow<T> =
-    context.dataStore.data
-        .map { preference ->
-            preference[key] ?: defaultValue
-        }
-
-suspend fun <T> savePreference(
-    key: Preferences.Key<T>,
-    newValue: T,
-    context: Context
-) {
-    withContext(Dispatchers.IO) {
-        context.dataStore.edit {
-            it[key] = newValue
-        }
-    }
-}
-
 
 @Composable
 fun rememberIsLandscape(): Boolean {

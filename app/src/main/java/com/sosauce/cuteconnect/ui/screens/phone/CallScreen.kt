@@ -18,15 +18,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.text.buildSpannedString
 import com.sosauce.cuteconnect.domain.states.CallState
 import com.sosauce.cuteconnect.ui.screens.phone.components.CallBottomBar
+import com.sosauce.cuteconnect.ui.screens.phone.components.IncomingBottomBar
 import com.sosauce.cuteconnect.ui.shared_components.DefaultContactIcon
+import com.sosauce.cuteconnect.utils.beautifyNumber
+import com.sosauce.cuteconnect.utils.getContactId
 import com.sosauce.cuteconnect.utils.getContactNameOrNothing
-import com.sosauce.cuteconnect.utils.getContactPfpUri
+import com.sosauce.cuteconnect.utils.getContactPfpUriFromId
 import com.sosauce.cuteconnect.utils.toStopwatch
 import kotlin.time.DurationUnit
 
@@ -39,15 +48,21 @@ fun CallScreen(
 
     val context = LocalContext.current
     val displayName = remember(callUiState.number) {
-        callUiState.number.getContactNameOrNothing(context)
+        callUiState.number.getContactNameOrNothing(context).beautifyNumber()
     }
 
     Scaffold(
         bottomBar = {
-            CallBottomBar(
-                onCallAction = onCallAction,
-                callUiState = callUiState
-            )
+            if (callUiState.callState == CallState.RINGING) {
+                IncomingBottomBar(
+                    onCallAction = onCallAction
+                )
+            } else {
+                CallBottomBar(
+                    onCallAction = onCallAction,
+                    callUiState = callUiState
+                )
+            }
         }
     ) { paddingValues ->
 //        AsyncImage(
@@ -73,15 +88,11 @@ fun CallScreen(
                 firstLetter = displayName.firstOrNull(),
                 size = 150.dp,
                 color = MaterialTheme.colorScheme.surfaceContainer,
-                contactPfp = callUiState.number.getContactPfpUri(context)
+                contactPfp = callUiState.number.getContactId(context).getContactPfpUriFromId()
             )
             Spacer(Modifier.height(20.dp))
             Text(
-                text = when(callUiState.callState) {
-                    CallState.RINGING, CallState.DIALING  -> "Ringing..."
-                    CallState.ONGOING -> displayName
-                    CallState.ENDED -> "Call ended"
-                },
+                text = displayName,
                 maxLines = 1,
                 style = MaterialTheme.typography.displaySmallEmphasized.copy(
                     fontWeight = FontWeight.ExtraBold
@@ -89,15 +100,24 @@ fun CallScreen(
                 modifier = Modifier.basicMarquee()
             )
             Spacer(Modifier.height(10.dp))
-            if (callUiState.callState == CallState.DIALING) {
-                ContainedLoadingIndicator()
-            } else {
-                Text(
-                    text = callUiState.timeSpentInCall.toStopwatch(DurationUnit.SECONDS),
-                    fontSize = 20.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+
+            val secondaryText = when(callUiState.callState) {
+                CallState.RINGING -> buildAnnotatedString {
+                    append("via ")
+                    withStyle(SpanStyle(color = Color(callUiState.activeSim.color))) {
+                        append(callUiState.activeSim.name)
+                    }
+                }
+                CallState.DIALING -> AnnotatedString("Ringing...")
+                CallState.ENDED -> AnnotatedString("Call ended")
+                CallState.ONGOING -> AnnotatedString(callUiState.timeSpentInCall.toStopwatch(DurationUnit.SECONDS))
             }
+            Text(
+                text = secondaryText,
+                style = MaterialTheme.typography.bodyLargeEmphasized.copy(
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            )
             AnimatedVisibility(
                 visible = callUiState.isHolding,
                 enter = scaleIn(),
@@ -105,8 +125,9 @@ fun CallScreen(
             ) {
                 Text(
                     text = "On hold",
-                    color = MaterialTheme.colorScheme.error,
-                    fontSize = 20.sp
+                    style = MaterialTheme.typography.bodyLargeEmphasized.copy(
+                        MaterialTheme.colorScheme.error
+                    )
                 )
             }
         }

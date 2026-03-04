@@ -218,7 +218,7 @@ fun DialpadScreen(
                 contentPadding = paddingValues
             ) {
                 groupedContactsList(
-                    groupedContacts = state.contacts.fastFilter { it.phoneNumbers.fastAny { number -> number.number.contains(value) } }.groupBy { it.name.first() },
+                    groupedContacts = state.contacts.fastFilter { it.phoneNumbers.fastAny { number -> number.number.contains(value) } }.groupBy { it.firstName.first() },
                     onContactClicked = { contact ->
                         if (contact.phoneNumbers.size > 1) {
                             showMultiNumberSelection = Pair(true, contact.id)

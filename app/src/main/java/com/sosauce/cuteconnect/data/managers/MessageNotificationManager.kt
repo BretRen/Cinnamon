@@ -29,15 +29,20 @@ import com.sosauce.cuteconnect.utils.CuteIntents
 import com.sosauce.cuteconnect.utils.RESULT_KEY
 import com.sosauce.cuteconnect.utils.THREAD_ID
 import com.sosauce.cuteconnect.utils.getAddressFromThreadId
+import com.sosauce.cuteconnect.utils.getContactId
 import com.sosauce.cuteconnect.utils.getContactNameOrNothing
-import com.sosauce.cuteconnect.utils.getContactPfpUri
+import com.sosauce.cuteconnect.utils.getContactPfpUriFromId
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlin.math.min
+import androidx.core.graphics.createBitmap
 
 class MessageNotificationManager(
     private val context: Context,
-    private val cuteTelephonyManager: CuteTelephonyManager
+    private val cuteTelephonyManager: CuteTelephonyManager,
+    private val scope: CoroutineScope
 ) {
 
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -81,10 +86,13 @@ class MessageNotificationManager(
                     .addAction(replyAction(threadId))
                     .build()
             )
-            cuteTelephonyManager.sendSms(
-                address = threadId.getAddressFromThreadId(context),
-                message = message
-            )
+            scope.launch {
+                cuteTelephonyManager.sendMessage(
+                    addresses = listOf(threadId.getAddressFromThreadId(context)),
+                    message = message,
+                    attachments = emptyList()
+                )
+            }
         }
     }
 
@@ -95,7 +103,7 @@ class MessageNotificationManager(
         val size = min(bitmap.width, bitmap.height)
         val squaredBitmap = Bitmap.createBitmap(bitmap, 0, 0, size, size)
 
-        val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val output = createBitmap(size, size)
         val canvas = Canvas(output)
 
         val paint = Paint()
@@ -124,8 +132,10 @@ class MessageNotificationManager(
         imageUri: Uri? = null
     ) {
 
+        if (ActiveThreadId.threadId == threadId) return
+
         val request = ImageRequest.Builder(context)
-            .data(number?.getContactPfpUri(context))
+            .data(number?.getContactId(context)?.getContactPfpUriFromId())
             .allowHardware(false)
             .build()
         val bitmap = runBlocking(Dispatchers.IO) {
@@ -224,4 +234,11 @@ class MessageNotificationManager(
         private const val MESSAGES_CHANNEL_ID = "Incoming Message"
         private const val MESSAGES_CHANNEL_ID_INT = 100
     }
+}
+
+/**
+ * Used to prevent notifications for current threadId
+ */
+object ActiveThreadId {
+    var threadId: Long? = null
 }

@@ -1,6 +1,7 @@
 package com.sosauce.cuteconnect.domain.model
 
 import android.provider.Telephony.Sms
+import com.sosauce.cuteconnect.data.broadcasts.DeliveryReportsReceiver
 
 /**
  * Define what a message is.
@@ -14,6 +15,8 @@ import android.provider.Telephony.Sms
  * @param threadId Unique thread id to which this message belongs to. Use this to navigate to a conversation screen.
  * @param read Is the message read ?
  * @param isMms Is it an MMS ? Note that group messages / RCS messages are treated as MMS
+ * @param isScheduled Whether this message is scheduled or not
+ * @param delivered Whether a message has been marked delivered by the carrier using [DeliveryReportsReceiver]
  */
 
 data class CuteMessage(
@@ -25,5 +28,7 @@ data class CuteMessage(
     val threadId: Long = 0,
     val read: Boolean = true,
     val isMms: Boolean = false,
-    val attachment: CuteAttachment? = null
+    val attachment: CuteAttachment? = null,
+    val isScheduled: Boolean = false,
+    val delivered: Boolean = false
 )

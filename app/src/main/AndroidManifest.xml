@@ -13,6 +13,7 @@
     <uses-permission android:name="com.android.voicemail.permission.ADD_VOICEMAIL" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.WRITE_CONTACTS" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
@@ -22,6 +23,8 @@
     <uses-permission android:name="android.permission.WRITE_CALL_LOG" />
     <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
     <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
 
 
 
@@ -98,6 +101,8 @@
             android:name=".activities.CallActivity"
             android:exported="true"
             android:launchMode="singleTask"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
             android:theme="@style/Theme.CuteConnect">
             <intent-filter>
                 <action android:name="android.intent.action.CALL"/>
@@ -111,10 +116,13 @@
             android:name=".data.services.CallService"
             android:exported="true"
             android:enabled="true"
+            android:foregroundServiceType="phoneCall"
             android:permission="android.permission.BIND_INCALL_SERVICE">
 
             <meta-data
                 android:name="android.telecom.IN_CALL_SERVICE_UI"
+                android:value="true" />
+            <meta-data android:name="android.telecom.IN_CALL_SERVICE_RINGING"
                 android:value="true" />
 
             <intent-filter>
@@ -138,13 +146,21 @@
             android:taskAffinity="com.sosauce.cuteconnect.SMS_SENT"/>
 
         <receiver
+            android:name=".data.broadcasts.DeliveryReportsReceiver"
+            android:exported="true"/>
+
+
+        <receiver
             android:name="com.klinker.android.send_message.DeliveredReceiver"
             android:taskAffinity="com.sosauce.cuteconnect.SMS_DELIVERED"/>
         <!-- Your custom receiver which is child of com.klinker.android.send_message.MmsSentReceiver -->
         <receiver
-            android:name=".data.receivers.MmsReceiver"
-            android:exported="false"
-            android:taskAffinity="com.klinker.android.messaging.MMS_SENT"/>
+            android:name=".data.receivers.CuteMmsSentReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.klinker.android.messaging.MMS_SENT"/>
+            </intent-filter>
+        </receiver>
 
         <receiver android:name=".data.receivers.CallReceiver"/>
 

@@ -77,7 +77,7 @@ fun ContactsScreen(
                 contentPadding = paddingValues
             ) {
                 groupedContactsList(
-                    groupedContacts = state.contacts.groupBy { it.name.first() },
+                    groupedContacts = state.contacts.groupBy { it.displayName.first().uppercaseChar() },
                     onContactClicked = { onNavigate(Screen.ContactDetails(it.id)) }
                 )
             }

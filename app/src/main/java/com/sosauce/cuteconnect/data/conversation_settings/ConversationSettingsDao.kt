@@ -1,6 +1,8 @@
 package com.sosauce.cuteconnect.data.conversation_settings
 
 import androidx.room.Dao
+import androidx.room.MapColumn
+import androidx.room.MapInfo
 import androidx.room.Query
 import androidx.room.Upsert
 import com.sosauce.cuteconnect.domain.model.ConversationSettings
@@ -12,7 +14,13 @@ interface ConversationSettingsDao {
     @Upsert
     suspend fun upsertConversation(conversationSettings: ConversationSettings)
 
-    @Query("SELECT * FROM conversationsettings WHERE convoId = :convoInt LIMIT 1")
-    fun getConversationSettings(convoInt: Long): Flow<ConversationSettings?>
+    @Query("SELECT * FROM conversationsettings WHERE threadId = :threadId LIMIT 1")
+    fun getConversationSettings(threadId: Long): Flow<ConversationSettings?>
+
+    @Query("SELECT threadId, draft FROM conversationsettings")
+    fun getAllDrafts(): Flow<Map<@MapColumn(columnName = "threadId") Long, @MapColumn(columnName = "draft") String>>
+
+    @Query("SELECT draft FROM conversationsettings WHERE :threadId = threadId LIMIT 1")
+    fun getDraftForThread(threadId: Long): String?
 
 }
