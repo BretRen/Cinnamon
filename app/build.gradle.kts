@@ -1,22 +1,12 @@
-import org.gradle.kotlin.dsl.support.kotlinCompilerOptions
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.serialization)
     alias(libs.plugins.ksp)
 }
-//androidComponents {
-//    onVariants { variant ->
-//        variant.outputsDir
-//        variant.outputs.forEach { output ->
-//            //output.out
-//        }
-//    }
-//}
+
 android {
-    namespace = "com.sosauce.cuteconnect"
+    namespace = "com.sosauce.cinnamon"
     compileSdk {
         version = release(36)
     }
@@ -36,7 +26,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.sosauce.cuteconnect"
+        applicationId = "com.sosauce.cinnamon"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
@@ -122,11 +112,10 @@ dependencies {
     implementation(libs.geocoder)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.sweetselect.compose)
-    implementation("androidx.paging:paging-compose:3.4.1")
-    implementation("androidx.paging:paging-runtime:3.4.1")
+    implementation("androidx.paging:paging-compose:3.4.2")
+    implementation("androidx.paging:paging-runtime:3.4.2")
     implementation(libs.sweetselect.compose)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.ez.vcard)
-    implementation(project(":smsmms"))
-
+    implementation("com.github.kelvinlaw:android-smsmms:0.1.3")
 }

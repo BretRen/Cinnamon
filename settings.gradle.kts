@@ -26,4 +26,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "CuteConnect"
 include(":app")
-include(":smsmms")
