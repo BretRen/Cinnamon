@@ -5,6 +5,7 @@ package com.sosauce.cinnamon.utils
 import android.app.Activity
 import android.app.WallpaperManager
 import android.app.role.RoleManager
+import android.content.ContentProviderOperation
 import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
@@ -12,7 +13,9 @@ import android.content.Intent
 import android.database.ContentObserver
 import android.net.Uri
 import android.os.Build
+import android.provider.BlockedNumberContract
 import android.provider.BlockedNumberContract.BlockedNumbers
+import android.provider.ContactsContract
 import android.provider.ContactsContract.Contacts
 import android.provider.ContactsContract.PhoneLookup
 import android.provider.OpenableColumns
@@ -57,6 +60,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
 import androidx.core.content.contentValuesOf
 import androidx.core.net.toUri
 import androidx.navigation3.runtime.NavBackStack
@@ -68,8 +72,10 @@ import dev.chrisbanes.haze.HazeEffectScope
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.hazeEffect
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -240,11 +246,40 @@ fun String.getContactId(context: Context): Long {
     return -1
 }
 
-fun Long.getContactPfpUriFromId(): Uri {
-    val contactUri = ContentUris.withAppendedId(Contacts.CONTENT_URI, this)
-    val photoUri = Uri.withAppendedPath(contactUri, Contacts.Photo.DISPLAY_PHOTO)
-    return photoUri
+
+fun String.getContactPfpFromNumber(context: Context): Uri {
+
+    val uri = Uri.withAppendedPath(
+        PhoneLookup.CONTENT_FILTER_URI,
+        Uri.encode(this)
+    )
+
+    context.contentResolver.query(
+        uri,
+        arrayOf(PhoneLookup.PHOTO_URI),
+        null,
+        null
+    )?.use { cursor ->
+
+        val photoColumn = cursor.getColumnIndexOrThrow(PhoneLookup.PHOTO_URI)
+
+        if (cursor.moveToFirst()) {
+            return cursor.getString(photoColumn)?.toUri() ?: Uri.EMPTY
+        }
+
+    }
+
+    return Uri.EMPTY
+
+
 }
+
+//fun Long.getContactPfpUriFromId(): Uri {
+//    if (this < 0) return Uri.EMPTY
+//    val contactUri = ContentUris.withAppendedId(Contacts.CONTENT_URI, this)
+//    val photoUri = Uri.withAppendedPath(contactUri, Contacts.Photo.DISPLAY_PHOTO)
+//    return photoUri
+//}
 
 // Arranged from Fossify
 fun Context.getMMSSize(uri: Uri): Long {
@@ -313,25 +348,6 @@ fun ContentResolver.observe(uri: Uri) = callbackFlow {
     trySend(false)
     awaitClose {
         unregisterContentObserver(observer)
-    }
-}
-fun SubscriptionManager.observeSims(context: Context) = callbackFlow {
-    val listener = object : SubscriptionManager.OnSubscriptionsChangedListener() {
-        override fun onSubscriptionsChanged() {
-            trySend(true)
-        }
-    }
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-        this@observeSims.addOnSubscriptionsChangedListener(context.mainExecutor, listener)
-    } else {
-        this@observeSims.addOnSubscriptionsChangedListener(listener)
-    }
-
-    trySend(false)
-
-    awaitClose {
-        this@observeSims.removeOnSubscriptionsChangedListener(listener)
     }
 }
 
@@ -668,7 +684,6 @@ fun MenuDefaults.getItemShape(
 }
 
 fun Uri.isImage(context: Context): Boolean = context.contentResolver.getType(this)?.startsWith("image/") == true
-fun Uri.isAudio(context: Context): Boolean = context.contentResolver.getType(this)?.startsWith("audio/") == true
 fun Uri.isVideo(context: Context): Boolean = context.contentResolver.getType(this)?.startsWith("video/") == true
 fun Uri.isVcard(context: Context): Boolean = context.contentResolver.getType(this)?.endsWith("vCard") == true || context.contentResolver.getType(this)?.endsWith("x-vCard") == true
 
@@ -719,15 +734,17 @@ fun String.tabToScreen(): Screen {
         DefaultTabOption.MESSAGES -> Screen.Messages
         DefaultTabOption.CONTACTS -> Screen.Contacts
         DefaultTabOption.DIALER -> Screen.Dialer
-        DefaultTabOption.DIALPAD -> Screen.Dialpad
+        DefaultTabOption.DIALPAD -> Screen.Dialpad()
         else -> throw IllegalArgumentException("Not a valid tab!")
     }}
 
 
 fun NavBackStack<NavKey>.navigateBack() {
-    // Popping the only screen will crash so this avoids it
-    if (size == 1) return
-    removeLastOrNull()
+    if (size == 1) {
+        add(Screen.Messages)
+    } else {
+        removeLastOrNull()
+    }
 }
 
 fun TextFieldState.backspace() {
@@ -742,3 +759,30 @@ fun <T> bouncySpec() = spring<T>(
     dampingRatio = Spring.DampingRatioMediumBouncy,
     stiffness = Spring.StiffnessLow
 )
+
+/**
+ * It can also take emails
+ */
+suspend fun Context.blockNumbers(numbers: List<String>) = withContext(Dispatchers.IO) {
+    val ops = ArrayList<ContentProviderOperation>()
+
+    numbers.fastForEach { number ->
+        ops.add(
+            ContentProviderOperation.newInsert(BlockedNumbers.CONTENT_URI)
+                .withValue(BlockedNumbers.COLUMN_ORIGINAL_NUMBER, number)
+                .build()
+        )
+    }
+    try {
+        contentResolver.applyBatch(BlockedNumberContract.AUTHORITY, ops)
+    } catch (_: Exception) {
+        withContext(Dispatchers.Main) {
+
+            val text = if (numbers.size > 1) {
+                "Couldn't block ${numbers.first()} and ${numbers.size - 1} more"
+            } else "Couldn't block ${numbers.first()}"
+
+            Toast.makeText(this@blockNumbers, text, Toast.LENGTH_SHORT).show()
+        }
+    }
+}

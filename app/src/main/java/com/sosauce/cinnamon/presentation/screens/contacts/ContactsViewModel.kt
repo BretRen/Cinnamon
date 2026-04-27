@@ -3,14 +3,17 @@
 package com.sosauce.cinnamon.presentation.screens.contacts
 
 import android.accounts.Account
+import android.app.Application
 import android.provider.ContactsContract
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.util.fastMap
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.data.datastore.UserPreferences
 import com.sosauce.cinnamon.domain.model.CuteContact
 import com.sosauce.cinnamon.domain.repository.ContactsRepository
@@ -32,9 +35,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class ContactsViewModel(
+    private val application: Application,
     private val contactsRepository: ContactsRepository,
     private val userPreferences: UserPreferences
-): ViewModel() {
+): AndroidViewModel(application) {
 
     private val _state = MutableStateFlow(ContactsState(isLoading = true))
     val state = _state.asStateFlow()
@@ -78,7 +82,10 @@ class ContactsViewModel(
         }
 
         viewModelScope.launch(Dispatchers.IO) {
-            val accounts = contactsRepository.fetchAccounts()
+            val all = Account(application.getString(R.string.all), ACCOUNT_FILTER_DEFAULT)
+            val accounts = contactsRepository.fetchAccounts().copyMutate {
+                add(0, all)
+            }
             _state.update {
                 it.copy(
                     contactAccounts = accounts
@@ -101,16 +108,7 @@ class ContactsViewModel(
     }
 
     companion object {
-        private val contactDataSearch = listOf(
-            ContactsContract.Data.DISPLAY_NAME,
-            ContactsContract.CommonDataKinds.Phone.NUMBER,
-            ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS,
-            ContactsContract.CommonDataKinds.Note.NOTE,
-            ContactsContract.CommonDataKinds.Email.ADDRESS
-        )
-
         const val ACCOUNT_FILTER_DEFAULT = "all"
-
     }
 
 }

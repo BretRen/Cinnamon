@@ -4,6 +4,7 @@ package com.sosauce.cinnamon.presentation.screens.messages.components.bubble
 
 import android.annotation.SuppressLint
 import android.net.Uri
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -25,6 +26,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.retain.RetainedEffect
+import androidx.compose.runtime.retain.retain
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,6 +35,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.compose.buttons.PlayPauseButton
 import com.sosauce.cinnamon.R
@@ -47,9 +50,11 @@ fun AudioAttachment(
     bubbleColor: Color
 ) {
     val context = LocalContext.current
+    var tempSliderValue by remember { mutableStateOf<Float?>(null) }
     var position by remember { mutableFloatStateOf(0f) }
     var duration by remember { mutableFloatStateOf(0f) }
-    val player = remember(context.applicationContext) {
+    var isPlayerPlaying by remember { mutableStateOf(false) }
+    val player = retain {
         ExoPlayer.Builder(context.applicationContext).build().apply {
             setMediaItem(MediaItem.fromUri(audio))
             prepare()
@@ -66,7 +71,18 @@ fun AudioAttachment(
     }
 
     RetainedEffect(player) {
+
+        val listener = object : Player.Listener {
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                super.onIsPlayingChanged(isPlaying)
+                isPlayerPlaying = isPlaying
+            }
+        }
+
+        player.addListener(listener)
+
         onRetire {
+            player.removeListener(listener)
             player.release()
         }
     }
@@ -96,15 +112,20 @@ fun AudioAttachment(
                 }
             }
 
-            var tempSlider by remember { mutableStateOf<Float?>(null) }
             WavySlider(
-                value = position,
+                value = animateFloatAsState(
+                    targetValue = tempSliderValue ?: position
+                ).value,
                 valueRange = 0f..duration,
-                onValueChangeFinished = { newValue ->
-                    player.seekTo(newValue.toLong())
-                    tempSlider = null
+                onValueChange = { tempSliderValue = it },
+                onValueChangeFinished = {
+                    tempSliderValue?.let {
+                        player.seekTo(it.toLong())
+                    }
+                    tempSliderValue = null
                 },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                isPlaying = isPlayerPlaying
             )
 
         }

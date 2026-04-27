@@ -16,10 +16,11 @@ import kotlinx.coroutines.launch
 
 class BottomBarViewModel(
     private val threadId: Long,
+    private val prefilledMessage: String,
     private val conversationSettingsDao: ConversationSettingsDao
 ): ViewModel() {
 
-    val textFieldState = TextFieldState()
+    val textFieldState = TextFieldState(prefilledMessage)
     private val _state = MutableStateFlow(BottomBarState())
     val state = _state.asStateFlow()
 
@@ -33,9 +34,12 @@ class BottomBarViewModel(
         }
 
         viewModelScope.launch(Dispatchers.IO) {
-            val draft = conversationSettingsDao.getDraftForThread(threadId) ?: ""
-            textFieldState.edit {
-                this.append(draft)
+            // draft should not replace/be appended to a prefilled message coming from an intent
+            if (prefilledMessage.isEmpty()) {
+                val draft = conversationSettingsDao.getDraftForThread(threadId) ?: ""
+                textFieldState.edit {
+                    append(draft)
+                }
             }
         }
     }

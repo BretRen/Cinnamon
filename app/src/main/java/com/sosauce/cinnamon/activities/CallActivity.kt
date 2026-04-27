@@ -1,6 +1,7 @@
 package com.sosauce.cinnamon.activities
 
 import android.app.KeyguardManager
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
@@ -11,6 +12,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sosauce.cinnamon.domain.states.CallState
+import com.sosauce.cinnamon.presentation.screens.phone.CallAction
 import com.sosauce.cinnamon.presentation.screens.phone.CallScreen
 import com.sosauce.cinnamon.presentation.screens.phone.CallingViewModel
 import com.sosauce.cinnamon.presentation.theme.CinnamonTheme
@@ -26,7 +28,16 @@ class CallActivity : ComponentActivity() {
         setContent {
             CinnamonTheme {
                 val callViewModel = koinViewModel<CallingViewModel>()
+
+                if (intent.action == Intent.ACTION_CALL) {
+                    val number = intent.data.toString().removePrefix("tel:")
+                    callViewModel.handleCallAction(CallAction.LaunchCall(number))
+                }
+
+
                 val callUiState by callViewModel.state.collectAsStateWithLifecycle()
+
+
 
                 if (callUiState.callState == CallState.ENDED) { finishAndRemoveTask() }
 

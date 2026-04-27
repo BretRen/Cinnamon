@@ -1,47 +1,58 @@
-@file:OptIn(ExperimentalCoroutinesApi::class)
+@file:OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 
 package com.sosauce.cinnamon.presentation.screens.messages
 
+import android.app.Application
+import android.provider.BlockedNumberContract
 import android.provider.Telephony
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastMap
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sosauce.cinnamon.data.conversation_settings.ConversationSettingsDao
 import com.sosauce.cinnamon.data.datastore.UserPreferences
 import com.sosauce.cinnamon.domain.model.CuteConversation
 import com.sosauce.cinnamon.domain.repository.MessagesRepository
+import com.sosauce.cinnamon.utils.observe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.plus
 
 class ConversationsViewModel(
+    private val application: Application,
     private val messagesRepository: MessagesRepository,
     private val userPreferences: UserPreferences,
     private val conversationSettingsDao: ConversationSettingsDao
-): ViewModel() {
+): AndroidViewModel(application) {
 
     private val _state = MutableStateFlow(ConversationsState(isLoading = true))
     val state = _state.asStateFlow()
 
+    private val textFieldState = TextFieldState()
+
 
 
     init {
-
-
         viewModelScope.launch(Dispatchers.IO) {
             userPreferences.archivedConversations.flatMapLatest { archived ->
                 val extraSelection = if (archived.isNotEmpty()) {
                     "${Telephony.Threads._ID} NOT IN (${archived.joinToString { "?" }})"
                 } else { null }
-                // never query archived convos in the first place
                 combine(
                     messagesRepository.fetchLatestConversations(
                         extraSelection = extraSelection,
@@ -49,8 +60,12 @@ class ConversationsViewModel(
                     ),
                     userPreferences.pinnedConversations,
                     conversationSettingsDao.getAllDrafts(),
-                ) { cleanConversations, pinned, allDrafts ->
+                    snapshotFlow { textFieldState.text }.debounce(250)
+                ) { cleanConversations, pinned, allDrafts, searchQuery ->
                     val (pinnedThreads, unpinnedThreads) = cleanConversations
+                        .fastFilter {
+                            it.snippet.contains(searchQuery, true)
+                        }
                         .fastMap {
                             val draft = allDrafts[it.threadId] ?: ""
                             it.copy(draft = draft)
@@ -61,12 +76,35 @@ class ConversationsViewModel(
                         isLoading = false,
                         conversations = unpinnedThreads,
                         pinnedConversations = pinnedThreads,
-                        hasArchivedThreads = archived.isNotEmpty()
+                        hasArchivedThreads = archived.isNotEmpty(),
+                        textFieldState = textFieldState
                     )
                 }
 
             }.collectLatest { newState -> _state.update { newState } }
         }
+        application.contentResolver.observe(BlockedNumberContract.BlockedNumbers.CONTENT_URI).onEach {
+
+            val newConversations = state.value.conversations.fastMap {
+                if (it.isGroupChat) {
+                    it
+                } else {
+                    val recipient = it.rawRecipients.firstOrNull()
+                    if (recipient == null) { it } else {
+                        it.copy(
+                            isSenderBlocked = BlockedNumberContract.isBlocked(application, recipient)
+                        )
+                    }
+                }
+            }
+
+            _state.update {
+                it.copy(
+                    conversations = newConversations
+                )
+            }
+        }.launchIn(viewModelScope + Dispatchers.IO)
+
     }
 
     fun handleThreadsAction(action: ConversationsAction) {
@@ -101,7 +139,8 @@ data class ConversationsState(
     val isLoading: Boolean = false,
     val hasArchivedThreads: Boolean = false,
     val conversations: List<CuteConversation> = emptyList(),
-    val pinnedConversations: List<CuteConversation> = emptyList()
+    val pinnedConversations: List<CuteConversation> = emptyList(),
+    val textFieldState: TextFieldState = TextFieldState()
 )
 
 sealed interface ConversationsAction {

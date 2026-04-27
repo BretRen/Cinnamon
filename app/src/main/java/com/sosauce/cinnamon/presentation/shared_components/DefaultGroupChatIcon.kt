@@ -11,6 +11,7 @@ import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -19,21 +20,23 @@ import com.sosauce.cinnamon.R
 @Composable
 fun DefaultGroupChatIcon(
     modifier: Modifier = Modifier,
-    size: Dp = 42.dp
+    size: Dp = 42.dp,
+    shape: Shape = MaterialShapes.Circle.toShape(),
 ) {
     Box(
         modifier = modifier
             .size(size)
             .background(
                 color = MaterialTheme.colorScheme.primary,
-                shape = MaterialShapes.Circle.toShape()
+                shape = shape
             ),
         contentAlignment = Alignment.Center
     ) {
         Icon(
             painter = painterResource(R.drawable.contacts_filled),
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onPrimary
+            tint = MaterialTheme.colorScheme.onPrimary,
+            modifier = Modifier.size(size / 2)
         )
     }
 }

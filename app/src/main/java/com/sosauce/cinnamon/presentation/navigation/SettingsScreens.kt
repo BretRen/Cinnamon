@@ -13,6 +13,15 @@ sealed class SettingsScreens: NavKey {
     data object LookAndFeel : SettingsScreens()
 
     @Serializable
+    data object Messages : SettingsScreens()
+
+    @Serializable
+    data object Contacts : SettingsScreens()
+
+    @Serializable
+    data object Phone : SettingsScreens()
+
+    @Serializable
     data object Behavior : SettingsScreens()
 
     @Serializable

@@ -37,8 +37,6 @@ fun SettingsLookAndFeel() {
     var theme by rememberAppTheme()
     val isSystemDark = isSystemInDarkTheme()
     val scrollState = rememberScrollState()
-    var showCharCount by rememberShowCharCount()
-    var groupSubCalls by rememberGroupSubsequentCalls()
 
 
     val themeItems = listOf(
@@ -103,25 +101,6 @@ fun SettingsLookAndFeel() {
             }
         }
 
-        SettingsWithTitle(title = R.string.messages) {
-            SwitchSettingsCards(
-                checked = showCharCount,
-                onCheckedChange = { showCharCount = !showCharCount },
-                topDp = 24.dp,
-                bottomDp = 24.dp,
-                text = "Show character count on typing"
-            )
-        }
-
-        SettingsWithTitle(title = R.string.phone) {
-            SwitchSettingsCards(
-                checked = groupSubCalls,
-                onCheckedChange = { groupSubCalls = !groupSubCalls },
-                topDp = 24.dp,
-                bottomDp = 24.dp,
-                text = "Group subsequent calls"
-            )
-        }
     }
 }
 

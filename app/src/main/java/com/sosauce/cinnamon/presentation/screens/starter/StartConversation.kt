@@ -3,6 +3,7 @@
 package com.sosauce.cinnamon.presentation.screens.starter
 
 import android.provider.Telephony
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -19,17 +20,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastMap
+import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.domain.model.CuteContact
 import com.sosauce.cinnamon.presentation.navigation.Screen
 import com.sosauce.cinnamon.presentation.screens.contacts.ContactListItem
 import com.sosauce.cinnamon.presentation.screens.contacts.components.dialogs.NumberPickerDialog
 import com.sosauce.cinnamon.presentation.screens.contacts.groupedContactsList
+import com.sosauce.cinnamon.presentation.shared_components.NoXFound
 import com.sosauce.cinnamon.presentation.shared_components.searchbars.MiniCuteSearchbar
 import com.sosauce.cinnamon.utils.getThreadIdOrCreate
 import com.sosauce.cinnamon.utils.selfAlignHorizontally
 
 @Composable
-fun StartConversation(
+fun SharedTransitionScope.StartConversation(
     state: StartConversationState,
     onNavigateUp: () -> Unit,
     onNavigate: (Screen) -> Unit
@@ -66,6 +69,7 @@ fun StartConversation(
             groupedContactsList(
                 contacts = state.contacts,
                 showPhoneNumbers = true,
+                sharedTransitionScope = this@StartConversation,
                 onContactClicked = { contact ->
                     if (contact.details.phoneNumbers.size > 1) {
                         contactPhoneNumbersPicker = contact.details.phoneNumbers.fastMap { it.number }
@@ -73,6 +77,13 @@ fun StartConversation(
                         val threadId = (contact.details.phoneNumbers.firstOrNull() ?: return@groupedContactsList).number.getThreadIdOrCreate(context)
                         onNavigate(Screen.Conversation(threadId))
                     }
+                },
+                emptyState = {
+                    NoXFound(
+                        headlineText = R.string.no_contacts_found,
+                        bodyText = R.string.no_contacts_found_starter_desc,
+                        icon = R.drawable.contacts
+                    )
                 }
             )
         }

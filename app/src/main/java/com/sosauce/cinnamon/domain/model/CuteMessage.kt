@@ -2,6 +2,7 @@ package com.sosauce.cinnamon.domain.model
 
 import android.provider.Telephony.Sms
 import com.sosauce.cinnamon.data.broadcasts.DeliveryReportsReceiver
+import kotlinx.serialization.Serializable
 
 /**
  * Define what a message is.
@@ -18,7 +19,6 @@ import com.sosauce.cinnamon.data.broadcasts.DeliveryReportsReceiver
  * @param isScheduled Whether this message is scheduled or not
  * @param delivered Whether a message has been marked delivered by the carrier using [DeliveryReportsReceiver]
  */
-
 data class CuteMessage(
     val id: Long = 0,
     val body: String = "",

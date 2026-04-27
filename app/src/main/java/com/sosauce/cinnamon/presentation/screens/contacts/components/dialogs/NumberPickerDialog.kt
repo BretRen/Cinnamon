@@ -51,10 +51,7 @@ fun NumberPickerDialog(
                         shape = MenuDefaults.getItemShape(index, phoneNumbers.lastIndex),
                         text = { Text(number.beautifyNumber()) },
                         leadingIcon = {
-                            Icon(
-                                painter = painterResource(R.drawable.phone),
-                                contentDescription = null
-                            )
+                            Text("${index + 1}.")
                         }
                     )
                 }

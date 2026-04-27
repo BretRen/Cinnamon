@@ -15,7 +15,6 @@ import com.sosauce.cinnamon.data.managers.MessageNotificationManager
 import com.sosauce.cinnamon.data.schedulers.scheduled_messages.ScheduledMessagesDao
 import com.sosauce.cinnamon.data.schedulers.scheduled_messages.ScheduledMessagesDatabase
 import com.sosauce.cinnamon.data.telephony.CuteTelephonyManager
-import com.sosauce.cinnamon.domain.repository.BlockedNumbersManager
 import com.sosauce.cinnamon.domain.repository.ContactsRepository
 import com.sosauce.cinnamon.domain.repository.ConversationsRepository
 import com.sosauce.cinnamon.domain.repository.DialerRepository
@@ -74,7 +73,6 @@ val appModule = module {
     single { WorkManager.getInstance(androidContext()) }
 
     singleOf(::UserPreferences)
-    singleOf(::BlockedNumbersManager)
     singleOf(::CallManager)
     singleOf(::MessageNotificationManager)
     singleOf(::CallNotificationManager)

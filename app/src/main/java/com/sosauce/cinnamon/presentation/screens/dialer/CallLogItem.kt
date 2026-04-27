@@ -3,9 +3,18 @@
 package com.sosauce.cinnamon.presentation.screens.dialer
 
 import android.content.ClipData
+import android.net.Uri
 import android.provider.CallLog
 import android.widget.Toast
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
@@ -34,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
@@ -41,13 +51,20 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
+import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.domain.model.CuteCallLog
 import com.sosauce.cinnamon.presentation.navigation.Screen
 import com.sosauce.cinnamon.presentation.screens.phone.CallAction
 import com.sosauce.cinnamon.presentation.shared_components.DefaultContactIcon
+import com.sosauce.cinnamon.presentation.shared_components.DefaultGroupChatIcon
+import com.sosauce.cinnamon.presentation.shared_components.SelectedItemLogo
+import com.sosauce.cinnamon.presentation.shared_components.animations.AnimatedSelectedIcon
 import com.sosauce.cinnamon.presentation.shared_components.items.CuteListItem
+import com.sosauce.cinnamon.utils.SharedTransitionKeys
 import com.sosauce.cinnamon.utils.beautifyNumber
+import com.sosauce.cinnamon.utils.bouncySpec
+import com.sosauce.cinnamon.utils.getContactPfpFromNumber
 import com.sosauce.cinnamon.utils.getItemShape
 import com.sosauce.cinnamon.utils.getThreadIdOrCreate
 import com.sosauce.cinnamon.utils.secondsToDuration
@@ -61,11 +78,13 @@ import kotlinx.coroutines.launch
 fun CallLogItem(
     modifier: Modifier = Modifier,
     callLog: CuteCallLog,
+    isSelected: Boolean,
     numberOfAppearance: Int,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
     onCallAction: (CallAction) -> Unit,
     onNavigate: (Screen) -> Unit,
-    onDeleteCallLog: () -> Unit,
-    sweetSelectState: SweetSelectState<CuteCallLog>
+    onDeleteCallLog: () -> Unit
 ) {
 
 
@@ -73,7 +92,10 @@ fun CallLogItem(
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
     var showMoreOptions by remember { mutableStateOf(false) }
-    val displayNameOrNumber = callLog.cachedName ?: callLog.rawNumber.beautifyNumber()
+    val displayNameOrNumber = remember { callLog.cachedName.beautifyNumber() }
+    val scale by animateFloatAsState(
+        targetValue = if (isSelected) 0.95f else 1f
+    )
 
 
     val icon = when(callLog.callType) {
@@ -140,17 +162,22 @@ fun CallLogItem(
 
 
     CuteListItem(
-        modifier = modifier,
-        onClick = if (callLog.presentation == CallLog.Calls.PRESENTATION_ALLOWED) {
-            // TODO multi select
-            { onCallAction(CallAction.LaunchCall(callLog.rawNumber)) }
-        } else null,
+        modifier = modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            },
+        onClick = onClick,
+        onLongClick = onLongClick,
         leadingContent = {
-            DefaultContactIcon(
-                firstLetter = displayNameOrNumber.firstOrNull(),
-                modifier = Modifier.padding(start = 10.dp),
-                contactPfp = callLog.cachedPicture
-            )
+            AnimatedSelectedIcon(
+                isSelected = isSelected
+            ) {
+                DefaultContactIcon(
+                    firstLetter = displayNameOrNumber.firstOrNull(),
+                    contactPfp = callLog.rawNumber.getContactPfpFromNumber(context)
+                )
+            }
         },
         trailingContent = {
             Row {

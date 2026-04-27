@@ -3,6 +3,7 @@
 package com.sosauce.cinnamon.presentation.screens.archived
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -27,18 +28,19 @@ import com.sosauce.cinnamon.presentation.screens.messages.ConversationsAction
 import com.sosauce.cinnamon.presentation.screens.messages.components.dialogs.DeleteConversationsDialog
 import com.sosauce.cinnamon.presentation.screens.messages.threadsList
 import com.sosauce.cinnamon.presentation.shared_components.ConversationsSelectedBar
+import com.sosauce.cinnamon.presentation.shared_components.NoXFound
+import com.sosauce.cinnamon.presentation.shared_components.buttons.CuteNavigationButtonSurface
 import com.sosauce.cinnamon.presentation.shared_components.searchbars.CuteSearchbar
 import com.sosauce.cinnamon.utils.selfAlignHorizontally
 import com.sosauce.sweetselect.rememberSweetSelectState
 
 @Composable
-fun ArchivedThreads(
+fun SharedTransitionScope.ArchivedThreads(
     state: ArchivedState,
     onNavigate: (Screen) -> Unit,
     onNavigateUp: () -> Unit,
     onHandleThreadsAction: (ConversationsAction) -> Unit
 ) {
-
 
     val sweetSelectState = rememberSweetSelectState<CuteConversation>()
     var showDeleteConversationsDialog by remember { mutableStateOf(false) }
@@ -65,22 +67,9 @@ fun ArchivedThreads(
             ) {
                 if (!it) {
                     CuteSearchbar(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentWidth(),
-                        sortingMenu = {},
-                        fab = {
-                            FloatingActionButton(
-                                onClick = { onNavigate(Screen.StartConversation) },
-                                shape = MaterialShapes.Cookie9Sided.toShape()
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.add),
-                                    contentDescription = null
-                                )
-                            }
-                        },
-                        onNavigate = onNavigate
+                        modifier = Modifier.selfAlignHorizontally(),
+                        onNavigate = onNavigate,
+                        navigationIcon = { CuteNavigationButtonSurface(onNavigateUp = onNavigateUp) }
                     )
                 } else {
                     ConversationsSelectedBar(
@@ -107,18 +96,25 @@ fun ArchivedThreads(
             }
         }
     ) { paddingValues ->
-        key(state.threads) {
-            LazyColumn(
-                contentPadding = paddingValues
-            ) {
-                threadsList(
-                    pinnedThreads = emptyList(),
-                    threads = state.threads,
-                    sweetSelectState = sweetSelectState,
-                    onNavigate = onNavigate
-                )
+        LazyColumn(
+            contentPadding = paddingValues
+        ) {
+            threadsList(
+                pinnedThreads = emptyList(),
+                threads = state.threads,
+                sweetSelectState = sweetSelectState,
+                onNavigate = onNavigate,
+                sharedTransitionScope = this@ArchivedThreads,
+                emptyState = {
+                    NoXFound(
+                        headlineText = R.string.no_archived_convos,
+                        bodyText = R.string.no_archived_convos_desc,
+                        icon = R.drawable.archived_outlined
+                    )
+                },
+                onHandleConversationsAction = onHandleThreadsAction
+            )
 
-            }
         }
 
     }

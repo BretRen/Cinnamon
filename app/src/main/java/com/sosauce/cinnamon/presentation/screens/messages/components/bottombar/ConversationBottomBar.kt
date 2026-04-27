@@ -3,10 +3,12 @@
 package com.sosauce.cinnamon.presentation.screens.messages.components.bottombar
 
 import android.net.Uri
+import android.provider.BlockedNumberContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -17,15 +19,21 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -77,7 +85,10 @@ import com.sosauce.cinnamon.data.schedulers.scheduled_messages.ScheduledMessage
 import com.sosauce.cinnamon.presentation.screens.messages.ConversationActions
 import com.sosauce.cinnamon.presentation.screens.messages.ConversationDetailsState
 import com.sosauce.cinnamon.presentation.screens.messages.components.AnimatedCounter
+import com.sosauce.cinnamon.presentation.screens.messages.components.TextingUnavailableBar
+import com.sosauce.cinnamon.presentation.screens.messages.components.TextingUnavailableReason
 import com.sosauce.cinnamon.presentation.screens.messages.components.dialogs.ScheduleMessageDialog
+import com.sosauce.cinnamon.utils.bouncySpec
 import com.sosauce.cinnamon.utils.selfAlignHorizontally
 import com.sosauce.cinnamon.utils.toDateAndTime
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
@@ -89,20 +100,21 @@ import kotlin.math.ceil
 fun ConversationBottomBar(
     conversationState: ConversationDetailsState,
     onSaveDraft: (String) -> Unit,
+    prefilledMessage: String,
     onHandleConversationActions: (ConversationActions) -> Unit
 ) {
     val viewModel = koinViewModel<BottomBarViewModel>(
-        parameters = { parametersOf(conversationState.threadId) }
+        parameters = { parametersOf(conversationState.threadId, prefilledMessage) }
     )
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
+    val showCharCount by rememberShowCharCount()
 
     var showSchedulerDialog by remember { mutableStateOf(false) }
     var isActionPickerExpanded by remember { mutableStateOf(false) }
     var cameraPicture by remember { mutableStateOf<Uri?>(null) }
 
-    val showCharCount by rememberShowCharCount()
 
     val mediaSelector = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) { uris ->
         viewModel.addAttachments(uris)
@@ -115,10 +127,6 @@ fun ConversationBottomBar(
     val documentsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         viewModel.addAttachments(uris)
     }
-
-    val shape by animateDpAsState(
-        targetValue = if (state.attachments.isEmpty()) 50.dp else 24.dp
-    )
     val attachmentRotation by animateFloatAsState(
         targetValue = if (isActionPickerExpanded) 45f else 0f
     )
@@ -199,12 +207,16 @@ fun ConversationBottomBar(
         }
 
         AnimatedVisibility(
-            visible = state.scheduledTime != null
+            visible = state.scheduledTime != null,
+            enter = slideInVertically(bouncySpec()) { it } + fadeIn(),
+            exit = slideOutVertically(bouncySpec()) { it } + fadeOut(),
+            modifier = Modifier
+                .padding(horizontal = 10.dp, vertical = 5.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .padding(horizontal = 10.dp, vertical = 5.dp)
+                    .animateContentSize()
                     .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.surfaceContainer)
                     .dashedBorder(RoundedCornerShape(12.dp))
@@ -223,116 +235,136 @@ fun ConversationBottomBar(
                 }
             }
         }
-        Column(
-            modifier = Modifier
-                .imePadding()
-                .navigationBarsPadding()
-                .padding(10.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    shape = RoundedCornerShape(shape)
-                )
-                .padding(10.dp)
+        AnimatedVisibility(
+            visible = state.attachments.isNotEmpty(),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            enter = slideInVertically(bouncySpec()) { it } + fadeIn(),
+            exit = slideOutVertically(bouncySpec()) { it } + fadeOut()
         ) {
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                items(
-                    items = state.attachments,
-                    key = { it }
-                ) { attachment ->
-                    ReadyToSendAttachment(
-                        modifier = Modifier.animateItem(),
-                        attachment = attachment,
-                        onRemoveAttachment = { viewModel.removeAttachment(attachment) }
+            Box(
+                modifier = Modifier
+                    .animateContentSize()
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        shape = RoundedCornerShape(24.dp)
                     )
+            ) {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(15.dp)
+                ) {
+                    items(
+                        items = state.attachments,
+                        key = { it }
+                    ) { attachment ->
+                        ReadyToSendAttachment(
+                            modifier = Modifier.animateItem(),
+                            attachment = attachment,
+                            onRemoveAttachment = { viewModel.removeAttachment(attachment) }
+                        )
+                    }
                 }
             }
-
-            Row(
-                modifier = Modifier.animateContentSize(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = { isActionPickerExpanded = !isActionPickerExpanded },
-                    shapes = IconButtonDefaults.shapes()
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.add),
-                        contentDescription = null,
-                        modifier = Modifier.rotate(attachmentRotation)
+        }
+        if (conversationState.isSoloRecipientBlocked) {
+            TextingUnavailableBar(reason = TextingUnavailableReason.BLOCKED)
+        } else {
+            Column(
+                modifier = Modifier
+                    .imePadding()
+                    .navigationBarsPadding()
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        shape = RoundedCornerShape(50.dp)
                     )
-                }
-                TextField(
-                    state = viewModel.textFieldState,
-                    shape = FloatingToolbarDefaults.ContainerShape,
-                    lineLimits = TextFieldLineLimits.SingleLine,
-                    modifier = Modifier.weight(1f),
-                    colors = TextFieldDefaults.colors(
-                        unfocusedIndicatorColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent
-                    ),
-                    trailingIcon =
-                        if (showCharCount) {
-                            {
-                                val charCount = state.message.length
-                                val segmentCount = if (charCount <= 160) 1 else ceil(charCount / 160.0).toInt()
-                                CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.bodySmallEmphasized) {
-                                    Row {
-                                        AnimatedCounter(charCount)
-                                        Text("/")
-                                        AnimatedCounter(segmentCount)
+                    .padding(10.dp)
+            ) {
+                Row(
+                    modifier = Modifier.animateContentSize(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = { isActionPickerExpanded = !isActionPickerExpanded },
+                        shapes = IconButtonDefaults.shapes()
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.add),
+                            contentDescription = null,
+                            modifier = Modifier.rotate(attachmentRotation)
+                        )
+                    }
+                    TextField(
+                        state = viewModel.textFieldState,
+                        shape = FloatingToolbarDefaults.ContainerShape,
+                        lineLimits = TextFieldLineLimits.SingleLine,
+                        modifier = Modifier.weight(1f),
+                        colors = TextFieldDefaults.colors(
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedIndicatorColor = Color.Transparent
+                        ),
+                        trailingIcon =
+                            if (showCharCount) {
+                                {
+                                    val charCount = state.message.length
+                                    val segmentCount = if (charCount <= 160) 1 else ceil(charCount / 160.0).toInt()
+                                    CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.bodySmallEmphasized) {
+                                        Row {
+                                            AnimatedCounter(charCount)
+                                            Text("/")
+                                            AnimatedCounter(segmentCount)
+                                        }
                                     }
                                 }
-                            }
 
-                        } else null
-                )
-                IconButton(
-                    onClick = {
-                        if (state.scheduledTime != null) {
-                            onHandleConversationActions(
-                                ConversationActions.ScheduleMessage(
-                                    ScheduledMessage(
-                                        threadId = conversationState.threadId,
-                                        address = conversationState.recipients.first(),
-                                        message = state.message,
-                                        sendAt = state.scheduledTime ?: return@IconButton
+                            } else null
+                    )
+                    IconButton(
+                        onClick = {
+                            if (state.scheduledTime != null) {
+                                onHandleConversationActions(
+                                    ConversationActions.ScheduleMessage(
+                                        ScheduledMessage(
+                                            threadId = conversationState.threadId,
+                                            address = conversationState.recipients.first(),
+                                            message = state.message,
+                                            sendAt = state.scheduledTime ?: return@IconButton
+                                        )
                                     )
                                 )
-                            )
-                        } else {
-                            onHandleConversationActions(
-                                ConversationActions.SendMessage(
-                                    addresses = conversationState.recipients,
-                                    message = state.message,
-                                    attachments = state.attachments
+                            } else {
+                                onHandleConversationActions(
+                                    ConversationActions.SendMessage(
+                                        addresses = conversationState.recipients,
+                                        message = state.message,
+                                        attachments = state.attachments
+                                    )
                                 )
-                            )
-                        }
-                        viewModel.resetState()
-                    },
-                    shapes = IconButtonDefaults.shapes(),
-                    enabled = (state.message.isNotEmpty() && state.message.isNotBlank()) || state.attachments.isNotEmpty(),
-                ) {
-
-                    AnimatedContent(
-                        targetState = state.scheduledTime != null,
-                        transitionSpec = { slideInHorizontally { -it } togetherWith slideOutHorizontally { it } }
+                            }
+                            viewModel.resetState()
+                        },
+                        shapes = IconButtonDefaults.shapes(),
+                        enabled = (state.message.isNotEmpty() && state.message.isNotBlank()) || state.attachments.isNotEmpty(),
                     ) {
-                        if (it) {
-                            Icon(
-                                painter = painterResource(R.drawable.schedule_send),
-                                contentDescription = "send scheduled message"
-                            )
-                        } else {
-                            Icon(
-                                painter = painterResource(R.drawable.send_filled),
-                                contentDescription = "send message"
-                            )
-                        }
 
+                        AnimatedContent(
+                            targetState = state.scheduledTime != null,
+                            transitionSpec = { slideInHorizontally { -it } togetherWith slideOutHorizontally { it } }
+                        ) {
+                            if (it) {
+                                Icon(
+                                    painter = painterResource(R.drawable.schedule_send),
+                                    contentDescription = "send scheduled message"
+                                )
+                            } else {
+                                Icon(
+                                    painter = painterResource(R.drawable.send_filled),
+                                    contentDescription = "send message"
+                                )
+                            }
+
+                        }
                     }
                 }
             }
@@ -343,7 +375,8 @@ fun ConversationBottomBar(
 data class MoreOptions(
     val onClick: () -> Unit,
     val icon: Int,
-    val text: Int
+    val text: Int,
+    val tint: Color? = null
 )
 
 @Composable

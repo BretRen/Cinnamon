@@ -35,6 +35,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -154,21 +155,28 @@ fun ConversationTheming(
                     .height(280.dp)
                     .width(200.dp)
             )
-            HeaderText(stringResource(R.string.blur_intensity) + " (${state.settings.wallpaperBlurIntensity}%)")
+            var tempSliderValue by remember { mutableStateOf<Float?>(null) }
+            val value = tempSliderValue ?: state.settings.wallpaperBlurIntensity.toFloat()
+            HeaderText(stringResource(R.string.blur_intensity) + " (${value.roundToInt()}%)")
             CategoryCard(
                 topDp = 24.dp,
                 bottomDp = 24.dp
             ) {
+
+
                 WavySlider(
-                    value = state.settings.wallpaperBlurIntensity.toFloat(),
-                    onValueChangeFinished = { newValue ->
-                        onHandleConversationSettingsActions(
-                            ConversationSettingActions.UpsertConversationSettings(
-                                state.settings.copy(
-                                    wallpaperBlurIntensity = newValue.roundToInt(),
+                    value = value,
+                    onValueChange = { tempSliderValue = it },
+                    onValueChangeFinished = {
+                        tempSliderValue?.let {
+                            onHandleConversationSettingsActions(
+                                ConversationSettingActions.UpsertConversationSettings(
+                                    state.settings.copy(
+                                        wallpaperBlurIntensity = it.roundToInt(),
+                                    )
                                 )
                             )
-                        )
+                        }
                     },
                     valueRange = 0f..100f,
                     modifier = Modifier.padding(10.dp)

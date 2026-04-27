@@ -4,6 +4,7 @@ package com.sosauce.cinnamon.presentation.screens.setup
 
 import android.annotation.SuppressLint
 import android.app.role.RoleManager
+import android.os.Build
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +18,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -35,9 +38,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -47,6 +52,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.presentation.screens.setup.components.SetupBottomBar
 import com.sosauce.cinnamon.presentation.shared_components.AppIcon
+import com.sosauce.cinnamon.utils.HOW_TO_ENABLE_RESTRCITED_PERMS
 import com.sosauce.cinnamon.utils.requestRole
 
 @SuppressLint("InlinedApi")
@@ -83,20 +89,6 @@ fun SetupPermissions(
                 onGoToNextPage = {},
                 onNavigateToApp = notifyHasRoles
             )
-        },
-        topBar = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                AppIcon(230.dp)
-                Text(
-                    text = stringResource(R.string.welcome),
-                    style = MaterialTheme.typography.headlineLargeEmphasized
-                )
-            }
         }
     ) { paddingValues ->
         Column(
@@ -107,6 +99,24 @@ fun SetupPermissions(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+
+                val uriHandler = LocalUriHandler.current
+
+                Text(
+                    text = "On Android 16 and above, you'll have to allow restricted permissions in order to use the app.",
+                    textAlign = TextAlign.Center
+                )
+                Button(
+                    onClick = { uriHandler.openUri(HOW_TO_ENABLE_RESTRCITED_PERMS) },
+                    shapes = ButtonDefaults.shapes()
+                ) {
+                    Text("Learn how")
+                }
+                Spacer(Modifier.height(10.dp))
+            }
+
             Card(
                 onClick = { activity.requestRole(RoleManager.ROLE_SMS) },
                 colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surfaceContainer),

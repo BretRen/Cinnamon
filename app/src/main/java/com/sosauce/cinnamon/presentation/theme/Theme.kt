@@ -46,8 +46,6 @@ fun CinnamonTheme(
 }
 
 val nunitoFontFamily = FontFamily(
-    Font(R.font.nunito_black, FontWeight.Black, FontStyle.Normal),
-    Font(R.font.nunito_bold, FontWeight.Bold, FontStyle.Normal),
     Font(R.font.nunito_extrabold, FontWeight.ExtraBold, FontStyle.Normal)
 )
 

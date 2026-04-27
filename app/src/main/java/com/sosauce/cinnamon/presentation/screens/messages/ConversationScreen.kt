@@ -7,6 +7,7 @@ package com.sosauce.cinnamon.presentation.screens.messages
 
 import android.provider.Telephony
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
@@ -14,11 +15,13 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -41,15 +44,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.retain.RetainedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import coil3.compose.AsyncImage
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.data.conversation_settings.ConversationSettingActions
@@ -64,6 +72,8 @@ import com.sosauce.cinnamon.presentation.screens.messages.components.bubble.Sand
 import com.sosauce.cinnamon.presentation.screens.messages.components.bubble.TextBubble
 import com.sosauce.cinnamon.presentation.screens.messages.components.topbars.SelectedTopBar
 import com.sosauce.cinnamon.presentation.screens.phone.CallAction
+import com.sosauce.cinnamon.presentation.shared_components.NoXFound
+import com.sosauce.cinnamon.utils.SharedTransitionKeys
 import com.sosauce.cinnamon.utils.getAdaptivePrimaryColor
 import com.sosauce.cinnamon.utils.isEmoji
 import com.sosauce.cinnamon.utils.rememberHazeState
@@ -76,8 +86,9 @@ import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ConversationScreen(
+fun SharedTransitionScope.ConversationScreen(
     state: ConversationDetailsState,
+    prefilledMessage: String,
     onHandleCallAction: (CallAction) -> Unit,
     onDeleteConversation: () -> Unit,
     onHandleConversationSettingsActions: (ConversationSettingActions) -> Unit,
@@ -134,6 +145,12 @@ fun ConversationScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .hazeSource(chatWallpaperState)
+                    .sharedElement(
+                        sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONVERSATION_WALLPAPER),
+                        animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+                        renderInOverlayDuringTransition = false
+                    )
+                    .clip(RoundedCornerShape(24.dp))
             )
 
             Scaffold(
@@ -144,7 +161,7 @@ fun ConversationScreen(
                         if (it) {
                             SelectedTopBar(
                                 selectedCuteMessages = sweetSelectState.selectedItems.toList(),
-                                onSelectAll = { sweetSelectState.toggleAll(state.messages) },
+                                onSelectAll = { sweetSelectState.toggleAll(state.messages.values.flatten()) },
                                 onUnselectAll = sweetSelectState::clearSelected
                             )
                         } else {
@@ -154,7 +171,7 @@ fun ConversationScreen(
                                 onHandleCallAction = onHandleCallAction,
                                 onNavigate = onNavigate,
                                 onDeleteConversation = onDeleteConversation,
-                                modifier = Modifier.selfAlignHorizontally()
+                                onHandleConversationActions = onHandleConversationActions
                             )
                         }
                     }
@@ -162,6 +179,7 @@ fun ConversationScreen(
                 bottomBar = {
                     ConversationBottomBar(
                         conversationState = state,
+                        prefilledMessage = prefilledMessage,
                         onSaveDraft = { draft ->
                             onHandleConversationSettingsActions(
                                 ConversationSettingActions.UpsertConversationSettings(
@@ -188,138 +206,133 @@ fun ConversationScreen(
                 ) {
 
 
-                    state.messages
-                        .groupBy { it.date.toDate() }
-                        .forEach { (date, messages) ->
+                    if (state.messages.isNotEmpty()) {
+                        state.messages
+                            .forEach { (date, messages) ->
 
-                            itemsIndexed(
-                                items = messages,
-                                key = { _, message -> "${if (message.isMms) "mms" else "sms"}_${message.id}" },
-                                contentType = { _, message -> message.isMms }
-                            ) { index, message ->
+                                itemsIndexed(
+                                    items = messages,
+                                    key = { _, message -> "${if (message.isMms) "mms" else "sms"}_${message.id}" },
+                                    contentType = { _, message -> message.isMms }
+                                ) { index, message ->
 
-                                val prev = messages.getOrNull(index + 1)
-                                val next = messages.getOrNull(index - 1)
-                                val sameAsPrev = prev?.type == message.type
-                                val sameAsNext = next?.type == message.type
+                                    val prev = messages.getOrNull(index + 1)
+                                    val next = messages.getOrNull(index - 1)
+                                    val sameAsPrev = prev?.type == message.type
+                                    val sameAsNext = next?.type == message.type
 
-                                val sandwichPosition = when {
-                                    !sameAsPrev && !sameAsNext -> SandwichPosition.SOLO
-                                    !sameAsPrev && sameAsNext -> SandwichPosition.TOP
-                                    sameAsPrev && sameAsNext -> SandwichPosition.MIDDLE
-                                    sameAsPrev && !sameAsNext -> SandwichPosition.BOTTOM
-                                    else -> SandwichPosition.SOLO
-                                }
+                                    val sandwichPosition = when {
+                                        !sameAsPrev && !sameAsNext -> SandwichPosition.SOLO
+                                        !sameAsPrev && sameAsNext -> SandwichPosition.TOP
+                                        sameAsPrev && sameAsNext -> SandwichPosition.MIDDLE
+                                        sameAsPrev && !sameAsNext -> SandwichPosition.BOTTOM
+                                        else -> SandwichPosition.SOLO
+                                    }
 
-                                val isSelected by sweetSelectState.isSelectedAsState(message)
-                                val bubbleColor = when {
-                                    message.body.isEmoji() || message.isScheduled -> Color.Transparent
-                                    message.type == Telephony.Sms.MESSAGE_TYPE_SENT -> MaterialTheme.colorScheme.primaryFixedDim
-                                    else -> MaterialTheme.colorScheme.tertiaryFixedDim
-                                }
+                                    val isSelected by sweetSelectState.isSelectedAsState(message)
+                                    val bubbleColor = when {
+                                        message.body.isEmoji() || message.isScheduled -> Color.Transparent
+                                        message.type == Telephony.Sms.MESSAGE_TYPE_INBOX -> MaterialTheme.colorScheme.tertiaryFixedDim
+                                        else -> MaterialTheme.colorScheme.primaryFixedDim
+                                    }
 
-                                MessageLayout(
-                                    type = message.type,
-                                    isScheduled = message.isScheduled,
-                                    delivered = message.delivered,
-                                    time = message.date,
-                                    sandwichPosition = sandwichPosition,
-                                    isSelected = isSelected,
-                                    onLongClick = { sweetSelectState.toggle(message) },
-                                    statusContent = {
-                                        when(message.type) {
-                                            Telephony.Sms.MESSAGE_TYPE_OUTBOX -> {
-                                                Row(
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ) {
-                                                    CircularWavyProgressIndicator(
-                                                        modifier = Modifier.size(30.dp)
-                                                    )
-                                                    Spacer(Modifier.width(5.dp))
-                                                    Text("Sending...")
+                                    println("test mms: ${message.type}")
+
+                                    MessageLayout(
+                                        sandwichPosition = sandwichPosition,
+                                        isSelected = isSelected,
+                                        message = message,
+                                        recipients = state.nameOrBeautifiedRecipients,
+                                        onLongClick = { sweetSelectState.toggle(message) },
+                                        statusContent = {
+                                            when(message.type) {
+                                                Telephony.Sms.MESSAGE_TYPE_OUTBOX -> {
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        CircularWavyProgressIndicator(
+                                                            modifier = Modifier.size(30.dp)
+                                                        )
+                                                        Spacer(Modifier.width(5.dp))
+                                                        Text(
+                                                            text = stringResource(R.string.sending)
+                                                        )
+                                                    }
                                                 }
-                                            }
-                                            Telephony.Sms.MESSAGE_TYPE_FAILED -> {
-                                                Row(
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ) {
-                                                    Icon(
-                                                        painter = painterResource(R.drawable.info),
-                                                        contentDescription = null,
-                                                        tint = MaterialTheme.colorScheme.error
-                                                    )
-                                                    Spacer(Modifier.width(5.dp))
-                                                    Text(
-                                                        text = "Not sent.",
-                                                        color = MaterialTheme.colorScheme.error
-                                                    )
+                                                Telephony.Sms.MESSAGE_TYPE_FAILED -> {
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Icon(
+                                                            painter = painterResource(R.drawable.info),
+                                                            contentDescription = null,
+                                                            tint = MaterialTheme.colorScheme.error
+                                                        )
+                                                        Spacer(Modifier.width(5.dp))
+                                                        Text(
+                                                            text = stringResource(R.string.not_sent),
+                                                            color = MaterialTheme.colorScheme.error
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
+                                    ) {
+                                        if (message.isMms) {
+                                            MmsBubble(message, sandwichPosition, bubbleColor, onHandleConversationActions)
+                                        } else {
+                                            TextBubble(message.body, message.type, sandwichPosition, message.isScheduled, bubbleColor)
+                                        }
                                     }
+                                }
+                                item(
+                                    key = date,
+                                    contentType = "date_header"
                                 ) {
-                                    if (message.isMms) {
-                                        MmsBubble(message, sandwichPosition, bubbleColor)
-                                    } else {
-                                        TextBubble(message.body, message.type, sandwichPosition, message.isScheduled, bubbleColor)
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 5.dp),
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        Text(
+                                            text = date,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            modifier = Modifier
+                                                .background(
+                                                    color = MaterialTheme.colorScheme.surface,
+                                                    shape = RoundedCornerShape(50)
+                                                )
+                                                .padding(5.dp)
+                                        )
                                     }
                                 }
                             }
-
-//                        itemsIndexed(
-//                            items = cuteMessages,
-//                            key = { _, message -> "${if (message.isMms) "mms" else "sms"}_${message.id}" },
-//                            contentType = { _, message -> message.isMms }
-//                        ) { index, cuteMessage ->
-//
-//
-//                            val prev = cuteMessages.getOrNull(index + 1)
-//                            val next = cuteMessages.getOrNull(index - 1)
-//                            val sameAsPrev = prev?.type == cuteMessage.type
-//                            val sameAsNext = next?.type == cuteMessage.type
-//
-//                            val sandwichPosition = when {
-//                                !sameAsPrev && !sameAsNext -> SandwichPosition.SOLO
-//                                !sameAsPrev && sameAsNext -> SandwichPosition.TOP
-//                                sameAsPrev && sameAsNext -> SandwichPosition.MIDDLE
-//                                sameAsPrev && !sameAsNext -> SandwichPosition.BOTTOM
-//                                else -> SandwichPosition.SOLO
-//                            }
-//
-//                            val isSelected by sweetSelectState.isSelectedAsState(cuteMessage)
-//
-//                            MessageBubble(
-//                                modifier = Modifier.animateItem(),
-//                                cuteMessage = cuteMessage,
-//                                isSelected = isSelected,
-//                                sandwichPosition = sandwichPosition,
-//                                onHandleConversationActions = onHandleConversationActions,
-//                                sweetSelectState = sweetSelectState
-//                            )
-//                        }
-                        item(
-                            key = date,
-                            contentType = "date_header"
-                        ) {
-                            Row(
+                    } else {
+                        item {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier
+                                    .padding(horizontal = 10.dp)
                                     .fillMaxWidth()
-                                    .padding(vertical = 5.dp),
-                                horizontalArrangement = Arrangement.Center
                             ) {
                                 Text(
-                                    text = date,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier
-                                        .background(
-                                            color = MaterialTheme.colorScheme.surface,
-                                            shape = RoundedCornerShape(50)
-                                        )
-                                        .padding(5.dp)
+                                    text = stringResource(R.string.conversation_starter),
+                                    style = MaterialTheme.typography.headlineMediumEmphasized.copy(
+                                        textAlign = TextAlign.Center
+                                    )
+                                )
+                                Text(
+                                    text = stringResource(R.string.conversation_starter_desc),
+                                    style = MaterialTheme.typography.bodyMediumEmphasized.copy(
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textAlign = TextAlign.Center
+                                    )
                                 )
                             }
                         }
                     }
+
                 }
             }
         }

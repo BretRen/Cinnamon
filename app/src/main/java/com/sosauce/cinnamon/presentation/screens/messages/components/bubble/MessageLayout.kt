@@ -2,6 +2,7 @@ package com.sosauce.cinnamon.presentation.screens.messages.components.bubble
 
 import android.annotation.SuppressLint
 import android.provider.Telephony
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
@@ -27,28 +28,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
+import com.sosauce.cinnamon.domain.model.CuteMessage
+import com.sosauce.cinnamon.presentation.shared_components.DefaultContactIcon
 import com.sosauce.cinnamon.utils.toTime
 
 @SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 fun MessageLayout(
     modifier: Modifier = Modifier,
-    type: Int,
+    message: CuteMessage,
     sandwichPosition: SandwichPosition,
-    isScheduled: Boolean,
-    delivered: Boolean,
-    time: Long,
     isSelected: Boolean,
+    recipients: List<String>,
     onLongClick: () -> Unit,
     statusContent: @Composable (ColumnScope.() -> Unit)? = null,
     bubbleContent: @Composable () -> Unit
 ) {
 
     val config = LocalConfiguration.current
-    val alignment = if (type == Telephony.Sms.MESSAGE_TYPE_INBOX) Alignment.Start else Alignment.End
+    val alignment = if (message.type == Telephony.Sms.MESSAGE_TYPE_INBOX) Alignment.Start else Alignment.End
     var isTimestampVisible by remember { mutableStateOf(false) }
     val verticalPadding = when(sandwichPosition) {
         SandwichPosition.SOLO -> 5.dp
@@ -74,7 +76,6 @@ fun MessageLayout(
         ) {
             bubbleContent()
         }
-
         AnimatedVisibility(
             visible = isTimestampVisible,
             modifier = Modifier
@@ -89,13 +90,14 @@ fun MessageLayout(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 when {
-                    delivered -> {
+                    message.delivered -> {
                         Icon(
                             painter = painterResource(R.drawable.delivered),
                             contentDescription = null
                         )
                     }
-                    isScheduled -> {
+
+                    message.isScheduled -> {
                         Icon(
                             painter = painterResource(R.drawable.timer),
                             contentDescription = null
@@ -103,17 +105,25 @@ fun MessageLayout(
                     }
                 }
                 Text(
-                    text = time.toTime(),
+                    text = message.date.toTime(),
                     style = MaterialTheme.typography.bodyMediumEmphasized,
                     modifier = Modifier.padding(5.dp)
                 )
             }
         }
-
         statusContent?.let {
-            Box(modifier = Modifier.align(alignment)) {
+            Box(Modifier.align(alignment)) {
                 it(this@Column)
             }
+        }
+        if (recipients.size > 1 && (sandwichPosition == SandwichPosition.BOTTOM || sandwichPosition == SandwichPosition.SOLO) && message.type == Telephony.Sms.MESSAGE_TYPE_INBOX) {
+            DefaultContactIcon(
+                modifier = Modifier
+                    .padding(top = 5.dp)
+                    .align(alignment),
+                firstLetter = 'S',
+                size = 30.dp
+            )
         }
     }
 }

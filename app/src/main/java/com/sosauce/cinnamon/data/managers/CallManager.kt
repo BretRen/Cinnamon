@@ -28,7 +28,7 @@ class CallManager(
     val telecomManager = context.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
 
 
-    private val _callingState = MutableStateFlow(CallingState())
+    val _callingState = MutableStateFlow(CallingState())
     val callingState = _callingState.asStateFlow()
 
 

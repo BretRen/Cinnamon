@@ -1,9 +1,13 @@
 package com.sosauce.cinnamon.presentation.screens.phone
 
 import android.content.res.Configuration
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Column
@@ -15,14 +19,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -46,9 +55,10 @@ import com.sosauce.cinnamon.presentation.shared_components.DefaultContactIcon
 import com.sosauce.cinnamon.presentation.theme.CinnamonTheme
 import com.sosauce.cinnamon.utils.ImageUtils
 import com.sosauce.cinnamon.utils.beautifyNumber
+import com.sosauce.cinnamon.utils.bouncySpec
 import com.sosauce.cinnamon.utils.getContactId
 import com.sosauce.cinnamon.utils.getContactNameOrNothing
-import com.sosauce.cinnamon.utils.getContactPfpUriFromId
+import com.sosauce.cinnamon.utils.getContactPfpFromNumber
 import com.sosauce.cinnamon.utils.toStopwatch
 import kotlin.time.DurationUnit
 
@@ -63,15 +73,20 @@ fun CallScreen(
 
     Scaffold(
         bottomBar = {
-            if (callUiState.callState == CallState.RINGING) {
-                IncomingBottomBar(
-                    onCallAction = onCallAction
-                )
-            } else {
-                CallBottomBar(
-                    onCallAction = onCallAction,
-                    callUiState = callUiState
-                )
+            AnimatedContent(
+                targetState = callUiState.callState == CallState.RINGING,
+                transitionSpec = { scaleIn(bouncySpec()) + fadeIn() togetherWith scaleOut(bouncySpec()) + fadeOut() }
+            ) {
+                if (it) {
+                    IncomingBottomBar(
+                        onCallAction = onCallAction
+                    )
+                } else {
+                    CallBottomBar(
+                        onCallAction = onCallAction,
+                        callUiState = callUiState
+                    )
+                }
             }
         }
     ) { paddingValues ->
@@ -79,9 +94,11 @@ fun CallScreen(
             model = callUiState.poster.toUri(),
             contentDescription = null,
             contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxSize()
-                .cloudy(5)
+            modifier = Modifier.fillMaxSize(),
+            colorFilter = ColorFilter.tint(
+                color = Color.Black.copy(alpha = 0.2f),
+                blendMode = BlendMode.Darken
+            ),
         )
         Column(
             modifier = Modifier
@@ -92,11 +109,12 @@ fun CallScreen(
         ) {
             DefaultContactIcon(
                 firstLetter = callUiState.displayName.firstOrNull(),
-                size = 150.dp,
+                size = 250.dp,
                 color = MaterialTheme.colorScheme.surfaceContainer,
-                contactPfp = callUiState.number.getContactId(context).getContactPfpUriFromId()
+                shape = MaterialShapes.Cookie9Sided.toShape(),
+                contactPfp = callUiState.number.getContactPfpFromNumber(context)
             )
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(40.dp))
             Text(
                 text = callUiState.displayName,
                 maxLines = 1,
@@ -157,7 +175,7 @@ private fun CallScreenPreview() {
             callUiState = CallingState(
                 number = "sosauce",
                 displayName = "sosauce",
-                callState = CallState.DIALING,
+                callState = CallState.RINGING,
                 availableAudioRoutes = listOf(AudioRoute(name = "Speaker"), AudioRoute(name = "Name"))
             )
         )

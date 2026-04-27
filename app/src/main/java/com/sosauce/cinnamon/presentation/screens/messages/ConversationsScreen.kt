@@ -3,6 +3,7 @@
 package com.sosauce.cinnamon.presentation.screens.messages
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,14 +20,12 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ContainedLoadingIndicator
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.toShape
@@ -49,7 +48,6 @@ import com.sosauce.cinnamon.presentation.screens.messages.components.Conversatio
 import com.sosauce.cinnamon.presentation.screens.messages.components.PinnedConversation
 import com.sosauce.cinnamon.presentation.shared_components.ConversationsSelectedBar
 import com.sosauce.cinnamon.presentation.shared_components.NoXFound
-import com.sosauce.cinnamon.presentation.shared_components.menus.SortingDropdownMenu
 import com.sosauce.cinnamon.presentation.shared_components.searchbars.CuteSearchbar
 import com.sosauce.cinnamon.utils.LazyListKeys
 import com.sosauce.cinnamon.utils.selfAlignHorizontally
@@ -57,10 +55,10 @@ import com.sosauce.sweetselect.SweetSelectState
 import com.sosauce.sweetselect.rememberSweetSelectState
 
 @Composable
-fun ConversationsScreen(
+fun SharedTransitionScope.ConversationsScreen(
     state: ConversationsState,
     onNavigate: (Screen) -> Unit,
-    onHandleThreadsAction: (ConversationsAction) -> Unit
+    onHandleConversationsAction: (ConversationsAction) -> Unit
 ) {
 
     if (state.isLoading) {
@@ -86,6 +84,7 @@ fun ConversationsScreen(
                         CuteSearchbar(
                             modifier = Modifier.selfAlignHorizontally(),
                             sortingMenu = {},
+                            textFieldState = state.textFieldState,
                             fab = {
                                 FloatingActionButton(
                                     onClick = { onNavigate(Screen.StartConversation) },
@@ -106,17 +105,17 @@ fun ConversationsScreen(
                             multiSelectState = sweetSelectState,
                             onDeleteConversations = {
                                 val threadIds = sweetSelectState.selectedItems.map { it.threadId }
-                                onHandleThreadsAction(ConversationsAction.DeleteConversations(threadIds))
+                                onHandleConversationsAction(ConversationsAction.DeleteConversations(threadIds))
                                 sweetSelectState.clearSelected()
                             },
                             onArchiveThreads = {
                                 val threadIds = sweetSelectState.selectedItems.map { it.threadId }
-                                onHandleThreadsAction(ConversationsAction.ArchiveConversations(threadIds))
+                                onHandleConversationsAction(ConversationsAction.ArchiveConversations(threadIds))
                                 sweetSelectState.clearSelected()
                             },
                             onPinThreads = {
                                 val threadIds = sweetSelectState.selectedItems.map { it.threadId }
-                                onHandleThreadsAction(ConversationsAction.PinConversations(threadIds))
+                                onHandleConversationsAction(ConversationsAction.PinConversations(threadIds))
                                 sweetSelectState.clearSelected()
                             }
                         )
@@ -157,7 +156,16 @@ fun ConversationsScreen(
                     pinnedThreads = state.pinnedConversations,
                     threads = state.conversations,
                     sweetSelectState = sweetSelectState,
-                    onNavigate = onNavigate
+                    onNavigate = onNavigate,
+                    sharedTransitionScope = this@ConversationsScreen,
+                    onHandleConversationsAction = onHandleConversationsAction,
+                    emptyState = {
+                        NoXFound(
+                            headlineText = R.string.no_convo_found,
+                            bodyText = R.string.no_convo_found_desc,
+                            icon = R.drawable.message_rounded
+                        )
+                    }
                 )
             }
         }
@@ -168,7 +176,10 @@ fun LazyListScope.threadsList(
     pinnedThreads: List<CuteConversation>,
     threads: List<CuteConversation>,
     sweetSelectState: SweetSelectState<CuteConversation>,
-    onNavigate: (Screen) -> Unit
+    onNavigate: (Screen) -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    emptyState: @Composable () -> Unit,
+    onHandleConversationsAction: (ConversationsAction) -> Unit
 ) {
     item(LazyListKeys.PINNED_CONVERSATIONS) {
         LazyRow(modifier = Modifier.fillMaxWidth()) {
@@ -197,19 +208,19 @@ fun LazyListScope.threadsList(
         }
     }
 
-    if (threads.isNotEmpty()) {
+    with(sharedTransitionScope) {
         items(
             items = threads,
             key = { conversation -> conversation.threadId }
         ) { conversation ->
 
+
             val isSelected by remember {
                 derivedStateOf { sweetSelectState.isSelected(conversation) }
             }
 
-            println("threads list, convo: ${conversation.rawRecipients} and threadId: ${conversation.threadId}")
             Conversation(
-                cuteConversation = conversation,
+                conversation = conversation,
                 modifier = Modifier.animateItem(),
                 onClick = {
                     if (sweetSelectState.isInSelectionMode) {
@@ -219,16 +230,12 @@ fun LazyListScope.threadsList(
                     }
                 },
                 onLongClick = { sweetSelectState.toggle(conversation) },
-                isSelected = isSelected
+                isSelected = isSelected,
+                onHandleConversationsAction = onHandleConversationsAction
             )
         }
-    } else {
-        item {
-            NoXFound(
-                headlineText = R.string.no_convo_found,
-                bodyText = R.string.no_convo_found_desc,
-                icon = R.drawable.message_rounded
-            )
-        }
+    }
+    if (threads.isEmpty() && pinnedThreads.isEmpty()) {
+        item { emptyState() }
     }
 }

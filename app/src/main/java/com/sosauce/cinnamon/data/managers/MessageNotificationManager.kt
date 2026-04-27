@@ -4,6 +4,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
+import android.content.Context.NOTIFICATION_SERVICE
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -31,13 +32,13 @@ import com.sosauce.cinnamon.utils.THREAD_ID
 import com.sosauce.cinnamon.utils.getAddressFromThreadId
 import com.sosauce.cinnamon.utils.getContactId
 import com.sosauce.cinnamon.utils.getContactNameOrNothing
-import com.sosauce.cinnamon.utils.getContactPfpUriFromId
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlin.math.min
 import androidx.core.graphics.createBitmap
+import com.sosauce.cinnamon.utils.getContactPfpFromNumber
 
 class MessageNotificationManager(
     private val context: Context,
@@ -45,7 +46,7 @@ class MessageNotificationManager(
     private val scope: CoroutineScope
 ) {
 
-    private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    private val notificationManager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
     private val flag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         PendingIntent.FLAG_MUTABLE
     } else 0
@@ -76,9 +77,9 @@ class MessageNotificationManager(
                 ?.addMessage(messageStyle)
             notificationManager.notify(
                 threadId.toInt(),
-                NotificationCompat.Builder(context, MESSAGES_CHANNEL_ID)
+                NotificationCompat.Builder(context, INCOMING_MESSAGES_CHANNEL_ID)
                     .setContentIntent(contentIntent)
-                    .setChannelId(MESSAGES_CHANNEL_ID)
+                    .setChannelId(INCOMING_MESSAGES_CHANNEL_ID)
                     .setSmallIcon(R.drawable.app_icon)
                     .setPriority(NotificationCompat.PRIORITY_MAX)
                     .setCategory(NotificationCompat.CATEGORY_MESSAGE)
@@ -135,7 +136,7 @@ class MessageNotificationManager(
         if (ActiveThreadId.threadId == threadId) return
 
         val request = ImageRequest.Builder(context)
-            .data(number?.getContactId(context)?.getContactPfpUriFromId())
+            .data(number?.getContactPfpFromNumber(context))
             .allowHardware(false)
             .build()
         val bitmap = runBlocking(Dispatchers.IO) {
@@ -172,9 +173,9 @@ class MessageNotificationManager(
 
             notificationManager.notify(
                 threadId.toInt(),
-                NotificationCompat.Builder(context, MESSAGES_CHANNEL_ID)
+                NotificationCompat.Builder(context, INCOMING_MESSAGES_CHANNEL_ID)
                     .setContentIntent(contentIntent)
-                    .setChannelId(MESSAGES_CHANNEL_ID)
+                    .setChannelId(INCOMING_MESSAGES_CHANNEL_ID)
                     .setSmallIcon(R.drawable.app_icon)
                     .setPriority(NotificationCompat.PRIORITY_MAX)
                     .setCategory(NotificationCompat.CATEGORY_MESSAGE)
@@ -186,9 +187,9 @@ class MessageNotificationManager(
             )
         } ?: notificationManager.notify(
             threadId.toInt(),
-            NotificationCompat.Builder(context, MESSAGES_CHANNEL_ID)
+            NotificationCompat.Builder(context, INCOMING_MESSAGES_CHANNEL_ID)
                 .setContentIntent(contentIntent)
-                .setChannelId(MESSAGES_CHANNEL_ID)
+                .setChannelId(INCOMING_MESSAGES_CHANNEL_ID)
                 .setSmallIcon(R.drawable.app_icon)
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)
@@ -198,17 +199,6 @@ class MessageNotificationManager(
                 .setAutoCancel(true)
                 .build()
         )
-    }
-
-    init {
-        createNotificationChannel()
-    }
-
-    private fun createNotificationChannel() {
-        val name = context.getString(R.string.messages)
-        val importance = NotificationManager.IMPORTANCE_HIGH
-        val channel = NotificationChannel(MESSAGES_CHANNEL_ID, name, importance)
-        notificationManager.createNotificationChannel(channel)
     }
 
     private fun replyAction(
@@ -233,8 +223,8 @@ class MessageNotificationManager(
     fun clearThreadNotifications(threadId: Long) = notificationManager.cancel(threadId.toInt())
 
     companion object {
-        private const val MESSAGES_CHANNEL_ID = "Incoming Message"
-        private const val MESSAGES_CHANNEL_ID_INT = 100
+        const val INCOMING_MESSAGES_CHANNEL_ID = "incoming_messages_channel"
+        const val MESSAGES_GROUP = "messages_group"
     }
 }
 

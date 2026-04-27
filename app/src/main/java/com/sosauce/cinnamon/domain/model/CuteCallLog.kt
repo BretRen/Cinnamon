@@ -10,6 +10,5 @@ data class CuteCallLog(
     val duration: Long,
     val location: String?,
     val presentation: Int,
-    val cachedName: String?,
-    val cachedPicture: Uri
+    val cachedName: String
 )

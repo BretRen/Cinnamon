@@ -19,6 +19,7 @@ android {
         versionCode = 1
         versionName = "1.0"
 
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk {
             //noinspection ChromeOsAbiSupport
@@ -109,6 +110,9 @@ dependencies {
     implementation(libs.ez.vcard)
     implementation(libs.android.smsmms)
     implementation(libs.squircle.shape)
-    implementation("com.airbnb.android:lottie-compose:6.7.1")
+    implementation(libs.lottie.compose)
+    implementation(libs.zoomable)
+    implementation("androidx.glance:glance-appwidget:1.1.1")
+    implementation("androidx.glance:glance-material3:1.1.1")
 
 }

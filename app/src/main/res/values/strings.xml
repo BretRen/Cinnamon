@@ -28,7 +28,7 @@
     <string name="you_blocked_this_no">You blocked this number.</string>
     <string name="unblock_no">Unblock number ?</string>
     <string name="unblock">Unblock</string>
-    <string name="unblock_no_u_sure">Are you sure you want to unblock %1$s ?</string>
+    <string name="unblock_no_u_sure">Are you sure you want to unblock %1$s ? They won\'t be notified, and any messages they might have sent while blocked will not arrive to you.</string>
     <string name="choose_no_to_call">Choose a number to call</string>
     <string name="delete_convo">Delete conversation ?</string>
     <string name="delete_convo_u_sure">Are you sure you want to delete this conversation ? This action cannot be undone !</string>
@@ -50,6 +50,7 @@
     <string name="sort">Sort</string>
     <string name="search_here">Search here</string>
     <string name="block">Block</string>
+    <string name="block_are_u_sure">Are you sure you want to block %1$s ? You won\'t receive messages and calls from them anymore. They won\'t be notified.</string>
     <string name="archived">Archived</string>
     <string name="unknown">Unknown</string>
     <string name="customize">Customize</string>
@@ -104,7 +105,36 @@
     <string name="private_number">Private number</string>
     <string name="save">Save</string>
     <string name="color_picker">Color picker</string>
-
+    <string name="saved">Saved!</string>
+    <string name="calls">Calls</string>
+    <string name="incoming_messages">Incoming messages</string>
+    <string name="unblock_them_first">You\'ll need to unblock them first</string>
+    <string name="no_archived_convos">No archived conversations!</string>
+    <string name="no_archived_convos_desc">That\'s good, you\'ll get to hear from everyone :P</string>
+    <string name="conversation_starter">How about you start with something nice?</string>
+    <string name="conversation_starter_desc">Or let them do the first move 🤷</string>
+    <string name="no_contacts_found">No contacts found!</string>
+    <string name="no_contacts_found_desc">How do you know who is who?? 😭</string>
+    <string name="no_contacts_found_starter_desc">Guess you won\'t be talking to anyone this time 🫵</string>
+    <string name="no_contacts_found_dialer_desc">Guess you won\'t be calling anyone this time 🙁</string>
+    <string name="all">All</string>
+    <string name="create_contact">Create contact</string>
+    <string name="no_widget_for_u">No widget for you >:)</string>
+    <string name="share">Share</string>
+    <string name="block_contact_u_sure">Are you sure you want to block %1$s ? This will block all their phone numbers (and email addresses if you choose to).</string>
+    <string name="block_emails">Block emails</string>
+    <string name="incoming">Incoming</string>
+    <string name="outgoing">Outgoing</string>
+    <string name="missed">Missed</string>
+    <string name="no_calls_found">No calls found!</string>
+    <string name="no_calls_found_desc">Why would you buy a phone if you\'re not gonna call anyone??</string>
+    <string name="messages_settings_desc">WIP_MESSAGES_DESC</string>
+    <string name="contacts_settings_desc">WIP_CONTACTS_DESC</string>
+    <string name="phone_settings_desc">"Make calls peaceful again! "</string>
+    <string name="no_result_found">No result found !</string>
+    <string name="no_result_found_desc">Better luck next time !</string>
+    <string name="not_sent">Not sent</string>
+    <string name="sending">Sending…</string>
 
 
     <plurals name="delete_msg">
@@ -118,6 +148,11 @@
     <plurals name="favorites">
         <item quantity="one">Favorite</item>
         <item quantity="other">Favorites</item>
+    </plurals>
+
+    <plurals name="medias_plural">
+        <item quantity="one">Media</item>
+        <item quantity="other">Medias</item>
     </plurals>
 
 </resources>

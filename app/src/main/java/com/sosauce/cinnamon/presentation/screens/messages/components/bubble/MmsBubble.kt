@@ -1,6 +1,7 @@
 package com.sosauce.cinnamon.presentation.screens.messages.components.bubble
 
 import android.content.Intent
+import android.net.Uri
 import android.provider.Telephony
 import android.text.format.Formatter
 import androidx.compose.foundation.background
@@ -36,21 +37,21 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import com.sosauce.cinnamon.R
+import com.sosauce.cinnamon.domain.model.AttachmentType
 import com.sosauce.cinnamon.domain.model.CuteAttachment
 import com.sosauce.cinnamon.domain.model.CuteMessage
+import com.sosauce.cinnamon.presentation.screens.messages.ConversationActions
 import com.sosauce.cinnamon.presentation.shared_components.DefaultContactIcon
 import com.sosauce.cinnamon.utils.getVcfName
-import com.sosauce.cinnamon.utils.isAudio
-import com.sosauce.cinnamon.utils.isImage
 import com.sosauce.cinnamon.utils.isVcard
-import com.sosauce.cinnamon.utils.isVideo
 import ezvcard.Ezvcard
 
 @Composable
 fun MmsBubble(
     message: CuteMessage,
     sandwichPosition: SandwichPosition,
-    bubbleColor: Color
+    bubbleColor: Color,
+    onHandleConversationActions: (ConversationActions) -> Unit,
 ) {
     val alignment = if (message.type == Telephony.Sms.MESSAGE_TYPE_INBOX)
         Alignment.Start else Alignment.End
@@ -64,7 +65,8 @@ fun MmsBubble(
                     details = details,
                     bubbleColor = bubbleColor,
                     sandwichPosition = sandwichPosition,
-                    messageType = message.type
+                    messageType = message.type,
+                    onHandleConversationActions = onHandleConversationActions
                 )
             }
         }
@@ -87,7 +89,8 @@ private fun MmsAttachmentRouter(
     details: CuteAttachment.AttachmentDetails,
     bubbleColor: Color,
     sandwichPosition: SandwichPosition,
-    messageType: Int
+    messageType: Int,
+    onHandleConversationActions: (ConversationActions) -> Unit,
 ) {
     val context = LocalContext.current
     val resources = LocalResources.current
@@ -95,11 +98,11 @@ private fun MmsAttachmentRouter(
 
 
     when {
-        uri.isImage(context) -> ImageAttachment(image = uri)
+        details.attachmentType == AttachmentType.IMAGE -> ImageAttachment(image = uri, onHandleConversationActions = onHandleConversationActions)
 
-        uri.isVideo(context) -> VideoAttachment(video = uri)
+        details.attachmentType == AttachmentType.VIDEO -> VideoAttachment(video = uri)
 
-        uri.isAudio(context) -> AudioAttachment(audio = uri, bubbleColor = bubbleColor)
+        details.attachmentType == AttachmentType.AUDIO -> AudioAttachment(audio = uri, bubbleColor = bubbleColor)
 
         uri.isVcard(context) -> {
             val contactName by remember {
@@ -134,8 +137,7 @@ private fun MmsAttachmentRouter(
                             style = MaterialTheme.typography.bodyMediumEmphasized
                         )
                         Text(
-                            text = "View contact",
-                            //text = Formatter.formatFileSize(context, details.size),
+                            text = Formatter.formatFileSize(context, details.size),
                             style = MaterialTheme.typography.labelSmallEmphasized
                         )
                     }
@@ -184,14 +186,11 @@ private fun FileAttachment(
                     text = details.filename,
                     maxLines = 1,
                     modifier = Modifier.basicMarquee(),
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMediumEmphasized
                 )
-                // Pro-tip: Move 'getMMSSize' to your Repository/ViewModel!
-                // Don't calculate file size during composition.
                 Text(
-                    text = "TODO SIZE",
-                    //text = Formatter.formatFileSize(context, details.size),
-                    style = MaterialTheme.typography.labelSmall
+                    text = Formatter.formatFileSize(context, details.size),
+                    style = MaterialTheme.typography.labelSmallEmphasized
                 )
             }
         }

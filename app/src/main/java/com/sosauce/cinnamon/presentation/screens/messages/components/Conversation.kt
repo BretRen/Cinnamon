@@ -3,21 +3,22 @@
 package com.sosauce.cinnamon.presentation.screens.messages.components
 
 import android.net.Uri
+import android.provider.BlockedNumberContract
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ButtonShapes
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,9 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -46,23 +44,29 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
+import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.domain.model.CuteConversation
+import com.sosauce.cinnamon.presentation.screens.messages.ConversationsAction
 import com.sosauce.cinnamon.presentation.shared_components.DefaultContactIcon
 import com.sosauce.cinnamon.presentation.shared_components.DefaultGroupChatIcon
 import com.sosauce.cinnamon.presentation.shared_components.SelectedItemLogo
+import com.sosauce.cinnamon.presentation.shared_components.animations.AnimatedSelectedIcon
+import com.sosauce.cinnamon.presentation.shared_components.items.CuteListItem
+import com.sosauce.cinnamon.utils.SharedTransitionKeys
+import com.sosauce.cinnamon.utils.bouncySpec
 import com.sosauce.cinnamon.utils.getContactId
-import com.sosauce.cinnamon.utils.getContactPfpUriFromId
+import com.sosauce.cinnamon.utils.getContactPfpFromNumber
 import com.sosauce.cinnamon.utils.toDate
 
 @Composable
-fun Conversation(
+fun SharedTransitionScope.Conversation(
     modifier: Modifier = Modifier,
-    cuteConversation: CuteConversation,
+    conversation: CuteConversation,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
     isSelected: Boolean = false,
-    shape: Shape = RoundedCornerShape(24.dp)
+    onHandleConversationsAction: (ConversationsAction) -> Unit
 ) {
     val context = LocalContext.current
     var showUnblockDialog by remember { mutableStateOf(false) }
@@ -75,12 +79,19 @@ fun Conversation(
     if (showUnblockDialog) {
         AlertDialog(
             onDismissRequest = { showUnblockDialog = false },
+            icon = {
+                Icon(
+                    painter = painterResource(R.drawable.block),
+                    contentDescription = null
+                )
+            },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        //BlockedNumberContract.unblock(context, cuteConversation.recipients.first())
+                        BlockedNumberContract.unblock(context, conversation.rawRecipients.firstOrNull())
                         showUnblockDialog = false
-                    }
+                              },
+                    shapes = ButtonDefaults.shapes()
                 ) {
                     Text(
                         text = stringResource(R.string.unblock)
@@ -89,7 +100,8 @@ fun Conversation(
             },
             dismissButton = {
                 TextButton(
-                    onClick = { showUnblockDialog = false }
+                    onClick = { showUnblockDialog = false },
+                    shapes = ButtonDefaults.shapes()
                 ) {
                     Text(
                         text = stringResource(R.string.cancel)
@@ -100,7 +112,7 @@ fun Conversation(
                 Text(
                     text = stringResource(
                         R.string.unblock_no_u_sure,
-                        cuteConversation.recipients.first()
+                        conversation.recipients.first()
                     )
                 )
             },
@@ -112,136 +124,127 @@ fun Conversation(
         )
     }
 
-    Box(
+    CuteListItem(
+        onClick = onClick,
+        onLongClick = onLongClick,
         modifier = modifier
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
-            }
-            .padding(3.dp)
-            .clip(shape)
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick
-            )
-    ) {
-        Row(
-            modifier = modifier
-                .padding(vertical = 15.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            AnimatedContent(
-                targetState = isSelected,
-                transitionSpec = { scaleIn() togetherWith scaleOut() },
-                modifier = Modifier.padding(start = 10.dp)
+            },
+        leadingContent = {
+            AnimatedSelectedIcon(
+                isSelected = isSelected
             ) {
-                if (it) {
-                    SelectedItemLogo()
-                } else {
-                    if (cuteConversation.isGroupChat) {
+                Box(
+                    modifier = Modifier
+                        .sharedElement(
+                            sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONTACT_PFP + conversation.threadId),
+                            animatedVisibilityScope = LocalNavAnimatedContentScope.current
+                        )
+                ) {
+                    if (conversation.isGroupChat) {
                         DefaultGroupChatIcon()
                     } else {
                         DefaultContactIcon(
-                            firstLetter = cuteConversation.recipients.firstOrNull()?.firstOrNull(),
-                            contactPfp = cuteConversation.rawRecipients.firstOrNull()?.getContactId(context)?.getContactPfpUriFromId() ?: Uri.EMPTY
+                            firstLetter = conversation.recipients.firstOrNull()?.firstOrNull(),
+                            contactPfp = conversation.rawRecipients.firstOrNull()?.getContactPfpFromNumber(context) ?: Uri.EMPTY
                         )
                     }
                 }
             }
-            Column(
-                modifier = Modifier
-                    .padding(horizontal = 12.dp)
-                    .weight(1f)
-            ) {
-                Text(
-                    text = buildString {
-                        cuteConversation.recipients.fastForEachIndexed { index, text ->
-                            append(text)
-                            if (index != cuteConversation.recipients.lastIndex) {
-                                append(", ")
-                            }
-                        }
-                    },
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                val text = when {
-                    cuteConversation.isSenderBlocked -> {
-                        buildAnnotatedString {
-                            withStyle(
-                                SpanStyle(
-                                    fontStyle = FontStyle.Italic
-                                )
-                            ) {
-                                append(stringResource(R.string.you_blocked_this_no))
-                            }
-                        }
-                    }
-                    cuteConversation.draft.isNotEmpty() -> {
-                        buildAnnotatedString {
-                            withStyle(
-                                SpanStyle(
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontStyle = FontStyle.Italic
-                                )
-                            ) { append("Draft:") }
-                            append(" ")
-                            append(cuteConversation.draft)
-                        }
-                    }
-                    else -> AnnotatedString(cuteConversation.snippet)
-                }
-
-
-                AnimatedContent(text) {
-                    Text(
-                        text = it,
-                        maxLines = if (cuteConversation.read) 1 else 2,
-                        overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.bodyMediumEmphasized.copy(
-                            color = if (cuteConversation.read) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onBackground,
-                        )
-                    )
-                }
-            }
+        },
+        trailingContent = {
             Column(
                 horizontalAlignment = Alignment.End,
                 modifier = Modifier.padding(end = 5.dp)
             ) {
-                Text(
-                    text = cuteConversation.date.toDate(),
-                    style = MaterialTheme.typography.bodySmallEmphasized.copy(
-                        color = if (cuteConversation.read) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onBackground
-                    )
-                )
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)
-                ) {
-                    if (!cuteConversation.read) {
+                if (conversation.isSenderBlocked) {
+                    IconButton(
+                        onClick = { showUnblockDialog = true }
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.block),
+                            contentDescription = null,
+                        )
+                    }
+                } else {
+                    Text(
+                        text = conversation.date.toDate(),
+                        style = MaterialTheme.typography.bodySmallEmphasized.copy(
+                            color = if (conversation.read) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onBackground
+                        )
+                    )
+                    if (!conversation.read) {
                         Badge(
                             containerColor = MaterialTheme.colorScheme.primary
                         ) {
                             // Text("99+")
                         }
                     }
+                }
 
-                    if (cuteConversation.isSenderBlocked) {
-                        IconButton(
-                            onClick = { showUnblockDialog = true }
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.block),
-                                contentDescription = null,
-                            )
-                        }
+
+            }
+        }
+    ) {
+        Text(
+            text = buildString {
+                conversation.recipients.fastForEachIndexed { index, text ->
+                    append(text)
+                    if (index != conversation.recipients.lastIndex) {
+                        append(", ")
+                    }
+                }
+            },
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .sharedBounds(
+                    sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONVERSATION_NAME + conversation.threadId),
+                    animatedVisibilityScope = LocalNavAnimatedContentScope.current
+                )
+        )
+
+        val text = when {
+            conversation.isSenderBlocked -> {
+                buildAnnotatedString {
+                    withStyle(
+                        SpanStyle(
+                            fontStyle = FontStyle.Italic
+                        )
+                    ) {
+                        append(stringResource(R.string.you_blocked_this_no))
                     }
                 }
             }
+            conversation.draft.isNotEmpty() -> {
+                buildAnnotatedString {
+                    withStyle(
+                        SpanStyle(
+                            color = MaterialTheme.colorScheme.primary,
+                            fontStyle = FontStyle.Italic
+                        )
+                    ) { append("Draft:") }
+                    append(" ")
+                    append(conversation.draft)
+                }
+            }
+            else -> AnnotatedString(conversation.snippet)
         }
 
+
+        AnimatedContent(text) {
+            Text(
+                text = it,
+                maxLines = if (conversation.read) 1 else 2,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.bodyMediumEmphasized.copy(
+                    color = if (conversation.read) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onBackground,
+                )
+            )
+        }
     }
 
 }

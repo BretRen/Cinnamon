@@ -3,6 +3,7 @@
 package com.sosauce.cinnamon.data.services
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
@@ -16,6 +17,7 @@ import android.telecom.TelecomManager
 import android.telecom.VideoProfile
 import android.telephony.SubscriptionManager
 import com.sosauce.cinnamon.R
+import com.sosauce.cinnamon.activities.CallActivity
 import com.sosauce.cinnamon.data.managers.AndroidCallCallback
 import com.sosauce.cinnamon.data.managers.CallManager
 import com.sosauce.cinnamon.data.managers.CallNotificationManager
@@ -102,6 +104,16 @@ class CallService: InCallService(), CallServiceCallback, AndroidCallCallback, Ko
 
     }
 
+    private fun launchCallActivity() {
+        val intent = Intent(this, CallActivity::class.java).apply {
+            addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP
+            )
+        }
+        startActivity(intent)
+    }
 
 
     @SuppressLint("MissingPermission")
@@ -115,7 +127,6 @@ class CallService: InCallService(), CallServiceCallback, AndroidCallCallback, Ko
             call.state
         }
 
-        val telecomManager = getSystemService(TelecomManager::class.java)
         val subscriptionManager = getSystemService(SubscriptionManager::class.java)
 
 
@@ -139,6 +150,7 @@ class CallService: InCallService(), CallServiceCallback, AndroidCallCallback, Ko
             }
             Call.STATE_DIALING, Call.STATE_CONNECTING -> {
                 callManager.updateCallState(CallState.DIALING)
+                launchCallActivity()
                 callNotificationManager.createOutgoingNotification(call.details)
             }
             Call.STATE_ACTIVE -> {

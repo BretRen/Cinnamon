@@ -4,6 +4,7 @@ package com.sosauce.cinnamon.presentation.screens.contacts
 
 import android.accounts.AccountManager
 import android.provider.ContactsContract
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -45,6 +46,7 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.data.datastore.rememberSortContactsAscending
 import com.sosauce.cinnamon.domain.model.CuteContact
 import com.sosauce.cinnamon.presentation.navigation.Screen
+import com.sosauce.cinnamon.presentation.shared_components.NoXFound
 import com.sosauce.cinnamon.presentation.shared_components.menus.SortingDropdownMenu
 import com.sosauce.cinnamon.presentation.shared_components.searchbars.CuteSearchbar
 import com.sosauce.cinnamon.utils.CuteRoundedCornerShape
@@ -53,7 +55,7 @@ import com.sosauce.cinnamon.utils.selfAlignHorizontally
 import kotlin.uuid.ExperimentalUuidApi
 
 @Composable
-fun ContactsScreen(
+fun SharedTransitionScope.ContactsScreen(
     state: ContactsState,
     onNavigate: (Screen) -> Unit,
     onHandleContactsAction: (ContactsAction) -> Unit
@@ -117,7 +119,15 @@ fun ContactsScreen(
             ) {
                 groupedContactsList(
                     contacts = state.contacts,
-                    onContactClicked = { onNavigate(Screen.ContactDetails(it.id)) }
+                    onContactClicked = { onNavigate(Screen.ContactDetails(it.id)) },
+                    sharedTransitionScope = this@ContactsScreen,
+                    emptyState = {
+                        NoXFound(
+                            headlineText = R.string.no_contacts_found,
+                            bodyText = R.string.no_contacts_found_desc,
+                            icon = R.drawable.contacts
+                        )
+                    }
                 )
             }
         }
@@ -127,51 +137,61 @@ fun ContactsScreen(
 fun LazyListScope.groupedContactsList(
     contacts: List<CuteContact>,
     onContactClicked: (CuteContact) -> Unit,
-    showPhoneNumbers: Boolean = false
+    showPhoneNumbers: Boolean = false,
+    sharedTransitionScope: SharedTransitionScope,
+    emptyState: @Composable () -> Unit
 ) {
-    contacts.groupBy {
-        if (it.isFavorite) '*' else (it.displayName.firstOrNull()?.uppercaseChar() ?: '#')
-    }.toSortedMap().forEach { (letter, contacts) ->
-        item {
-            if (letter == '*') {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.favorite_filled),
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(Modifier.width(5.dp))
+
+    if (contacts.isNotEmpty()) {
+        contacts.groupBy {
+            if (it.isFavorite) '*' else (it.displayName.firstOrNull()?.uppercaseChar() ?: '#')
+        }.toSortedMap().forEach { (letter, contacts) ->
+            item {
+                if (letter == '*') {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.favorite_filled),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(Modifier.width(5.dp))
+                        Text(
+                            text = pluralStringResource(R.plurals.favorites, contacts.size),
+                            style = MaterialTheme.typography.bodyLargeEmphasized.copy(
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        )
+                    }
+                } else {
                     Text(
-                        text = pluralStringResource(R.plurals.favorites, contacts.size),
+                        text = letter.toString(),
                         style = MaterialTheme.typography.bodyLargeEmphasized.copy(
                             color = MaterialTheme.colorScheme.primary
-                        )
+                        ),
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
                     )
                 }
-            } else {
-                Text(
-                    text = letter.toString(),
-                    style = MaterialTheme.typography.bodyLargeEmphasized.copy(
-                        color = MaterialTheme.colorScheme.primary
-                    ),
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
-                )
+            }
+            with(sharedTransitionScope) {
+                items(
+                    items = contacts,
+                    key = { contact -> contact.id }
+                ) { contact ->
+                    ContactListItem(
+                        modifier = Modifier.animateItem(),
+                        contact = contact,
+                        onContactClick = { onContactClicked(contact) },
+                        showNumber = showPhoneNumbers
+                    )
+                }
             }
         }
-        items(
-            items = contacts,
-            key = { contact -> contact.id }
-        ) { contact ->
-            ContactListItem(
-                modifier = Modifier.animateItem(),
-                contact = contact,
-                onContactClick = { onContactClicked(contact) },
-                showNumber = showPhoneNumbers
-            )
-        }
+    } else {
+        item { emptyState() }
     }
+
 }

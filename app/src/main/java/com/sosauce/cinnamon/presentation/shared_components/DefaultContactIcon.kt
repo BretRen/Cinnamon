@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.sosauce.cinnamon.R
 
@@ -40,10 +41,6 @@ fun DefaultContactIcon(
     shape: Shape = MaterialShapes.Circle.toShape(),
     @DrawableRes icon: Int = R.drawable.person_filled
 ) {
-
-    val context = LocalContext.current
-    val density = LocalDensity.current
-
     Box(
         modifier = modifier
             .size(size)
@@ -59,7 +56,7 @@ fun DefaultContactIcon(
                 text = firstLetter.uppercase(),
                 style = MaterialTheme.typography.titleLargeEmphasized.copy(
                     color = contentColorFor(color),
-                    fontSize = with(density) { (size / 2).toSp() },
+                    fontSize = (size / 2).value.sp
                 )
             )
         } else {

@@ -1,13 +1,22 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package com.sosauce.cinnamon.presentation.screens.messages
 
 import android.app.Application
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
+import android.provider.BlockedNumberContract
+import android.provider.MediaStore
+import android.widget.Toast
 import androidx.compose.ui.util.fastMap
+import androidx.core.content.contentValuesOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.data.conversation_settings.ConversationSettingActions
 import com.sosauce.cinnamon.data.conversation_settings.ConversationSettingsDao
 import com.sosauce.cinnamon.data.managers.MessageNotificationManager
@@ -19,18 +28,24 @@ import com.sosauce.cinnamon.data.telephony.CuteTelephonyManager
 import com.sosauce.cinnamon.domain.model.ConversationSettings
 import com.sosauce.cinnamon.domain.model.CuteMessage
 import com.sosauce.cinnamon.domain.repository.ConversationsRepository
-import com.sosauce.cinnamon.presentation.screens.messages.components.bubble.SandwichPosition
 import com.sosauce.cinnamon.utils.beautifyNumber
+import com.sosauce.cinnamon.utils.blockNumbers
 import com.sosauce.cinnamon.utils.getContactNameOrNothing
+import com.sosauce.cinnamon.utils.observe
 import com.sosauce.cinnamon.utils.toDate
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.plus
 import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 
 class ConversationDetailsViewModel(
@@ -55,10 +70,11 @@ class ConversationDetailsViewModel(
                         conversationsRepository.fetchLatestSmsForThread(threadId),
                         conversationsRepository.fetchLatestMmsForThread(threadId),
                         scheduledMessagesDao.getScheduledMessagesForThread(threadId),
-                    ) { sms, mms, scheduled -> sms + mms + scheduled.fastMap { it.toCuteMessage() } }.collectLatest { messages ->
+                        application.contentResolver.observe(BlockedNumberContract.BlockedNumbers.CONTENT_URI)
+                    ) { sms, mms, scheduled, _ -> sms + mms + scheduled.fastMap { it.toCuteMessage() } }.collectLatest { messages ->
                         _state.update {
                             it.copy(
-                                messages = messages.sortedByDescending { it.date },
+                                messages = messages.sortedByDescending { it.date }.groupBy { it.date.toDate() },
                                 isLoading = false
                             )
                         }
@@ -73,6 +89,18 @@ class ConversationDetailsViewModel(
                             nameOrBeautifiedRecipients = threadRecipients.fastMap { it.getContactNameOrNothing(application).beautifyNumber() }
                         )
                     }
+
+                    application.contentResolver.observe(BlockedNumberContract.BlockedNumbers.CONTENT_URI).onEach {
+                        if (state.value.recipients.size > 1) return@onEach
+
+                        val number = state.value.recipients.firstOrNull() ?: return@onEach
+                        _state.update {
+                            it.copy(
+                                isSoloRecipientBlocked = BlockedNumberContract.isBlocked(application, number)
+                            )
+                        }
+                    }.launchIn(viewModelScope + Dispatchers.IO)
+
                 }
                 launch {
                     conversationSettingsDao.getConversationSettings(threadId).collectLatest { settings ->
@@ -132,30 +160,87 @@ class ConversationDetailsViewModel(
             }
 
             is ConversationActions.ClearThreadNotifications -> messageNotificationManager.clearThreadNotifications(threadId)
+            is ConversationActions.ToggleBlock -> {
+                viewModelScope.launch(Dispatchers.IO) {
+                    if (state.value.recipients.size > 1) return@launch // can't block group chats (unless we block everyone but why)
+                    val rawNumber = state.value.recipients.firstOrNull() ?: return@launch
+
+                    if (state.value.isSoloRecipientBlocked) {
+                        BlockedNumberContract.unblock(application, rawNumber)
+                        _state.update {
+                            it.copy(
+                                isSoloRecipientBlocked = false
+                            )
+                        }
+                    } else {
+                        application.blockNumbers(listOf(rawNumber))
+                    }
+
+                }
+            }
+
+            is ConversationActions.DownloadMmsImage -> {
+                viewModelScope.launch(Dispatchers.IO) {
+                    val contentValues = contentValuesOf(
+                        MediaStore.Images.Media.DISPLAY_NAME to "mms_${System.currentTimeMillis()}.jpg",
+                        MediaStore.Images.Media.MIME_TYPE to "image/jpeg",
+                        MediaStore.Images.Media.IS_PENDING to 1,
+                    )
+
+                    val uri = application.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues) ?: return@launch
+
+                    var bitmap: Bitmap? = null
+
+                    application.contentResolver.openInputStream(action.image)?.use { stream ->
+                        bitmap = BitmapFactory.decodeStream(stream)
+                    }
+
+                    try {
+                        if (bitmap == null) return@launch
+                        contentValues.clear()
+                        contentValues.put(MediaStore.Images.Media.IS_PENDING, 0)
+                        application.contentResolver.update(uri, contentValues, null, null)
+
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(application, application.getString(R.string.saved), Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        application.contentResolver.delete(uri, null, null)
+                    }
+                }
+            }
         }
     }
 
 }
 
+/**
+ * @param isSoloRecipientBlocked Always false for group chats
+ */
 data class ConversationDetailsState(
     val isLoading: Boolean = false,
     val threadId: Long = 0,
     val recipients: List<String> = emptyList(), // raw phone numbers in the conversation
-    val nameOrBeautifiedRecipients: List<String> = emptyList(), // phone numbers in the conversation
+    val nameOrBeautifiedRecipients: List<String> = emptyList(), // phone numbers or contacts in the conversation
     val settings: ConversationSettings = ConversationSettings(),
-    val messages: List<CuteMessage> = emptyList()
+    val messages: Map<String, List<CuteMessage>> = emptyMap(),
+    val isSoloRecipientBlocked: Boolean = false // Always false for GCs
 )
 
-sealed class ConversationActions {
-    data object MarkAsRead : ConversationActions()
-    data object ClearThreadNotifications : ConversationActions()
+sealed interface ConversationActions {
+    data object MarkAsRead : ConversationActions
+    data object ClearThreadNotifications : ConversationActions
     data class SendMessage(
         val addresses: List<String>,
         val message: String,
         val attachments: List<Uri>
-    ) : ConversationActions()
+    ) : ConversationActions
 
     data class ScheduleMessage(
         val scheduledMessage: ScheduledMessage
-    ) : ConversationActions()
+    ) : ConversationActions
+
+    data class DownloadMmsImage(val image: Uri) : ConversationActions
+
+    data object ToggleBlock : ConversationActions
 }

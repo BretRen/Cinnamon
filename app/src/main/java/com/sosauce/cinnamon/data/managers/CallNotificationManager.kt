@@ -5,37 +5,34 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
 import android.media.AudioAttributes
 import android.media.RingtoneManager
+import android.net.Uri
+import android.provider.ContactsContract
 import android.telecom.Call
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.Person
+import androidx.core.graphics.drawable.IconCompat
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.activities.CallActivity
 import com.sosauce.cinnamon.data.receivers.CallReceiver
 import com.sosauce.cinnamon.utils.ACCEPT_INCOMING_CALL
 import com.sosauce.cinnamon.utils.DECLINE_INCOMING_CALL
 import com.sosauce.cinnamon.utils.HANGUP_ONGOING_CALL
+import com.sosauce.cinnamon.utils.getContactId
 import com.sosauce.cinnamon.utils.getContactNameOrNothing
+import androidx.core.net.toUri
+import com.sosauce.cinnamon.utils.getContactPfpFromNumber
 
 class CallNotificationManager(
     private val context: Context,
 ) {
 
     val notificationManager = NotificationManagerCompat.from(context)
-    val ringtone = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-    val incomingChannel = NotificationChannel(INCOMING_CHANNEL_ID, "Incoming calls", NotificationManager.IMPORTANCE_HIGH).apply {
-        setSound(
-            ringtone,
-            AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
-                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .build()
-        )
-    }
 
     val intent = Intent(Intent.ACTION_MAIN, null).apply {
         flags = Intent.FLAG_ACTIVITY_NO_USER_ACTION
@@ -70,7 +67,13 @@ class CallNotificationManager(
         val number = callDetails.gatewayInfo?.originalAddress?.schemeSpecificPart ?:
         callDetails.handle.schemeSpecificPart
 
-        val builder = NotificationCompat.Builder(context, INCOMING_CHANNEL_ID)
+        val contactPfpUri = number.getContactPfpFromNumber(context)
+        val icon = if (contactPfpUri != Uri.EMPTY) {
+            IconCompat.createWithContentUri(contactPfpUri)
+        } else IconCompat.createWithResource(context, R.drawable.account)
+
+
+        val builder = NotificationCompat.Builder(context, CALLS_CHANNEL_ID)
             .setSmallIcon(R.drawable.round_call_received_24)
             .setCategory(Notification.CATEGORY_CALL)
             .setOngoing(true)
@@ -79,6 +82,7 @@ class CallNotificationManager(
             .setStyle(
                 NotificationCompat.CallStyle.forIncomingCall(
                     Person.Builder()
+                        .setIcon(icon)
                         .setName(number.getContactNameOrNothing(context))
                         .build(),
                     declinePendingIntent,
@@ -101,7 +105,13 @@ class CallNotificationManager(
         val number = callDetails.gatewayInfo?.originalAddress?.schemeSpecificPart ?:
         callDetails.handle.schemeSpecificPart
 
-        val builder = NotificationCompat.Builder(context, INCOMING_CHANNEL_ID)
+        val contactPfpUri = number.getContactPfpFromNumber(context)
+        val icon = if (contactPfpUri != Uri.EMPTY) {
+            IconCompat.createWithContentUri(contactPfpUri)
+        } else IconCompat.createWithResource(context, R.drawable.account)
+
+
+        val builder = NotificationCompat.Builder(context, CALLS_CHANNEL_ID)
             .setSmallIcon(R.drawable.call)
             .setCategory(Notification.CATEGORY_CALL)
             .setOngoing(true)
@@ -110,10 +120,11 @@ class CallNotificationManager(
             .setContentIntent(pendingIntent)
             .setSilent(true)
             .setUsesChronometer(true)
-            .setFullScreenIntent(pendingIntent, false)
+            .setFullScreenIntent(pendingIntent, true)
             .setStyle(
                 NotificationCompat.CallStyle.forOngoingCall(
                     Person.Builder()
+                        .setIcon(icon)
                         .setName(number.getContactNameOrNothing(context))
                         .build(),
                     hangupPendingIntent
@@ -136,7 +147,13 @@ class CallNotificationManager(
         val number = callDetails.gatewayInfo?.originalAddress?.schemeSpecificPart ?:
         callDetails.handle.schemeSpecificPart
 
-        val builder = NotificationCompat.Builder(context, INCOMING_CHANNEL_ID)
+        val contactPfpUri = number.getContactPfpFromNumber(context)
+        val icon = if (contactPfpUri != Uri.EMPTY) {
+            IconCompat.createWithContentUri(contactPfpUri)
+        } else IconCompat.createWithResource(context, R.drawable.account)
+
+
+        val builder = NotificationCompat.Builder(context, CALLS_CHANNEL_ID)
             .setSmallIcon(R.drawable.round_call_made_24)
             .setCategory(Notification.CATEGORY_CALL)
             .setContentText(context.getString(R.string.ringing))
@@ -147,6 +164,7 @@ class CallNotificationManager(
             .setStyle(
                 NotificationCompat.CallStyle.forOngoingCall(
                     Person.Builder()
+                        .setIcon(icon)
                         .setName(number.getContactNameOrNothing(context))
                         .build(),
                     hangupPendingIntent
@@ -160,17 +178,14 @@ class CallNotificationManager(
         return builder
     }
 
-    init {
-        notificationManager.createNotificationChannel(incomingChannel)
-    }
-
-
 
     companion object {
         private const val DECLINE_CALL_CODE = 0
         private const val ACCEPT_CALL_CODE = 1
         private const val HANGUP_ONGOING_CALL_CODE = 2
-        private const val INCOMING_CHANNEL_ID = "incoming calls"
+        const val CALLS_CHANNEL_ID = "calls_id"
+        const val CALLS_GROUP = "calls_group"
+
         const val CALL_NOTIF_ID = 1
     }
 }

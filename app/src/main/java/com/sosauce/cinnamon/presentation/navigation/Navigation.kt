@@ -7,7 +7,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
@@ -45,6 +44,7 @@ import com.sosauce.cinnamon.presentation.screens.messages.ConversationDetailsVie
 import com.sosauce.cinnamon.presentation.screens.messages.ConversationScreen
 import com.sosauce.cinnamon.presentation.screens.messages.ConversationsScreen
 import com.sosauce.cinnamon.presentation.screens.messages.ConversationsViewModel
+import com.sosauce.cinnamon.presentation.screens.messages.about.AboutConversationScreen
 import com.sosauce.cinnamon.presentation.screens.starter.StartConversation
 import com.sosauce.cinnamon.presentation.screens.phone.CallingViewModel
 import com.sosauce.cinnamon.presentation.screens.settings.SettingsScreen
@@ -79,7 +79,7 @@ fun Nav(
         runBlocking { context.dataStore.data.map { it[DEFAULT_TAB] }.first() ?: DefaultTabOption.MESSAGES }
     }
     val backStack = rememberNavBackStack(initialTab.tabToScreen()).apply {
-        handleIntent(intent)
+        handleIntent(context,intent)
     }
     val hazeState = rememberHazeState()
 
@@ -136,7 +136,7 @@ fun Nav(
                             state = state,
                             onNavigate = backStack::add,
                             onHandleCallActions = callViewModel::handleCallAction,
-                            onDeleteCallLogs = viewModel::deleteCallLogs
+                            onHandleDialerActions = viewModel::handleDialerAction
                         )
                     }
 
@@ -158,13 +158,13 @@ fun Nav(
                         ConversationsScreen(
                             state = state,
                             onNavigate = backStack::add,
-                            onHandleThreadsAction = viewModel::handleThreadsAction
+                            onHandleConversationsAction = viewModel::handleThreadsAction
                         )
                     }
 
                     entry<Screen.Conversation>(
                         metadata = NavDisplay.transitionSpec {
-                            slideInHorizontally(bouncySpec()) { -it } + fadeIn() togetherWith  fadeOut()
+                            slideInHorizontally(bouncySpec()) { it } + fadeIn() togetherWith  fadeOut()
                         }
                     ) { key ->
                         val viewModel = koinViewModel<ConversationDetailsViewModel>(
@@ -181,6 +181,7 @@ fun Nav(
 
                         ConversationScreen(
                             state = state,
+                            prefilledMessage = key.prefilledMessage,
                             onNavigateUp = backStack::navigateBack,
                             onHandleCallAction = callViewModel::handleCallAction,
                             onNavigate = backStack::add,
@@ -205,9 +206,11 @@ fun Nav(
                         )
                     }
 
-                    entry<Screen.Dialpad> {
+                    entry<Screen.Dialpad> { key ->
                         val callViewModel = koinViewModel<CallingViewModel>()
-                        val viewModel = koinViewModel<DialpadViewModel>()
+                        val viewModel = koinViewModel<DialpadViewModel>(
+                            parameters = { parametersOf(key.prefilledNumber) }
+                        )
                         val state by viewModel.state.collectAsStateWithLifecycle()
 
                         DialpadScreen(
@@ -231,6 +234,18 @@ fun Nav(
                             state = state,
                             onNavigateUp = backStack::navigateBack,
                             onNavigate = backStack::add
+                        )
+                    }
+
+                    entry<Screen.AboutConversation> { key ->
+                        val viewModel = koinViewModel<ConversationDetailsViewModel>(
+                            parameters = { parametersOf(key.threadId) }
+                        )
+                        val state by viewModel.state.collectAsStateWithLifecycle()
+                        AboutConversationScreen(
+                            state = state,
+                            onNavigateBack = backStack::navigateBack,
+                            onHandleConversationActions = viewModel::handleConversationActions
                         )
                     }
 

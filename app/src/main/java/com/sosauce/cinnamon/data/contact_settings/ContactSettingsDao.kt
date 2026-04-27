@@ -12,6 +12,9 @@ interface ContactSettingsDao {
     suspend fun upsertContact(contactSettings: ContactSettings)
 
     @Query("SELECT * FROM contactsettings WHERE id = :contactId LIMIT 1")
-    fun getConversationSettings(contactId: Long): Flow<ContactSettings?>
+    fun getContactSettings(contactId: Long): Flow<ContactSettings?>
+
+    @Query("SELECT poster FROM contactsettings WHERE id = :contactId LIMIT 1")
+    fun getContactPoster(contactId: Long): String?
 
 }

@@ -2,6 +2,7 @@ package com.sosauce.cinnamon.presentation.navigation
 
 import androidx.navigation3.runtime.NavKey
 import com.sosauce.cinnamon.domain.model.CuteContact
+import com.sosauce.cinnamon.presentation.screens.messages.ConversationDetailsState
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -23,7 +24,10 @@ sealed class Screen: NavKey {
     data object Dialer : Screen()
 
     @Serializable
-    data object Dialpad : Screen()
+    /**
+     * @param prefilledNumber for dial intent
+     */
+    data class Dialpad(val prefilledNumber: String = "") : Screen()
 
     @Serializable
     data object Voicemail : Screen()
@@ -40,6 +44,9 @@ sealed class Screen: NavKey {
 
     @Serializable
     data object ArchivedThreads : Screen()
+
+    @Serializable
+    data class AboutConversation(val threadId: Long) : Screen()
 
     @Serializable
     data class ConversationTheming(
@@ -61,7 +68,8 @@ sealed class Screen: NavKey {
 
     @Serializable
     data class Conversation(
-        val threadId: Long
+        val threadId: Long,
+        val prefilledMessage: String = ""
     ) : Screen()
 
 

@@ -30,7 +30,7 @@ import com.sosauce.cinnamon.presentation.shared_components.DefaultContactIcon
 import com.sosauce.cinnamon.presentation.shared_components.DefaultGroupChatIcon
 import com.sosauce.cinnamon.presentation.shared_components.SelectedItemLogo
 import com.sosauce.cinnamon.utils.getContactId
-import com.sosauce.cinnamon.utils.getContactPfpUriFromId
+import com.sosauce.cinnamon.utils.getContactPfpFromNumber
 import com.sosauce.cinnamon.utils.thenIf
 
 @Composable
@@ -77,7 +77,7 @@ fun PinnedConversation(
                         DefaultContactIcon(
                             firstLetter = cuteConversation.recipients.first().firstOrNull(),
                             size = 70.dp,
-                            contactPfp = cuteConversation.rawRecipients.first().getContactId(context).getContactPfpUriFromId()
+                            contactPfp = cuteConversation.rawRecipients.first().getContactPfpFromNumber(context)
                         )
                     }
                 }

@@ -29,6 +29,7 @@ import com.sosauce.cinnamon.presentation.navigation.SettingsScreens
 import com.sosauce.cinnamon.presentation.screens.settings.components.AboutCard
 import com.sosauce.cinnamon.presentation.screens.settings.components.SettingsCategoryCard
 import com.sosauce.cinnamon.presentation.shared_components.buttons.CuteNavigationButton
+import com.sosauce.cinnamon.utils.bouncySpec
 import com.sosauce.cinnamon.utils.navigateBack
 
 @Composable
@@ -45,17 +46,35 @@ fun SettingsScreen(
             onNavigate = { backStack.add(SettingsScreens.LookAndFeel) }
         ),
         Item(
-            icon = R.drawable.behavior,
-            name = stringResource(R.string.behavior),
-            description = stringResource(R.string.behavior_desc),
-            onNavigate = { backStack.add(SettingsScreens.Behavior) }
+            icon = R.drawable.message_rounded,
+            name = stringResource(R.string.messages),
+            description = stringResource(R.string.messages_settings_desc),
+            onNavigate = { backStack.add(SettingsScreens.Messages) }
         ),
         Item(
-            icon = R.drawable.migrate,
-            name = stringResource(R.string.migration),
-            description = stringResource(R.string.migration_desc),
-            onNavigate = { backStack.add(SettingsScreens.Migration) }
-        )
+            icon = R.drawable.contacts,
+            name = stringResource(R.string.contacts),
+            description = stringResource(R.string.contacts_settings_desc),
+            onNavigate = { backStack.add(SettingsScreens.Contacts) }
+        ),
+        Item(
+            icon = R.drawable.phone,
+            name = stringResource(R.string.phone),
+            description = stringResource(R.string.phone_settings_desc),
+            onNavigate = { backStack.add(SettingsScreens.Phone) }
+        ),
+//        Item(
+//            icon = R.drawable.behavior,
+//            name = stringResource(R.string.behavior),
+//            description = stringResource(R.string.behavior_desc),
+//            onNavigate = { backStack.add(SettingsScreens.Behavior) }
+//        ),
+//        Item(
+//            icon = R.drawable.migrate,
+//            name = stringResource(R.string.migration),
+//            description = stringResource(R.string.migration_desc),
+//            onNavigate = { backStack.add(SettingsScreens.Migration) }
+//        )
     )
 
 
@@ -82,20 +101,20 @@ fun SettingsScreen(
             },
             transitionSpec = {
                 ContentTransform(
-                    targetContentEnter = slideInHorizontally { it } + fadeIn(),
+                    targetContentEnter = slideInHorizontally(bouncySpec()) { it } + fadeIn(),
                     initialContentExit = fadeOut()
                 )
             },
             popTransitionSpec = {
                 ContentTransform(
-                    targetContentEnter = slideInHorizontally { -it } + fadeIn(),
+                    targetContentEnter = slideInHorizontally(bouncySpec()) { -it } + fadeIn(),
                     initialContentExit = fadeOut()
                 )
             },
             predictivePopTransitionSpec = {
                 ContentTransform(
                     fadeIn(),
-                    slideOutHorizontally { it },
+                    slideOutHorizontally(bouncySpec()) { it },
                 )
             },
             entryDecorators = listOf(
@@ -122,6 +141,17 @@ fun SettingsScreen(
                         }
                     }
                 }
+
+                entry<SettingsScreens.Messages> {
+                    SettingsMessages()
+                }
+                entry<SettingsScreens.Contacts> {
+                    SettingsContacts()
+                }
+                entry<SettingsScreens.Phone> {
+                    SettingsPhone()
+                }
+
 
 
                 entry<SettingsScreens.LookAndFeel> {

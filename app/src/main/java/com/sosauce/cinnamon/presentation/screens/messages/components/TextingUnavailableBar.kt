@@ -27,11 +27,12 @@ fun TextingUnavailableBar(
     val reasonText = when (reason) {
         TextingUnavailableReason.AIRPLANE_MODE_ON -> R.string.cant_text_while_airplane
         TextingUnavailableReason.SHORT_CODE -> R.string.reply_short_code_unavailable
+        TextingUnavailableReason.BLOCKED -> R.string.unblock_them_first
     }
 
     val reasonIcon = when (reason) {
         TextingUnavailableReason.AIRPLANE_MODE_ON -> R.drawable.airplane_mode
-        TextingUnavailableReason.SHORT_CODE -> R.drawable.block
+        TextingUnavailableReason.SHORT_CODE, TextingUnavailableReason.BLOCKED,-> R.drawable.block
     }
 
     HorizontalFloatingToolbar(
@@ -53,5 +54,6 @@ fun TextingUnavailableBar(
 
 enum class TextingUnavailableReason {
     SHORT_CODE,
-    AIRPLANE_MODE_ON
+    AIRPLANE_MODE_ON,
+    BLOCKED
 }

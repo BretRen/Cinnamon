@@ -2,10 +2,21 @@
 
 package com.sosauce.cinnamon.presentation.screens.contacts
 
+import android.graphics.Matrix
+import android.graphics.Path
+import android.graphics.Rect
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
@@ -18,49 +29,81 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ContainedLoadingIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuGroup
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenuPopup
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.contentColorFor
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEachIndexed
+import androidx.compose.ui.zIndex
+import androidx.graphics.shapes.Morph
+import androidx.graphics.shapes.RoundedPolygon
+import androidx.graphics.shapes.toPath
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import coil3.compose.AsyncImage
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.skydoves.cloudy.cloudy
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.data.contact_settings.ContactSettingsActions
 import com.sosauce.cinnamon.presentation.navigation.Screen
 import com.sosauce.cinnamon.presentation.screens.contacts.components.ContactActionsRow
 import com.sosauce.cinnamon.presentation.screens.contacts.components.ContactInfos
+import com.sosauce.cinnamon.presentation.screens.messages.components.bottombar.MoreOptions
 import com.sosauce.cinnamon.presentation.screens.phone.CallAction
 import com.sosauce.cinnamon.presentation.shared_components.DefaultContactIcon
 import com.sosauce.cinnamon.presentation.shared_components.buttons.CuteNavigationButtonSurface
 import com.sosauce.cinnamon.utils.SharedTransitionKeys
+import com.sosauce.cinnamon.utils.getItemShape
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
+import kotlin.math.max
 
 @Composable
 fun SharedTransitionScope.ContactDetailsScreen(
@@ -70,6 +113,103 @@ fun SharedTransitionScope.ContactDetailsScreen(
     onHandleCallAction: (CallAction) -> Unit,
     onHandleContactDetailsAction: (ContactDetailsAction) -> Unit
 ) {
+
+    var showMoreOptions by remember { mutableStateOf(false) }
+    var showBlockDialog by remember { mutableStateOf(false) }
+
+    val moreOptions = listOf(
+        MoreOptions(
+            onClick = {},
+            icon = R.drawable.share,
+            text = R.string.share
+        ),
+        MoreOptions(
+            onClick = { showBlockDialog = true },
+            icon = R.drawable.block,
+            text = R.string.block,
+            tint = MaterialTheme.colorScheme.error
+        ),
+        MoreOptions(
+            onClick = {
+                onHandleContactDetailsAction(ContactDetailsAction.DeleteContact)
+                onNavigateBack()
+            },
+            icon = R.drawable.delete,
+            text = R.string.delete,
+            tint = MaterialTheme.colorScheme.error
+        )
+    )
+
+
+    if (showBlockDialog) {
+
+        var blockEmailsToo by remember { mutableStateOf(false) }
+
+        AlertDialog(
+            onDismissRequest = { showBlockDialog = false },
+            icon = {
+                Icon(
+                    painter = painterResource(R.drawable.block),
+                    contentDescription = null
+                )
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showBlockDialog = false },
+                    shapes = ButtonDefaults.shapes()
+                ) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onHandleContactDetailsAction(ContactDetailsAction.BlockContact(blockEmailsToo))
+                        showBlockDialog = false
+                    },
+                    shapes = ButtonDefaults.shapes()
+                ) {
+                    Text(stringResource(R.string.block))
+                }
+            },
+            text = {
+                Column{
+                    Text(stringResource(R.string.block_contact_u_sure,state.contact.displayName))
+
+                    val corners by animateDpAsState(
+                        if (blockEmailsToo) 50.dp else 12.dp
+                    )
+                    val color by animateColorAsState(
+                        if (blockEmailsToo) MaterialTheme.colorScheme.primary else  MaterialTheme.colorScheme.surfaceContainerHighest
+                    )
+
+                    Button(
+                        onClick = { blockEmailsToo = !blockEmailsToo },
+                        modifier = Modifier.align(Alignment.End),
+                        shape = RoundedCornerShape(corners),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = color,
+                            contentColor = contentColorFor(color)
+                        )
+                    ) {
+                        AnimatedVisibility(
+                            visible = blockEmailsToo,
+                            modifier = Modifier.padding(end = 5.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.check),
+                                contentDescription = null
+                            )
+                        }
+                        Text(
+                            text = stringResource(id = R.string.block_emails)
+                        )
+                    }
+                }
+            }
+        )
+    }
+
 
     if (state.isLoading) {
         Box(
@@ -81,6 +221,41 @@ fun SharedTransitionScope.ContactDetailsScreen(
     } else {
         val context = LocalContext.current
         val scrollState = rememberScrollState()
+        var playFavoriteAnimation by remember { mutableStateOf(false) }
+
+
+        AnimatedVisibility(
+            visible = playFavoriteAnimation,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.zIndex(999f)
+        ) {
+            val raw = if (state.contact.isFavorite) R.raw.heart else R.raw.broken_heart
+
+            val composition by rememberLottieComposition(
+                LottieCompositionSpec.RawRes(raw)
+            )
+            val progress by animateLottieCompositionAsState(
+                composition = composition,
+                speed = 2f
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                LottieAnimation(
+                    composition = composition,
+                    progress = { progress },
+                    modifier = Modifier.size(120.dp)
+                )
+            }
+
+            LaunchedEffect(progress) {
+                if (progress == 1f) playFavoriteAnimation = false
+            }
+        }
 
 
         Scaffold(
@@ -109,17 +284,44 @@ fun SharedTransitionScope.ContactDetailsScreen(
                                     )
                                 }
                                 IconButton(
-                                    onClick = {
-                                        onHandleContactDetailsAction(ContactDetailsAction.DeleteContact)
-                                        onNavigateBack()
-                                    },
+                                    onClick = { showMoreOptions = true },
                                     shapes = IconButtonDefaults.shapes()
                                 ) {
                                     Icon(
-                                        painter = painterResource(R.drawable.delete_filled),
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.error
+                                        painter = painterResource(R.drawable.more_vert),
+                                        contentDescription = null
                                     )
+                                }
+                                DropdownMenuPopup(
+                                    expanded = showMoreOptions,
+                                    onDismissRequest = { showMoreOptions = false }
+                                ) {
+                                    DropdownMenuGroup(
+                                        shapes = MenuDefaults.groupShapes()
+                                    ) {
+                                        moreOptions.fastForEachIndexed { index, option ->
+                                            DropdownMenuItem(
+                                                onClick = {
+                                                    option.onClick()
+                                                    showMoreOptions = false
+                                                },
+                                                shape = MenuDefaults.getItemShape(index, moreOptions.lastIndex),
+                                                leadingIcon = {
+                                                    Icon(
+                                                        painter = painterResource(option.icon),
+                                                        contentDescription = null,
+                                                        tint = option.tint ?: LocalContentColor.current
+                                                    )
+                                                },
+                                                text = {
+                                                    Text(
+                                                        text = stringResource(option.text),
+                                                        color = option.tint ?: LocalContentColor.current
+                                                    )
+                                                }
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -157,7 +359,7 @@ fun SharedTransitionScope.ContactDetailsScreen(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .cloudy(30),
-                            contentScale = ContentScale.FillWidth
+                            contentScale = ContentScale.Crop
                         )
                     }
                     DefaultContactIcon(
@@ -176,7 +378,12 @@ fun SharedTransitionScope.ContactDetailsScreen(
                 Spacer(Modifier.height(15.dp))
                 Text(
                     text = state.contact.displayName,
-                    modifier = Modifier.basicMarquee(),
+                    modifier = Modifier
+                        .sharedBounds(
+                            sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONTACT_NAME + state.contact.id),
+                            animatedVisibilityScope = LocalNavAnimatedContentScope.current
+                        )
+                        .basicMarquee(),
                     style = MaterialTheme.typography.headlineLargeEmphasized
                 )
                 if (state.contact.details.company.isNotEmpty()) {
@@ -192,11 +399,14 @@ fun SharedTransitionScope.ContactDetailsScreen(
                     contact = state.contact,
                     onNavigate = onNavigate,
                     onHandleCallAction = onHandleCallAction,
-                    onHandleContactDetailsAction = onHandleContactDetailsAction
+                    onHandleContactDetailsAction = onHandleContactDetailsAction,
+                    onPlayFavoriteAnimation = { playFavoriteAnimation = true }
                 )
                 Spacer(Modifier.height(25.dp))
                 ContactInfos(
-                    contact = state.contact
+                    contact = state.contact,
+                    onHandleCallAction = onHandleCallAction,
+                    onNavigate = onNavigate
                 )
 
             }

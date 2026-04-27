@@ -15,9 +15,11 @@ import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.core.net.toUri
 import com.sosauce.cinnamon.R
+import com.sosauce.cinnamon.domain.model.AttachmentType
 import com.sosauce.cinnamon.domain.model.CuteAttachment
 import com.sosauce.cinnamon.domain.model.CuteMessage
 import com.sosauce.cinnamon.utils.PermissionUtils
+import com.sosauce.cinnamon.utils.getMMSSize
 import com.sosauce.cinnamon.utils.observe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -69,7 +71,7 @@ class ConversationsRepository(
             projection,
             selection,
             selectionArgs,
-            null,
+            Sms.DEFAULT_SORT_ORDER,
         )?.use { cursor ->
             val idColumn = cursor.getColumnIndexOrThrow(Sms._ID)
             val threadIdColumn = cursor.getColumnIndexOrThrow(Sms.THREAD_ID)
@@ -106,6 +108,7 @@ class ConversationsRepository(
             Mms.MESSAGE_BOX,
             Mms.READ,
             Mms.DATE,
+            //Mms.Addr.ADDRESS,
             Mms.STATUS // this is what smsmms updates for MMS delivery reports
         )
 
@@ -128,7 +131,7 @@ class ConversationsRepository(
             projection,
             selection,
             selectionArgs,
-            null
+            Mms.DEFAULT_SORT_ORDER
         )?.use { cursor ->
             val idColumn = cursor.getColumnIndexOrThrow(Mms._ID)
             val typeColumn = cursor.getColumnIndexOrThrow(Mms.MESSAGE_BOX)
@@ -290,31 +293,58 @@ class ConversationsRepository(
             var filename = ""
 
             parts.fastForEach { part ->
+                val fileUri = ContentUris.withAppendedId(uri, part.partId)
+
                 when {
                     part.mimeType == "text/plain" -> body = part.text
-                    part.mimeType.startsWith("image/") || part.mimeType.startsWith("video/") -> {
-                        val fileUri = ContentUris.withAppendedId(uri, part.partId)
+                    part.mimeType.startsWith("image/") -> {
+
                         attachmentDetails.add(
                             CuteAttachment.AttachmentDetails(
                                 id = part.partId,
                                 uri = fileUri,
-                                filename =  context.getString(R.string.unknown) // TODO get filename
+                                filename =  context.getString(R.string.unknown), // TODO get filename
+                                attachmentType = AttachmentType.IMAGE,
+                                size = 0 // we dont care about the size for known filetype since we display them and not info, saves resources
+                            )
+                        )
+                    }
+                    part.mimeType.startsWith("video/") -> {
+
+                        attachmentDetails.add(
+                            CuteAttachment.AttachmentDetails(
+                                id = part.partId,
+                                uri = fileUri,
+                                filename =  context.getString(R.string.unknown),
+                                attachmentType = AttachmentType.VIDEO,
+                                size = 0
+                            )
+                        )
+                    }
+                    part.mimeType.startsWith("audio/") -> {
+
+                        attachmentDetails.add(
+                            CuteAttachment.AttachmentDetails(
+                                id = part.partId,
+                                uri = fileUri,
+                                filename =  context.getString(R.string.unknown),
+                                attachmentType = AttachmentType.AUDIO,
+                                size = 0
                             )
                         )
                     }
                     part.mimeType == "application/smil" -> {
-                        // parse SMIL to get filenames if u need em
                         filename = parseAttachmentNames(part.text).firstOrNull() ?: "idk"
-                        // but tbh u already have the URIs from other parts so u might not even need this
                     }
                     else -> {
-                        println("luffy duffy: mimeType=${part.mimeType} partId=${part.partId}")
-                        val fileUri = ContentUris.withAppendedId(uri, part.partId)
+                        val size = context.getMMSSize(fileUri)
                         attachmentDetails.add(
                             CuteAttachment.AttachmentDetails(
                                 id = part.partId,
                                 uri = fileUri,
-                                filename = filename
+                                filename = filename,
+                                attachmentType = AttachmentType.OTHER,
+                                size = size
                             )
                         )
                     }
@@ -332,7 +362,7 @@ class ConversationsRepository(
 
     private fun parseAttachmentNames(text: String): List<String> {
 
-        if (text.isBlank()) return emptyList() // 👈 this is the vibe check
+        if (text.isBlank()) return emptyList()
 
         val parser = Xml.newPullParser()
         parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)

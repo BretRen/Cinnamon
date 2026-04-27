@@ -2,6 +2,7 @@
 
 package com.sosauce.cinnamon.presentation.screens.contacts
 
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
@@ -18,13 +19,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
+import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import com.sosauce.cinnamon.domain.model.CuteContact
 import com.sosauce.cinnamon.presentation.shared_components.DefaultContactIcon
 import com.sosauce.cinnamon.presentation.shared_components.items.CuteListItem
+import com.sosauce.cinnamon.utils.SharedTransitionKeys
 import com.sosauce.cinnamon.utils.beautifyNumber
 
 @Composable
-fun ContactListItem(
+fun SharedTransitionScope.ContactListItem(
     modifier: Modifier = Modifier,
     contact: CuteContact,
     onContactClick: () -> Unit,
@@ -47,7 +50,12 @@ fun ContactListItem(
         Text(
             text = contact.displayName,
             maxLines = 1,
-            modifier = Modifier.basicMarquee()
+            modifier = Modifier
+                .sharedBounds(
+                    sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONTACT_NAME + contact.id),
+                    animatedVisibilityScope = LocalNavAnimatedContentScope.current
+                )
+                .basicMarquee()
         )
         if (showNumber) {
             Text(
@@ -58,7 +66,8 @@ fun ContactListItem(
                     }
                 },
                 maxLines = 1,
-                modifier = Modifier.basicMarquee(),
+                modifier = Modifier
+                    .basicMarquee(),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

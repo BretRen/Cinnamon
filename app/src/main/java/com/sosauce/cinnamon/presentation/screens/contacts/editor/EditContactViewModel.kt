@@ -31,7 +31,7 @@ class EditContactViewModel(
     // TODO CANT FETCH OR UPSERT SETTINGS FOR A CONTACTS THAT'S GETTING CREATED
     init {
         viewModelScope.launch(Dispatchers.IO) {
-            contactSettingsDao.getConversationSettings(contact.id).collectLatest { settings ->
+            contactSettingsDao.getContactSettings(contact.id).collectLatest { settings ->
                 _state.update {
                     it.copy(
                         settings = settings ?: ContactSettings(contact.id.toInt())

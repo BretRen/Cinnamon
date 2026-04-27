@@ -27,6 +27,7 @@ const val EMOJI_REGEX = "(?:[\uD83C\uDF00-\uD83D\uDDFF]|[\uD83E\uDD00-\uD83E\uDD
         "[\u231A\u231B\u2328\u23CF\u23E9-\u23F3\u23F8-\u23FA]\uFE0F?)+"
 const val GITHUB_RELEASES = "https://github.com/sosauce/Cinnamon/releases"
 const val SUPPORT_PAGE = "https://sosauce.github.io/support/"
+const val HOW_TO_ENABLE_RESTRCITED_PERMS = "https://support.google.com/android/answer/12623953?hl=en"
 
 
 object CuteTheme {
@@ -68,4 +69,7 @@ object LazyListKeys {
 object SharedTransitionKeys {
     const val CONTACT_POSTER = "CONTACT_POSTER"
     const val CONTACT_PFP = "CONTACT_PFP"
+    const val CONTACT_NAME = "CONTACT_NAME"
+    const val CONVERSATION_NAME = "CONVERSATION_NAME"
+    const val CONVERSATION_WALLPAPER = "CONVERSATION_WALLPAPER"
 }

@@ -2,12 +2,16 @@
 
 package com.sosauce.cinnamon.domain.repository
 
+import android.content.ContentProviderOperation
+import android.content.ContentUris
 import android.content.Context
 import android.net.Uri
 import android.os.Build
+import android.provider.BlockedNumberContract
 import android.provider.Telephony
 import android.provider.Telephony.Mms
 import android.provider.Telephony.MmsSms
+import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.core.net.toUri
 import androidx.paging.Pager
@@ -25,15 +29,13 @@ import com.sosauce.cinnamon.utils.observe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.withContext
 
 
-class MessagesRepository(
-    private val context: Context,
-    private val blockedNumbersManager: BlockedNumbersManager
-) {
+class MessagesRepository(private val context: Context) {
 
 
     fun fetchLatestConversations(
@@ -78,6 +80,9 @@ class MessagesRepository(
         }.toTypedArray()
 
 
+        val blockedNumbers = getAllBlockedNumbers()
+
+
         context.contentResolver.query(
             "${Telephony.Threads.CONTENT_URI}?simple=true".toUri(),
             projection,
@@ -101,7 +106,12 @@ class MessagesRepository(
                 val rawRecipients = recipientIds.fastMap { it.getNumberForId() }
                 val recipients = rawRecipients.fastMap { it.getContactNameOrNothing(context).beautifyNumber() }
                 val isGroupChat = rawRecipients.size > 1
-                val snippet = cursor.getString(snippetColumn) ?: getMmsThreadSnippet(threadId)
+                val systemSnippet = cursor.getString(snippetColumn)
+                val snippet = if (systemSnippet.isNullOrBlank()) {
+                    getMmsThreadSnippet(threadId)
+                } else {
+                    systemSnippet
+                }
 
                 conversations.add(
                     CuteConversation(
@@ -112,13 +122,39 @@ class MessagesRepository(
                         date = date,
                         read = read,
                         isGroupChat = isGroupChat,
-                        isSenderBlocked = if (isGroupChat) false else blockedNumbersManager.isNumberBlocked(rawRecipients.first()),
+                        isSenderBlocked = if (isGroupChat) false else blockedNumbers.contains(rawRecipients.firstOrNull())
                     )
                 )
             }
         }
 
        return conversations
+    }
+
+    /**
+     * I don't wanna use [android.provider.BlockedNumberContract.isBlocked] because they say it's slow and that's spooky
+      */
+    private fun getAllBlockedNumbers(): Set<String> {
+
+        val blocked = mutableSetOf<String>()
+
+        context.contentResolver.query(
+            BlockedNumberContract.BlockedNumbers.CONTENT_URI,
+            arrayOf(BlockedNumberContract.BlockedNumbers.COLUMN_ORIGINAL_NUMBER),
+            null,
+            null,
+            null
+        )?.use { cursor ->
+            val numberColumn = cursor.getColumnIndexOrThrow(BlockedNumberContract.BlockedNumbers.COLUMN_ORIGINAL_NUMBER)
+
+            while (cursor.moveToNext()) {
+                val number = cursor.getString(numberColumn)
+                blocked.add(number)
+            }
+        }
+
+        return blocked
+
     }
 
     private fun Long.getNumberForId(): String {
@@ -143,45 +179,45 @@ class MessagesRepository(
 
 
 
-private fun getMmsThreadSnippet(threadId: Long): String {
-    val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        Mms.Part.CONTENT_URI
-    } else {
-        "content://mms/part".toUri()
-    }
-
-    val projection = arrayOf(
-        Mms.Part.CONTENT_TYPE,
-        Mms.Part.TEXT,
-    )
-    // today i learnt u can cross SQL select
-    val selection = "${Mms.Part.MSG_ID} = (SELECT ${Mms._ID} FROM $MMS_TABLE_NAME WHERE ${Mms.THREAD_ID} = ? ORDER BY ${Mms.DATE} DESC LIMIT 1)"
-    val selectionArgs = arrayOf(threadId.toString())
-
-    context.contentResolver.query(
-        uri,
-        projection,
-        selection,
-        selectionArgs,
-        null,
-    )?.use { cursor ->
-        var fallback = ""
-        while (cursor.moveToNext()) {
-            val mimeType = cursor.getString(cursor.getColumnIndexOrThrow(Mms.Part.CONTENT_TYPE))
-            fallback = when {
-                mimeType == "text/plain" -> {
-                    return cursor.getString(cursor.getColumnIndexOrThrow(Mms.Part.TEXT)) ?: ""
-                }
-                mimeType.startsWith("image/") -> context.getString(R.string.image)
-                mimeType.startsWith("video/") -> context.getString(R.string.video)
-                else -> context.getString(R.string.attachment)
-            }
+    private fun getMmsThreadSnippet(threadId: Long): String {
+        val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            Mms.Part.CONTENT_URI
+        } else {
+            "content://mms/part".toUri()
         }
-        return fallback
-    }
 
-    return ""
-}
+        val projection = arrayOf(
+            Mms.Part.CONTENT_TYPE,
+            Mms.Part.TEXT,
+        )
+        // today i learnt u can cross SQL select
+        val selection = "${Mms.Part.MSG_ID} = (SELECT ${Mms._ID} FROM $MMS_TABLE_NAME WHERE ${Mms.THREAD_ID} = ? ORDER BY ${Mms.DATE} DESC LIMIT 1)"
+        val selectionArgs = arrayOf(threadId.toString())
+
+        context.contentResolver.query(
+            uri,
+            projection,
+            selection,
+            selectionArgs,
+            null,
+        )?.use { cursor ->
+            var fallback = ""
+            while (cursor.moveToNext()) {
+                val mimeType = cursor.getString(cursor.getColumnIndexOrThrow(Mms.Part.CONTENT_TYPE))
+                fallback = when {
+                    mimeType == "text/plain" -> {
+                        return cursor.getString(cursor.getColumnIndexOrThrow(Mms.Part.TEXT)) ?: ""
+                    }
+                    mimeType.startsWith("image/") -> context.getString(R.string.image)
+                    mimeType.startsWith("video/") -> context.getString(R.string.video)
+                    else -> context.getString(R.string.attachment)
+                }
+            }
+            return fallback
+        }
+
+        return ""
+    }
 
     suspend fun deleteThreads(threadIds: List<Long>) = withContext(Dispatchers.IO) {
 

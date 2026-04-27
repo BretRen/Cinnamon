@@ -38,29 +38,13 @@ fun TextBubble(
     isScheduled: Boolean,
     bubbleColor: Color
 ) {
-    if (body == "😭") {
-        val composition by rememberLottieComposition(
-            LottieCompositionSpec.RawRes(R.raw.crying)
-        )
-        val progress by animateLottieCompositionAsState(
-            composition = composition,
-            iterations = LottieConstants.IterateForever
-        )
-
-        LottieAnimation(
-            composition = composition,
-            progress = { progress },
-            modifier = Modifier.size(35.dp)
-        )
-    } else {
-        TextBubbleContent(
-            text = body,
-            type = type,
-            bubbleColor = bubbleColor,
-            sandwichPosition = sandwichPosition,
-            isScheduled = isScheduled
-        )
-    }
+    TextBubbleContent(
+        text = body,
+        type = type,
+        bubbleColor = bubbleColor,
+        sandwichPosition = sandwichPosition,
+        isScheduled = isScheduled
+    )
 }
 
 @Composable

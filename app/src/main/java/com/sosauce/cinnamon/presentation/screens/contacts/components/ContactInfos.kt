@@ -2,8 +2,10 @@
 
 package com.sosauce.cinnamon.presentation.screens.contacts.components
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.provider.ContactsContract
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +15,8 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
@@ -28,13 +32,17 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.domain.model.CuteContact
+import com.sosauce.cinnamon.presentation.navigation.Screen
+import com.sosauce.cinnamon.presentation.screens.phone.CallAction
 import com.sosauce.cinnamon.presentation.shared_components.items.CuteListItem
 import com.sosauce.cinnamon.presentation.shared_components.text.HeaderText
 import com.sosauce.cinnamon.utils.formateEventDate
 
 @Composable
 fun ContactInfos(
-    contact: CuteContact
+    contact: CuteContact,
+    onHandleCallAction: (CallAction) -> Unit,
+    onNavigate: (Screen) -> Unit
 ) {
 
     val resources = LocalResources.current
@@ -60,7 +68,7 @@ fun ContactInfos(
                     contact.details.phoneNumbers.forEachIndexed { index, number ->
 
                         CuteListItem(
-                            onClick = null,
+                            onClick = { onHandleCallAction(CallAction.LaunchCall(number.number)) },
                             leadingContent = {
                                 Icon(
                                     painter = painterResource(R.drawable.phone),
@@ -69,6 +77,21 @@ fun ContactInfos(
                                         .padding(start = 10.dp)
                                         .alpha(if (index == 0) 1f else 0f)
                                 )
+                            },
+                            trailingContent = {
+                                if (number.isBlocked) {
+                                    IconButton(
+                                        onClick = {
+                                            Toast.makeText(context, "You blocked this number", Toast.LENGTH_SHORT).show()
+                                        },
+                                        shapes = IconButtonDefaults.shapes()
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(R.drawable.block),
+                                            contentDescription = null
+                                        )
+                                    }
+                                }
                             }
                         ) {
                             Text(number.number)
@@ -91,12 +114,17 @@ fun ContactInfos(
                     contact.details.emails.forEachIndexed { index, email ->
                         CuteListItem(
                             onClick = {
-                                val intent = Intent(Intent.ACTION_SENDTO, "mailto:".toUri())
-                                    .apply {
-                                        putExtra(Intent.EXTRA_EMAIL, email.email)
-                                    }
+                                try {
+                                    val intent = Intent(Intent.ACTION_SENDTO, "mailto:".toUri())
+                                        .apply {
+                                            putExtra(Intent.EXTRA_EMAIL, email.email)
+                                        }
+                                    context.startActivity(intent)
 
-                                context.startActivity(intent)
+                                } catch (_: ActivityNotFoundException) {
+                                    Toast.makeText(context, "No email app found!", Toast.LENGTH_SHORT).show()
+                                }
+
                             },
                             leadingContent = {
                                 Icon(
@@ -106,6 +134,19 @@ fun ContactInfos(
                                         .padding(start = 10.dp)
                                         .alpha(if (index == 0) 1f else 0f)
                                 )
+                            },
+                            trailingContent = {
+                                if (email.isBlocked) {
+                                    IconButton(
+                                        onClick = { Toast.makeText(context, "You blocked this email", Toast.LENGTH_SHORT).show() },
+                                        shapes = IconButtonDefaults.shapes()
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(R.drawable.block),
+                                            contentDescription = null
+                                        )
+                                    }
+                                }
                             }
                         ) {
                             Text(email.email)
@@ -127,11 +168,15 @@ fun ContactInfos(
                     contact.details.addresses.forEachIndexed { index, address ->
                         CuteListItem(
                             onClick = {
-                                val intent = Intent(Intent.ACTION_VIEW, "geo:0,0?q=${address.address}".toUri())
-                                    .apply {
-                                        setClassName("com.google.android.apps.maps", "com.google.android.maps.MapsActivity")
-                                    }
-                                context.startActivity(intent)
+                                try {
+                                    val intent = Intent(Intent.ACTION_VIEW, "geo:0,0?q=${address.address}".toUri())
+                                        .apply {
+                                            setClassName("com.google.android.apps.maps", "com.google.android.maps.MapsActivity")
+                                        }
+                                    context.startActivity(intent)
+                                } catch (_: ActivityNotFoundException) {
+                                    Toast.makeText(context, "Google Maps not found!", Toast.LENGTH_SHORT).show()
+                                }
                             },
                             leadingContent = {
                                 Icon(
@@ -163,7 +208,7 @@ fun ContactInfos(
             }
         } else {
             CuteListItem(
-                onClick = { /*navigate to edit*/},
+                onClick = { onNavigate(Screen.ContactEditor(contact)) },
                 backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                 shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 4.dp, bottomEnd = 4.dp),
                 leadingContent = {
@@ -175,7 +220,7 @@ fun ContactInfos(
                 }
             ) { Text(stringResource(R.string.add_phone)) }
             CuteListItem(
-                onClick = { /*navigate to edit*/},
+                onClick = { onNavigate(Screen.ContactEditor(contact)) },
                 backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                 shape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 24.dp, bottomEnd = 24.dp),
                 leadingContent = {

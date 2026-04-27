@@ -17,6 +17,7 @@ import com.sosauce.cinnamon.data.datastore.PreferencesKeys.DEFAULT_MESSAGES_SIM
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.DEFAULT_PHONE_SIM
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.DEFAULT_TAB
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.ENABLE_DELIVERY_REPORTS
+import com.sosauce.cinnamon.data.datastore.PreferencesKeys.ENABLE_T9_DIALING
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.GROUP_SUBSEQUENT_CALLS
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.MMS_MAX_SIZE_LIMIT
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.PINNED_CONVOS
@@ -25,6 +26,7 @@ import com.sosauce.cinnamon.data.datastore.PreferencesKeys.SEND_LONG_AS_MMS
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.SHOW_CHAR_COUNT
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.SORT_CONTACTS_ASCENDING
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.SORT_CONVERSATIONS_ASCENDING
+import com.sosauce.cinnamon.data.datastore.PreferencesKeys.SORT_LOGS_ASCENDING
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.THEME
 import com.sosauce.cinnamon.utils.CuteTheme
 import com.sosauce.cinnamon.utils.DefaultTabOption
@@ -52,6 +54,8 @@ data object PreferencesKeys {
     val GROUP_SUBSEQUENT_CALLS = booleanPreferencesKey("GROUP_SUBSEQUENT_CALLS")
     val SORT_CONVERSATIONS_ASCENDING = booleanPreferencesKey("SORT_CONVERSATIONS_ASCENDING")
     val SORT_CONTACTS_ASCENDING = booleanPreferencesKey("SORT_CONTACTS_ASCENDING")
+    val ENABLE_T9_DIALING = booleanPreferencesKey("ENABLE_T9_DIALING")
+    val SORT_LOGS_ASCENDING = booleanPreferencesKey("SORT_LOGS_ASCENDING")
 }
 
 
@@ -102,3 +106,8 @@ fun rememberSortConversationsAscending() = rememberPreference(SORT_CONVERSATIONS
 @Composable
 fun rememberSortContactsAscending() = rememberPreference(SORT_CONTACTS_ASCENDING, true)
 
+@Composable
+fun rememberEnableT9Dialing() = rememberPreference(ENABLE_T9_DIALING, true)
+
+@Composable
+fun rememberSortLogsAscending() = rememberPreference(SORT_LOGS_ASCENDING, true)

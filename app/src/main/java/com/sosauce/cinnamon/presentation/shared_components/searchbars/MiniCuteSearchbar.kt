@@ -85,8 +85,7 @@ fun MiniCuteSearchbar(
                     )
                 },
                 textStyle = TextStyle.Default.copy(
-                    fontFamily = nunitoFontFamily,
-                    fontWeight = FontWeight.Bold
+                    fontFamily = nunitoFontFamily
                 ),
                 lineLimits = TextFieldLineLimits.SingleLine,
                 shape = FloatingToolbarDefaults.ContainerShape,

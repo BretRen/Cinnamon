@@ -37,7 +37,8 @@ fun ContactActionsRow(
     contact: CuteContact,
     onNavigate: (Screen) -> Unit,
     onHandleCallAction: (CallAction) -> Unit,
-    onHandleContactDetailsAction: (ContactDetailsAction) -> Unit
+    onHandleContactDetailsAction: (ContactDetailsAction) -> Unit,
+    onPlayFavoriteAnimation: () -> Unit
 ) {
 
     val context = LocalContext.current
@@ -78,14 +79,11 @@ fun ContactActionsRow(
         add(
             ContactActionsItem(
                 icon = if (contact.isFavorite) R.drawable.favorite_filled else R.drawable.favorite,
-                onClick = { onHandleContactDetailsAction(ContactDetailsAction.ToggleFavorite) },
+                onClick = {
+                    onHandleContactDetailsAction(ContactDetailsAction.ToggleFavorite)
+                    onPlayFavoriteAnimation()
+                },
                 tint = if (contact.isFavorite) MaterialTheme.colorScheme.error else null
-            )
-        )
-        add(
-            ContactActionsItem(
-                icon = R.drawable.share,
-                onClick = { onHandleContactDetailsAction(ContactDetailsAction.ShareContact) }
             )
         )
 
@@ -95,6 +93,7 @@ fun ContactActionsRow(
         NumberPickerDialog(
             onDismissRequest = { showNumberPicker = false },
             onPickNumber = { number ->
+                showNumberPicker = false
                 when(action) {
                     NumberPickerAction.MESSAGE -> {
                         val threadId = number.getThreadIdOrCreate(context)

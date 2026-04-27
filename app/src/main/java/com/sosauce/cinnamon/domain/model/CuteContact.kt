@@ -57,13 +57,15 @@ data class CuteContact(
     data class Email(
         val email: String,
         val type: Int,
-        val isDefault: Boolean
+        val isDefault: Boolean,
+        val isBlocked: Boolean = false
     )
     @Serializable
     data class Phone(
         val number: String,
         val type: Int,
-        val isDefault: Boolean
+        val isDefault: Boolean,
+        val isBlocked: Boolean = false
     )
     @Serializable
     data class Address(

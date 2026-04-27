@@ -15,6 +15,7 @@ import com.sosauce.cinnamon.data.datastore.PreferencesKeys.SEND_GROUP_AS_MMS
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.SEND_LONG_AS_MMS
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.SORT_CONTACTS_ASCENDING
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.SORT_CONVERSATIONS_ASCENDING
+import com.sosauce.cinnamon.data.datastore.PreferencesKeys.SORT_LOGS_ASCENDING
 import com.sosauce.cinnamon.utils.copyMutate
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.map
@@ -54,6 +55,10 @@ class UserPreferences(private val context: Context) {
 
     val defaultMessagesSim = context.dataStore.data.map {
         it[DEFAULT_MESSAGES_SIM] ?: SubscriptionManager.getDefaultSmsSubscriptionId()
+    }
+
+    val sortLogsAscending = context.dataStore.data.map {
+        it[SORT_LOGS_ASCENDING] ?: true
     }
 
 

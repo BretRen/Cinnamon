@@ -3,12 +3,17 @@
 package com.sosauce.cinnamon.presentation.screens.messages.components.bottombar
 
 import android.net.Uri
+import android.text.format.Formatter
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
@@ -27,6 +32,7 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.presentation.screens.messages.components.bubble.ImageAttachment
 import com.sosauce.cinnamon.presentation.screens.messages.components.bubble.VideoAttachment
 import com.sosauce.cinnamon.utils.getFileName
+import com.sosauce.cinnamon.utils.getMMSSize
 import com.sosauce.cinnamon.utils.isImage
 import com.sosauce.cinnamon.utils.isVideo
 
@@ -39,29 +45,50 @@ fun ReadyToSendAttachment(
 
     val context = LocalContext.current
 
-    Box {
-        Box(
-            modifier = modifier
-                .size(70.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-        ) {
-            when {
-                attachment.isImage(context) -> ImageAttachment(image = attachment)
-                attachment.isVideo(context) -> VideoAttachment(video = attachment)
-                else -> {
-                    Column(
-                        modifier = Modifier.align(Alignment.Center),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.file_filled),
-                            contentDescription = null
-                        )
+    Box(modifier = modifier) {
+        when {
+            attachment.isImage(context) -> {
+                Box(
+                    modifier = Modifier
+                        .size(70.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                ) { ImageAttachment(image = attachment, onHandleConversationActions = {}) }
+            }
+            attachment.isVideo(context) -> {
+                Box(
+                    modifier = Modifier
+                        .size(70.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                ) { VideoAttachment(video = attachment) }
+            }
+            else -> {
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .height(70.dp)
+                        .width(150.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            shape = RoundedCornerShape(12.dp)
+                        ),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.file_filled),
+                        contentDescription = null
+                    )
+                    Spacer(Modifier.width(5.dp))
+                    Column {
                         Text(
                             text = attachment.getFileName(context) ?: "",
                             modifier = Modifier.basicMarquee(),
                             style = MaterialTheme.typography.bodySmallEmphasized
+                        )
+                        Text(
+                            text = Formatter.formatFileSize(context,context.getMMSSize(attachment)),
+                            style = MaterialTheme.typography.labelSmallEmphasized.copy(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         )
                     }
                 }

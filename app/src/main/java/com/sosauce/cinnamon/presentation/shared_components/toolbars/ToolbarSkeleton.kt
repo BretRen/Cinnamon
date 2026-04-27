@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.sosauce.cinnamon.utils.selfAlignHorizontally
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 
 /**
@@ -31,8 +32,8 @@ fun ToolbarSkeleton(
     HorizontalFloatingToolbar(
         expanded = true,
         modifier = modifier
-            .padding(horizontal = 5.dp)
-            .fillMaxWidth()
+            .selfAlignHorizontally()
+            .fillMaxWidth(0.95f)
             .systemBarsPadding()
             .clip(FloatingToolbarDefaults.ContainerShape)
             .background(MaterialTheme.colorScheme.surfaceContainer)

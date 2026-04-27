@@ -11,6 +11,10 @@ import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.PaintingStyle.Companion.Stroke
 import androidx.compose.ui.graphics.StrokeCap
@@ -25,53 +29,38 @@ fun WavySlider(
     modifier: Modifier = Modifier,
     value: Float,
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
-    onValueChangeFinished: (Float) -> Unit,
-    colors: SliderColors = SliderDefaults.colors()
+    onValueChange: (Float) -> Unit,
+    onValueChangeFinished: () -> Unit,
+    colors: SliderColors = SliderDefaults.colors(),
+    isPlaying: Boolean = false
 ) {
-
-
-    val state = rememberSliderState(
-        value = value,
-        valueRange = valueRange
-    )
-    state.onValueChangeFinished = { onValueChangeFinished(state.value) }
-
-    LaunchedEffect(value) {
-        if (!state.isDragging) {
-            state.value = value
-        }
-    }
 
     Slider(
         modifier = modifier,
-        state = state,
+        value = animateFloatAsState(value).value,
+        onValueChange = onValueChange,
+        onValueChangeFinished = onValueChangeFinished,
+        valueRange = valueRange,
         colors = colors,
         thumb = {
-            val animatedHeight by animateDpAsState(
-                if (it.isDragging) 40.dp else 35.dp
-            )
-
-            val animatedWidth by animateDpAsState(
-                if (it.isDragging) 10.dp else 6.dp
-            )
+            val animatedHeight by animateDpAsState(if (it.isDragging) 40.dp else 35.dp)
+            val animatedWidth by animateDpAsState(if (it.isDragging) 10.dp else 6.dp)
 
             SliderDefaults.Thumb(
                 interactionSource = rememberInteractionSource(),
                 thumbSize = DpSize(animatedWidth, animatedHeight)
             )
         },
+
         track = { sliderState ->
             val animatedHeight by animateDpAsState(
                 if (sliderState.isDragging) 7.dp else 4.dp
             )
-            val trackStroke = Stroke(
-                width =
-                    with(LocalDensity.current) {
-                        animatedHeight.toPx()
-                    },
-                cap = StrokeCap.Round,
-            )
 
+            val trackStroke = Stroke(
+                width = with(LocalDensity.current) { animatedHeight.toPx() },
+                cap = StrokeCap.Round
+            )
             LinearWavyProgressIndicator(
                 modifier = Modifier.fillMaxWidth(),
                 progress = {
@@ -82,7 +71,7 @@ fun WavySlider(
                 },
                 stopSize = 0.dp,
                 trackStroke = trackStroke,
-                amplitude = { if (!sliderState.isDragging) 1f else 0f }
+                amplitude = { if (!sliderState.isDragging && isPlaying) 1f else 0f }
             )
         }
     )

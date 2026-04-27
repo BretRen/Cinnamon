@@ -5,10 +5,13 @@
 package com.sosauce.cinnamon.presentation.screens.messages.components.topbars
 
 import android.net.Uri
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuGroup
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.DropdownMenuPopup
@@ -36,26 +39,29 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
+import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.presentation.navigation.Screen
+import com.sosauce.cinnamon.presentation.screens.messages.ConversationActions
 import com.sosauce.cinnamon.presentation.screens.messages.ConversationDetailsState
 import com.sosauce.cinnamon.presentation.screens.phone.CallAction
 import com.sosauce.cinnamon.presentation.shared_components.DefaultContactIcon
 import com.sosauce.cinnamon.presentation.shared_components.DefaultGroupChatIcon
 import com.sosauce.cinnamon.presentation.shared_components.toolbars.ToolbarSkeleton
+import com.sosauce.cinnamon.utils.SharedTransitionKeys
 import com.sosauce.cinnamon.utils.getContactId
-import com.sosauce.cinnamon.utils.getContactPfpUriFromId
+import com.sosauce.cinnamon.utils.getContactPfpFromNumber
 import com.sosauce.cinnamon.utils.getItemShape
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 
 @Composable
-fun ConversationTopBar(
-    modifier: Modifier = Modifier,
+fun SharedTransitionScope.ConversationTopBar(
     state: ConversationDetailsState,
     onNavigateUp: () -> Unit,
     onHandleCallAction: (CallAction) -> Unit,
     onNavigate: (Screen) -> Unit,
-    onDeleteConversation: () -> Unit
+    onDeleteConversation: () -> Unit,
+    onHandleConversationActions: (ConversationActions) -> Unit
 ) {
 
     val context = LocalContext.current
@@ -71,7 +77,7 @@ fun ConversationTopBar(
         ),
         MoreActions(
             onClick = { showBlockDialog = true },
-            text = R.string.block,
+            text = if (state.isSoloRecipientBlocked) R.string.unblock else R.string.block,
             icon = R.drawable.block,
             tint = MaterialTheme.colorScheme.error
         ),
@@ -89,24 +95,35 @@ fun ConversationTopBar(
             icon = {
                 Icon(
                     painter = painterResource(R.drawable.block),
-                    contentDescription = stringResource(R.string.block)
+                    contentDescription = null
                 )
             },
             dismissButton = {
                 TextButton(
-                    onClick = { showBlockDialog = false }
+                    onClick = { showBlockDialog = false },
+                    shapes = ButtonDefaults.shapes()
                 ) { Text(stringResource(R.string.cancel)) }
             },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        // TODO -> onBlock()
+                        onHandleConversationActions(ConversationActions.ToggleBlock)
                         showBlockDialog = false
-                    }
-                ) { Text(stringResource(R.string.block)) }
+                    },
+                    shapes = ButtonDefaults.shapes()
+                ) {
+                    val text = if (state.isSoloRecipientBlocked) R.string.unblock else R.string.block
+                    Text(stringResource(text))
+                }
             },
-            text = { Text(stringResource(R.string.block)) },
-            title = { Text(stringResource(R.string.block)) },
+            text = {
+                val text = if (state.isSoloRecipientBlocked) R.string.unblock_no_u_sure else R.string.block_are_u_sure
+                Text(stringResource(text, state.recipients.first()))
+                   },
+            title = {
+                val text = if (state.isSoloRecipientBlocked) R.string.unblock else R.string.block
+                Text(stringResource(text))
+                    },
         )
     }
     if (showDeleteDialog) {
@@ -139,10 +156,7 @@ fun ConversationTopBar(
 
 
     ToolbarSkeleton(
-        onClick = if (isGroupChat) { null } else {
-            {}
-//            TODO { onNavigate(Screen.ContactDetails(state.recipients.first())) }
-        }
+        onClick = { onNavigate(Screen.AboutConversation(state.threadId)) }
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -157,17 +171,24 @@ fun ConversationTopBar(
                     contentDescription = null
                 )
             }
-            if (isGroupChat) {
-                DefaultGroupChatIcon(
-                    modifier = Modifier.padding(end = 10.dp),
-                )
-            } else {
-                DefaultContactIcon(
-                    firstLetter = state.recipients.firstOrNull()?.firstOrNull(),
-                    modifier = Modifier.padding(end = 10.dp),
-                    size = 38.dp,
-                    contactPfp = state.recipients.firstOrNull()?.getContactId(context)?.getContactPfpUriFromId() ?: Uri.EMPTY
-                )
+            Box(
+                modifier = Modifier
+                    .padding(end = 10.dp)
+                    .sharedElement(
+                        sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONTACT_PFP + state.threadId),
+                        animatedVisibilityScope = LocalNavAnimatedContentScope.current
+                    )
+            ) {
+                if (isGroupChat) {
+                    DefaultGroupChatIcon()
+                } else {
+                    DefaultContactIcon(
+                        firstLetter = state.nameOrBeautifiedRecipients.firstOrNull()?.firstOrNull(),
+                        size = 38.dp,
+                        contactPfp = state.recipients.firstOrNull()?.getContactPfpFromNumber(context) ?: Uri.EMPTY
+                    )
+                }
+
             }
             Text(
                 text = buildString {
@@ -180,7 +201,11 @@ fun ConversationTopBar(
                 },
                 maxLines = 1,
                 modifier = Modifier
-                    .weight(1f),
+                    .weight(1f)
+                    .sharedBounds(
+                        sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONVERSATION_NAME + state.threadId),
+                        animatedVisibilityScope = LocalNavAnimatedContentScope.current
+                    ),
                 overflow = TextOverflow.Ellipsis
             )
 
@@ -214,7 +239,10 @@ fun ConversationTopBar(
                     ) {
                         actions.fastForEachIndexed { index, action ->
                             DropdownMenuItem(
-                                onClick = action.onClick,
+                                onClick = {
+                                    action.onClick()
+                                    showMoreMenu = false
+                                },
                                 shape = MenuDefaults.getItemShape(index, actions.lastIndex),
                                 text = {
                                     Text(

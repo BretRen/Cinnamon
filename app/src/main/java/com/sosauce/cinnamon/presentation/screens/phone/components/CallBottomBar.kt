@@ -5,13 +5,18 @@ package com.sosauce.cinnamon.presentation.screens.phone.components
 import android.telecom.CallAudioState
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -32,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.painterResource
@@ -41,6 +47,7 @@ import com.sosauce.cinnamon.domain.states.CallState
 import com.sosauce.cinnamon.domain.states.DialerPaneContent
 import com.sosauce.cinnamon.presentation.screens.phone.CallAction
 import com.sosauce.cinnamon.presentation.screens.phone.CallingState
+import com.sosauce.cinnamon.utils.bouncySpec
 import com.sosauce.cinnamon.utils.selfAlignHorizontally
 
 @Composable
@@ -57,30 +64,33 @@ fun CallBottomBar(
             .selfAlignHorizontally()
             .fillMaxWidth(0.9f)
     ) {
-        AnimatedVisibility(
-            visible = paneContent != DialerPaneContent.NOTHING,
-            enter = slideInVertically { it },
-            exit = slideOutVertically { it },
-            modifier = Modifier
-                .background(
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    shape = RoundedCornerShape(24.dp)
-                )
+        AnimatedContent(
+            targetState = paneContent,
+            transitionSpec = {
+                slideInVertically(bouncySpec()) { it } + fadeIn() togetherWith slideOutVertically(bouncySpec()) { it } + fadeOut()
+            }
         ) {
-
-            when (paneContent) {
-                DialerPaneContent.DIALPAD -> {
-                    Dialpad(
-                        onSendTone = { onCallAction(CallAction.StartTone(it)) },
+            Box(
+                modifier = Modifier
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        shape = RoundedCornerShape(24.dp)
                     )
+            ) {
+                when (it) {
+                    DialerPaneContent.DIALPAD -> {
+                        Dialpad(
+                            onSendTone = { onCallAction(CallAction.StartTone(it)) },
+                        )
+                    }
+                    DialerPaneContent.AUDIO_SWITCHER -> {
+                        AudioSwitcher(
+                            onCallAction = onCallAction,
+                            routes = callUiState.availableAudioRoutes
+                        )
+                    }
+                    DialerPaneContent.NOTHING -> Box(Modifier.fillMaxWidth()) {}
                 }
-                DialerPaneContent.AUDIO_SWITCHER -> {
-                    AudioSwitcher(
-                        onCallAction = onCallAction,
-                        routes = callUiState.availableAudioRoutes
-                    )
-                }
-                DialerPaneContent.NOTHING -> Unit
             }
 
         }
@@ -218,5 +228,4 @@ fun CallBottomBar(
             }
         }
     }
-
 }

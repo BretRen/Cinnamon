@@ -1,20 +1,45 @@
 package com.sosauce.cinnamon.presentation.screens.phone
 
 import android.annotation.SuppressLint
+import android.app.Application
 import androidx.core.net.toUri
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.sosauce.cinnamon.data.contact_settings.ContactSettingsDao
 import com.sosauce.cinnamon.data.managers.CallManager
 import com.sosauce.cinnamon.domain.model.AudioRoute
 import com.sosauce.cinnamon.domain.model.CuteSimCard
 import com.sosauce.cinnamon.domain.states.CallState
-import kotlinx.coroutines.flow.asStateFlow
+import com.sosauce.cinnamon.utils.getContactId
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 class CallingViewModel(
-    private val callManager: CallManager
-): ViewModel() {
+    private val application: Application,
+    private val callManager: CallManager,
+    private val contactSettingsDao: ContactSettingsDao
+): AndroidViewModel(application) {
 
 
     val state = callManager.callingState
+
+
+    init {
+        viewModelScope.launch(Dispatchers.IO) {
+
+            val poster = contactSettingsDao.getContactPoster(state.value.number.getContactId(application.applicationContext)) ?: ""
+
+            callManager._callingState.update {
+                it.copy(
+                    poster = poster
+                )
+            }
+
+
+        }
+    }
 
     @SuppressLint("MissingPermission")
     fun handleCallAction(action: CallAction) {

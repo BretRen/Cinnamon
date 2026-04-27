@@ -55,6 +55,7 @@ import com.sosauce.cinnamon.presentation.navigation.Screen
 import com.sosauce.cinnamon.presentation.shared_components.ScreenSelection
 import com.sosauce.cinnamon.presentation.theme.nunitoFontFamily
 import com.sosauce.cinnamon.utils.LocalScreen
+import com.sosauce.cinnamon.utils.bouncySpec
 import com.sosauce.cinnamon.utils.rememberSearchbarMaxFloatValue
 import com.sosauce.cinnamon.utils.rememberSearchbarRightPadding
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
@@ -63,10 +64,10 @@ import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 fun CuteSearchbar(
     modifier: Modifier = Modifier,
     textFieldState: TextFieldState = rememberTextFieldState(),
-    sortingMenu: @Composable (() -> Unit),
+    sortingMenu: @Composable (() -> Unit)? = null,
     navigationIcon: @Composable (() -> Unit)? = null,
     showSearchField: Boolean = true,
-    fab: @Composable () -> Unit,
+    fab: @Composable (() -> Unit)? = null,
     onNavigate: (Screen) -> Unit,
 ) {
 
@@ -100,7 +101,7 @@ fun CuteSearchbar(
             if (showBackButton) {
                 navigationIcon?.invoke()
             }
-            fab()
+            fab?.invoke()
         }
         Column(
             modifier = Modifier
@@ -119,7 +120,7 @@ fun CuteSearchbar(
                 ) {
                     AnimatedContent(
                         targetState = isInScreenSelectionMode,
-                        transitionSpec = { slideInVertically { it } + fadeIn() togetherWith slideOutVertically { it } + fadeOut() }
+                        transitionSpec = { slideInVertically(bouncySpec()) { it } + fadeIn() togetherWith slideOutVertically(bouncySpec()) { it } + fadeOut() }
                     ) {
                         if (it) {
                             ScreenSelection(
@@ -155,7 +156,7 @@ fun CuteSearchbar(
                                 },
                                 trailingIcon = {
                                     Row {
-                                        sortingMenu()
+                                        sortingMenu?.invoke()
                                         IconButton(
                                             onClick = { onNavigate(Screen.Settings) },
                                             shapes = IconButtonDefaults.shapes()
@@ -168,8 +169,7 @@ fun CuteSearchbar(
                                     }
                                 },
                                 textStyle = TextStyle.Default.copy(
-                                    fontFamily = nunitoFontFamily,
-                                    fontWeight = FontWeight.Bold
+                                    fontFamily = nunitoFontFamily
                                 ),
                                 lineLimits = TextFieldLineLimits.SingleLine,
                                 shape = FloatingToolbarDefaults.ContainerShape,

@@ -2,10 +2,13 @@
 
 package com.sosauce.cinnamon.presentation.shared_components
 
+import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -17,17 +20,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.sosauce.cinnamon.R
 
 @Composable
 fun NoXFound(
-    headlineText: Int,
-    bodyText: Int,
-    icon: Int
+    @StringRes headlineText: Int,
+    @StringRes bodyText: Int,
+    @DrawableRes icon: Int
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(5.dp)
     ) {
         Icon(
             painter = painterResource(icon),
@@ -37,13 +44,26 @@ fun NoXFound(
         Spacer(Modifier.height(10.dp))
         Text(
             text = stringResource(headlineText),
-            style = MaterialTheme.typography.headlineMediumEmphasized,
-            fontWeight = FontWeight.Black
+            style = MaterialTheme.typography.headlineMediumEmphasized.copy(
+                fontWeight = FontWeight.Black,
+                textAlign = TextAlign.Center
+            )
         )
         Text(
             text = stringResource(bodyText),
-            style = MaterialTheme.typography.bodyMediumEmphasized,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            style = MaterialTheme.typography.bodyMediumEmphasized.copy(
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
         )
     }
+}
+
+@Composable
+fun NoSearchFound() {
+    NoXFound(
+        headlineText = R.string.no_result_found,
+        bodyText = R.string.no_result_found_desc,
+        icon = R.drawable.search
+    )
 }
