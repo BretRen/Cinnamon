@@ -163,7 +163,7 @@ fun DialerScreen(
                         },
                         fab = {
                             AnimatedFab(
-                                onClick = { onNavigate(Screen.ContactEditor(CuteContact())) },
+                                onClick = { onNavigate(Screen.Dialpad()) },
                                 icon = R.drawable.dialpad
                             )
                         },

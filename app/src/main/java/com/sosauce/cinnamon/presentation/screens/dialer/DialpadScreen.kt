@@ -8,13 +8,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldLineLimits
@@ -53,6 +56,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -64,13 +68,14 @@ import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.util.fastMap
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.presentation.navigation.Screen
+import com.sosauce.cinnamon.presentation.screens.contacts.ContactListItem
 import com.sosauce.cinnamon.presentation.screens.contacts.components.dialogs.NumberPickerDialog
-import com.sosauce.cinnamon.presentation.screens.contacts.groupedContactsList
 import com.sosauce.cinnamon.presentation.screens.phone.CallAction
 import com.sosauce.cinnamon.presentation.screens.phone.components.DisableSoftKeyboard
 import com.sosauce.cinnamon.presentation.shared_components.NoXFound
 import com.sosauce.cinnamon.presentation.shared_components.buttons.LongClickButton
 import com.sosauce.cinnamon.presentation.shared_components.items.CuteListItem
+import com.sosauce.cinnamon.utils.LazyListKeys
 import com.sosauce.cinnamon.utils.backspace
 import com.sosauce.cinnamon.utils.getThreadIdOrCreate
 import com.sosauce.cinnamon.utils.rememberFocusRequester
@@ -255,25 +260,93 @@ fun SharedTransitionScope.DialpadScreen(
                 contentPadding = paddingValues,
                 modifier = Modifier.padding(horizontal = 10.dp)
             ) {
-                groupedContactsList(
-                    contacts = state.contacts,
-                    showPhoneNumbers = true,
-                    sharedTransitionScope = this@DialpadScreen,
-                    onContactClicked = { contact ->
-                        if (contact.details.phoneNumbers.size > 1) {
-                            showMultiNumberSelection = Pair(true, contact.id)
-                        } else {
-                            onHandleCallAction(CallAction.LaunchCall(contact.details.phoneNumbers.first().number))
+                if (state.contacts.isNotEmpty()) {
+
+                    val (favorites, nonFavorites) = state.contacts.partition { it.isFavorite }
+
+                    if (favorites.isNotEmpty()) {
+                        item(LazyListKeys.FAVORITE_CONTACTS) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.favorite_filled),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(Modifier.width(5.dp))
+                                Text(
+                                    text = pluralStringResource(R.plurals.favorites, favorites.size),
+                                    style = MaterialTheme.typography.bodyLargeEmphasized.copy(
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                )
+                            }
                         }
-                    },
-                    emptyState = {
+                        items(
+                            items = favorites,
+                            key = { contact -> contact.id }
+                        ) { contact ->
+
+                            ContactListItem(
+                                modifier = Modifier.animateItem(),
+                                contact = contact,
+                                isSelected = false,
+                                onClick = {
+                                    if (contact.details.phoneNumbers.size > 1) {
+                                        showMultiNumberSelection = Pair(true, contact.id)
+                                    } else {
+                                        onHandleCallAction(CallAction.LaunchCall(contact.details.phoneNumbers.first().number))
+                                    }
+                                },
+                                showNumber = false
+                            )
+                        }
+                    }
+
+
+                    nonFavorites.groupBy { it.displayName.firstOrNull()?.uppercaseChar() ?: '#' }.toSortedMap().forEach { (letter, contacts) ->
+                        item {
+                            Text(
+                                text = letter.toString(),
+                                style = MaterialTheme.typography.bodyLargeEmphasized.copy(
+                                    color = MaterialTheme.colorScheme.primary
+                                ),
+                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
+                            )
+                        }
+                        items(
+                            items = contacts,
+                            key = { contact -> contact.id }
+                        ) { contact ->
+
+
+                            ContactListItem(
+                                modifier = Modifier.animateItem(),
+                                contact = contact,
+                                isSelected = false,
+                                onClick = {
+                                    if (contact.details.phoneNumbers.size > 1) {
+                                        showMultiNumberSelection = Pair(true, contact.id)
+                                    } else {
+                                        onHandleCallAction(CallAction.LaunchCall(contact.details.phoneNumbers.first().number))
+                                    }
+                                },
+                                showNumber = false
+                            )
+                        }
+                    }
+                } else {
+                    item {
                         NoXFound(
                             headlineText = R.string.no_contacts_found,
-                            bodyText = R.string.no_contacts_found_dialer_desc,
+                            bodyText = R.string.no_contacts_found_desc,
                             icon = R.drawable.contacts
                         )
                     }
-                )
+                }
             }
         }
 

@@ -7,13 +7,7 @@ import com.android.mms.transaction.PushReceiver
 import com.klinker.android.send_message.MmsReceivedReceiver
 
 class MmsReceiver: MmsReceivedReceiver() {
-    override fun onMessageReceived(context: Context, uri: Uri?) {
-        Toast.makeText(context, "received mms", Toast.LENGTH_SHORT).show()
-    }
+    override fun onMessageReceived(context: Context, uri: Uri?) {}
 
-    override fun onError(context: Context, error: String?) {
-
-        Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
-
-    }
+    override fun onError(context: Context, error: String?) { Toast.makeText(context, error, Toast.LENGTH_SHORT).show() }
 }

@@ -157,9 +157,13 @@ fun SharedTransitionScope.ContactsScreen(
                             items = favorites,
                             key = { contact -> contact.id }
                         ) { contact ->
+
+                            val isSelected by sweetSelectState.isSelectedAsState(contact)
+
                             ContactListItem(
                                 modifier = Modifier.animateItem(),
                                 contact = contact,
+                                isSelected = isSelected,
                                 onClick = {
                                     if (sweetSelectState.isInSelectionMode) {
                                         sweetSelectState.toggle(contact)
@@ -188,9 +192,13 @@ fun SharedTransitionScope.ContactsScreen(
                             items = contacts,
                             key = { contact -> contact.id }
                         ) { contact ->
+
+                            val isSelected by sweetSelectState.isSelectedAsState(contact)
+
                             ContactListItem(
                                 modifier = Modifier.animateItem(),
                                 contact = contact,
+                                isSelected = isSelected,
                                 onClick = {
                                     if (sweetSelectState.isInSelectionMode) {
                                         sweetSelectState.toggle(contact)
@@ -217,81 +225,81 @@ fun SharedTransitionScope.ContactsScreen(
     }
 }
 
-fun LazyListScope.groupedContactsList(
-    contacts: List<CuteContact>,
-    onContactClicked: (CuteContact) -> Unit,
-    showPhoneNumbers: Boolean = false,
-    sharedTransitionScope: SharedTransitionScope,
-    emptyState: @Composable () -> Unit
-) {
-
-    if (contacts.isNotEmpty()) {
-
-        val (favorites, nonFavorites) = contacts.partition { it.isFavorite }
-
-        if (favorites.isNotEmpty()) {
-            item(LazyListKeys.FAVORITE_CONTACTS) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.favorite_filled),
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(Modifier.width(5.dp))
-                    Text(
-                        text = pluralStringResource(R.plurals.favorites, favorites.size),
-                        style = MaterialTheme.typography.bodyLargeEmphasized.copy(
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    )
-                }
-            }
-            with(sharedTransitionScope) {
-                items(
-                    items = favorites,
-                    key = { contact -> contact.id }
-                ) { contact ->
-                    ContactListItem(
-                        modifier = Modifier.animateItem(),
-                        contact = contact,
-                        onClick = { onContactClicked(contact) },
-                        showNumber = showPhoneNumbers
-                    )
-                }
-            }
-        }
-
-
-        nonFavorites.groupBy { it.displayName.firstOrNull()?.uppercaseChar() ?: '#' }.toSortedMap().forEach { (letter, contacts) ->
-            item {
-                Text(
-                    text = letter.toString(),
-                    style = MaterialTheme.typography.bodyLargeEmphasized.copy(
-                        color = MaterialTheme.colorScheme.primary
-                    ),
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
-                )
-            }
-            with(sharedTransitionScope) {
-                items(
-                    items = contacts,
-                    key = { contact -> contact.id }
-                ) { contact ->
-                    ContactListItem(
-                        modifier = Modifier.animateItem(),
-                        contact = contact,
-                        onClick = { onContactClicked(contact) },
-                        showNumber = showPhoneNumbers
-                    )
-                }
-            }
-        }
-    } else {
-        item { emptyState() }
-    }
-
-}
+//fun LazyListScope.groupedContactsList(
+//    contacts: List<CuteContact>,
+//    onContactClicked: (CuteContact) -> Unit,
+//    showPhoneNumbers: Boolean = false,
+//    sharedTransitionScope: SharedTransitionScope,
+//    emptyState: @Composable () -> Unit
+//) {
+//
+//    if (contacts.isNotEmpty()) {
+//
+//        val (favorites, nonFavorites) = contacts.partition { it.isFavorite }
+//
+//        if (favorites.isNotEmpty()) {
+//            item(LazyListKeys.FAVORITE_CONTACTS) {
+//                Row(
+//                    verticalAlignment = Alignment.CenterVertically,
+//                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+//                ) {
+//                    Icon(
+//                        painter = painterResource(R.drawable.favorite_filled),
+//                        contentDescription = null,
+//                        modifier = Modifier.size(18.dp),
+//                        tint = MaterialTheme.colorScheme.primary
+//                    )
+//                    Spacer(Modifier.width(5.dp))
+//                    Text(
+//                        text = pluralStringResource(R.plurals.favorites, favorites.size),
+//                        style = MaterialTheme.typography.bodyLargeEmphasized.copy(
+//                            color = MaterialTheme.colorScheme.primary
+//                        )
+//                    )
+//                }
+//            }
+//            with(sharedTransitionScope) {
+//                items(
+//                    items = favorites,
+//                    key = { contact -> contact.id }
+//                ) { contact ->
+//                    ContactListItem(
+//                        modifier = Modifier.animateItem(),
+//                        contact = contact,
+//                        onClick = { onContactClicked(contact) },
+//                        showNumber = showPhoneNumbers
+//                    )
+//                }
+//            }
+//        }
+//
+//
+//        nonFavorites.groupBy { it.displayName.firstOrNull()?.uppercaseChar() ?: '#' }.toSortedMap().forEach { (letter, contacts) ->
+//            item {
+//                Text(
+//                    text = letter.toString(),
+//                    style = MaterialTheme.typography.bodyLargeEmphasized.copy(
+//                        color = MaterialTheme.colorScheme.primary
+//                    ),
+//                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
+//                )
+//            }
+//            with(sharedTransitionScope) {
+//                items(
+//                    items = contacts,
+//                    key = { contact -> contact.id }
+//                ) { contact ->
+//                    ContactListItem(
+//                        modifier = Modifier.animateItem(),
+//                        contact = contact,
+//                        onClick = { onContactClicked(contact) },
+//                        showNumber = showPhoneNumbers
+//                    )
+//                }
+//            }
+//        }
+//    } else {
+//        item { emptyState() }
+//    }
+//
+//}

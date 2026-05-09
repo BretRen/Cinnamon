@@ -24,7 +24,7 @@ import com.sosauce.cinnamon.utils.beautifyNumber
 fun SharedTransitionScope.ContactListItem(
     modifier: Modifier = Modifier,
     contact: CuteContact,
-    isSelected: Boolean = false,
+    isSelected: Boolean,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
     showNumber: Boolean = false
