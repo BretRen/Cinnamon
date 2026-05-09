@@ -104,6 +104,16 @@ class ContactsViewModel(
                     )
                 }
             }
+            is ContactsAction.DeleteContacts -> {
+                viewModelScope.launch(Dispatchers.IO) {
+                    contactsRepository.deleteContacts(action.ids)
+                }
+            }
+            is ContactsAction.ToggleFavorite -> {
+                viewModelScope.launch(Dispatchers.IO) {
+                    contactsRepository.toggleFavorite(action.contacts)
+                }
+            }
         }
     }
 
@@ -123,4 +133,6 @@ data class ContactsState(
 
 sealed interface ContactsAction {
     data class ChangeAccountFiltering(val accountType: String) : ContactsAction
+    data class DeleteContacts(val ids: List<Long>) : ContactsAction
+    data class ToggleFavorite(val contacts: List<CuteContact>) : ContactsAction
 }

@@ -49,62 +49,63 @@ class ConversationsViewModel(
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
-            userPreferences.archivedConversations.flatMapLatest { archived ->
-                val extraSelection = if (archived.isNotEmpty()) {
-                    "${Telephony.Threads._ID} NOT IN (${archived.joinToString { "?" }})"
-                } else { null }
-                combine(
-                    messagesRepository.fetchLatestConversations(
-                        extraSelection = extraSelection,
-                        extraSelectionArgs = archived.toTypedArray()
-                    ),
-                    userPreferences.pinnedConversations,
-                    conversationSettingsDao.getAllDrafts(),
-                    snapshotFlow { textFieldState.text }.debounce(250)
-                ) { cleanConversations, pinned, allDrafts, searchQuery ->
-                    val (pinnedThreads, unpinnedThreads) = cleanConversations
-                        .fastFilter {
-                            it.snippet.contains(searchQuery, true)
-                        }
-                        .fastMap {
-                            val draft = allDrafts[it.threadId] ?: ""
-                            it.copy(draft = draft)
-                        }
-                        .partition { it.threadId.toString() in pinned }
+            combine(
+                messagesRepository.fetchLatestConversations(),
+                userPreferences.pinnedConversations,
+                conversationSettingsDao.getAllDrafts(),
+                userPreferences.archivedConversations,
+                snapshotFlow { textFieldState.text }.debounce(250)
+            ) { cleanConversations, pinned, allDrafts, archived, searchQuery ->
+                val (pinnedThreads, unpinnedThreads) = cleanConversations
+                    .fastFilter { it.threadId.toString() !in archived }
+                    .fastFilter {
+                        it.snippet.contains(searchQuery, true)
+                    }
+                    .fastMap {
+                        val draft = allDrafts[it.threadId] ?: ""
+                        it.copy(draft = draft)
+                    }
+                    .partition { it.threadId.toString() in pinned }
 
-                    ConversationsState(
-                        isLoading = false,
-                        conversations = unpinnedThreads,
-                        pinnedConversations = pinnedThreads,
-                        hasArchivedThreads = archived.isNotEmpty(),
-                        textFieldState = textFieldState
-                    )
-                }
-
+                ConversationsState(
+                    isLoading = false,
+                    conversations = unpinnedThreads,
+                    pinnedConversations = pinnedThreads,
+                    hasArchivedThreads = archived.isNotEmpty(),
+                    textFieldState = textFieldState
+                )
             }.collectLatest { newState -> _state.update { newState } }
         }
-        application.contentResolver.observe(BlockedNumberContract.BlockedNumbers.CONTENT_URI).onEach {
 
-            val newConversations = state.value.conversations.fastMap {
-                if (it.isGroupChat) {
-                    it
-                } else {
-                    val recipient = it.rawRecipients.firstOrNull()
-                    if (recipient == null) { it } else {
+        viewModelScope.launch {
+            application.contentResolver.observe(BlockedNumberContract.BlockedNumbers.CONTENT_URI)
+                .onEach {
+
+                    val newConversations = state.value.conversations.fastMap {
+                        if (it.isGroupChat) {
+                            it
+                        } else {
+                            val recipient = it.rawRecipients.firstOrNull()
+                            if (recipient == null) {
+                                it
+                            } else {
+                                it.copy(
+                                    isSenderBlocked = BlockedNumberContract.isBlocked(
+                                        application,
+                                        recipient
+                                    )
+                                )
+                            }
+                        }
+                    }
+
+                    _state.update {
                         it.copy(
-                            isSenderBlocked = BlockedNumberContract.isBlocked(application, recipient)
+                            conversations = newConversations
                         )
                     }
-                }
-            }
-
-            _state.update {
-                it.copy(
-                    conversations = newConversations
-                )
-            }
-        }.launchIn(viewModelScope + Dispatchers.IO)
-
+                }.launchIn(viewModelScope + Dispatchers.IO)
+        }
     }
 
     fun handleThreadsAction(action: ConversationsAction) {

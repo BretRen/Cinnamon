@@ -6,6 +6,7 @@ import android.content.ContentProviderOperation
 import android.content.Context
 import android.net.Uri
 import android.provider.CallLog
+import android.provider.ContactsContract
 import androidx.compose.ui.util.fastForEach
 import androidx.core.net.toUri
 import androidx.paging.Pager
@@ -18,6 +19,7 @@ import com.google.i18n.phonenumbers.geocoding.PhoneNumberOfflineGeocoder
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.domain.model.CuteCallLog
 import com.sosauce.cinnamon.utils.getContactId
+import com.sosauce.cinnamon.utils.getContactPfpFromNumber
 import com.sosauce.cinnamon.utils.observe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -55,8 +57,10 @@ class DialerRepository(
             CallLog.Calls.DURATION,
             CallLog.Calls.NUMBER_PRESENTATION,
             CallLog.Calls.CACHED_NAME,
-            CallLog.Calls.GEOCODED_LOCATION
+            CallLog.Calls.GEOCODED_LOCATION,
+            CallLog.Calls.CACHED_PHOTO_ID
         )
+
 
         context.contentResolver.query(
             CallLog.Calls.CONTENT_URI,
@@ -95,7 +99,9 @@ class DialerRepository(
                         duration = duration,
                         location = location,
                         presentation = presentation,
-                        cachedName = cachedName
+                        cachedName = cachedName,
+                        pfp = Uri.EMPTY
+                        //pfp = number.getContactPfpFromNumber(context, false)
                     )
                 )
 
@@ -103,6 +109,7 @@ class DialerRepository(
         }
         return logs
     }
+
 
     suspend fun deleteCallLog(ids: List<Long>) = withContext(Dispatchers.IO) {
 

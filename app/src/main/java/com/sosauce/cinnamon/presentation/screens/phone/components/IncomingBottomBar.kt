@@ -125,7 +125,7 @@ fun IncomingBottomBar(
                     vertical = 15.dp
                 )
                 .align(Alignment.CenterStart),
-            color = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
+            color = contentColorFor(MaterialTheme.colorScheme.onSurfaceVariant)
         )
         Text(
             text = "Answer",
@@ -135,7 +135,7 @@ fun IncomingBottomBar(
                     vertical = 15.dp
                 )
                 .align(Alignment.CenterEnd),
-            color = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
+            color = contentColorFor(MaterialTheme.colorScheme.onSurfaceVariant)
         )
 
         Box(

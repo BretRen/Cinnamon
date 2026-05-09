@@ -30,6 +30,7 @@ import com.sosauce.cinnamon.presentation.screens.settings.components.AboutCard
 import com.sosauce.cinnamon.presentation.screens.settings.components.SettingsCategoryCard
 import com.sosauce.cinnamon.presentation.shared_components.buttons.CuteNavigationButton
 import com.sosauce.cinnamon.utils.bouncySpec
+import com.sosauce.cinnamon.utils.bouncySpecNavigation
 import com.sosauce.cinnamon.utils.navigateBack
 
 @Composable
@@ -101,20 +102,20 @@ fun SettingsScreen(
             },
             transitionSpec = {
                 ContentTransform(
-                    targetContentEnter = slideInHorizontally(bouncySpec()) { it } + fadeIn(),
+                    targetContentEnter = slideInHorizontally(bouncySpecNavigation()) { it } + fadeIn(),
                     initialContentExit = fadeOut()
                 )
             },
             popTransitionSpec = {
                 ContentTransform(
-                    targetContentEnter = slideInHorizontally(bouncySpec()) { -it } + fadeIn(),
+                    targetContentEnter = slideInHorizontally(bouncySpecNavigation()) { -it } + fadeIn(),
                     initialContentExit = fadeOut()
                 )
             },
             predictivePopTransitionSpec = {
                 ContentTransform(
                     fadeIn(),
-                    slideOutHorizontally(bouncySpec()) { it },
+                    slideOutHorizontally(bouncySpecNavigation()) { it },
                 )
             },
             entryDecorators = listOf(

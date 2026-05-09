@@ -32,6 +32,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
+import com.sosauce.cinnamon.domain.model.CuteContact
 import com.sosauce.cinnamon.domain.model.CuteConversation
 import com.sosauce.cinnamon.presentation.navigation.Screen
 import com.sosauce.cinnamon.presentation.screens.messages.components.dialogs.DeleteConversationsDialog
@@ -195,6 +196,64 @@ fun ConversationsSelectedBar(
                 ),
                 modifier = Modifier
                     .animateWidth(interactionSources[2])
+                    .weight(1f)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.delete_filled),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ContactsSelectedBar(
+    modifier: Modifier = Modifier,
+    items: List<CuteContact>,
+    multiSelectState: SweetSelectState<CuteContact>,
+    onToggleFavorite: () -> Unit,
+    onDeleteContacts: () -> Unit
+) {
+
+    val interactionSources = List(2) { rememberInteractionSource() }
+
+    SelectedBarSurface(
+        modifier = modifier,
+        items = items,
+        multiSelectState = multiSelectState
+    ) {
+        ButtonGroup(
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Button(
+                onClick = onToggleFavorite,
+                interactionSource = interactionSources[0],
+                shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 4.dp, bottomEnd = 4.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
+                ),
+                modifier = Modifier
+                    .animateWidth(interactionSources[0])
+                    .weight(1f)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.favorite_filled),
+                    contentDescription = null
+                )
+            }
+            Button(
+                onClick = onDeleteContacts,
+                interactionSource = interactionSources[1],
+                shape = RoundedCornerShape(topStart = 4.dp, bottomStart = 4.dp, topEnd = 50.dp, bottomEnd = 50.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
+                ),
+                modifier = Modifier
+                    .animateWidth(interactionSources[1])
                     .weight(1f)
             ) {
                 Icon(

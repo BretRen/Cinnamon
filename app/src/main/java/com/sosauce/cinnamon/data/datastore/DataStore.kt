@@ -12,7 +12,6 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.ARCHIVED_CONVOS
-import com.sosauce.cinnamon.data.datastore.PreferencesKeys.BLOCKED_NUMBERS
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.DEFAULT_MESSAGES_SIM
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.DEFAULT_PHONE_SIM
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.DEFAULT_TAB
@@ -20,6 +19,7 @@ import com.sosauce.cinnamon.data.datastore.PreferencesKeys.ENABLE_DELIVERY_REPOR
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.ENABLE_T9_DIALING
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.GROUP_SUBSEQUENT_CALLS
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.MMS_MAX_SIZE_LIMIT
+import com.sosauce.cinnamon.data.datastore.PreferencesKeys.PALETTE_STYLE
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.PINNED_CONVOS
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.SEND_GROUP_AS_MMS
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.SEND_LONG_AS_MMS
@@ -28,6 +28,8 @@ import com.sosauce.cinnamon.data.datastore.PreferencesKeys.SORT_CONTACTS_ASCENDI
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.SORT_CONVERSATIONS_ASCENDING
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.SORT_LOGS_ASCENDING
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.THEME
+import com.sosauce.cinnamon.data.datastore.PreferencesKeys.USE_SYSTEM_FONT
+import com.sosauce.cinnamon.utils.CutePaletteStyle
 import com.sosauce.cinnamon.utils.CuteTheme
 import com.sosauce.cinnamon.utils.DefaultTabOption
 import com.sosauce.cinnamon.utils.MmsSize
@@ -38,11 +40,12 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(PREFERENCE
 
 data object PreferencesKeys {
     val THEME = stringPreferencesKey("theme")
+    val USE_SYSTEM_FONT = booleanPreferencesKey("use_sys_font")
+    val PALETTE_STYLE = stringPreferencesKey("PALETTE_STYLE")
 
     val PINNED_CONVOS = stringSetPreferencesKey("pinned_convos")
     val ARCHIVED_CONVOS = stringSetPreferencesKey("archived_convos")
     val MMS_MAX_SIZE_LIMIT = longPreferencesKey("MMS_MAX_SIZE_LIMIT")
-    val BLOCKED_NUMBERS = stringSetPreferencesKey("BLOCKED_NUMBERS")
     val DEFAULT_MESSAGES_SIM = intPreferencesKey("DEFAULT_MESSAGES_SIM")
     val DEFAULT_PHONE_SIM = intPreferencesKey("DEFAULT_PHONE_SIM")
     val SEND_LONG_AS_MMS = booleanPreferencesKey("SEND_LONG_AS_MMS")
@@ -62,6 +65,15 @@ data object PreferencesKeys {
 @Composable
 fun rememberAppTheme() =
     rememberPreference(key = THEME, defaultValue = CuteTheme.SYSTEM)
+
+@Composable
+fun rememberUseSystemFont() =
+    rememberPreference(key = USE_SYSTEM_FONT, defaultValue = false)
+
+@Composable
+fun rememberPaletteStyle() =
+    rememberPreference(key = PALETTE_STYLE, defaultValue = CutePaletteStyle.FIDELITY)
+
 @Composable
 fun rememberPinnedConversations() =
     rememberPreference(key = PINNED_CONVOS, defaultValue = emptySet())
@@ -73,8 +85,6 @@ fun rememberArchivedConversations() =
 @Composable
 fun rememberMmsMaxSizeLimit() = rememberPreference(MMS_MAX_SIZE_LIMIT, MmsSize.FILE_SIZE_600_KB)
 
-@Composable
-fun rememberBlockedNumbers() = rememberPreference(BLOCKED_NUMBERS, emptySet())
 
 @Composable
 fun rememberDefaultMessagesSim() = rememberPreference(DEFAULT_MESSAGES_SIM, SubscriptionManager.getDefaultSmsSubscriptionId())

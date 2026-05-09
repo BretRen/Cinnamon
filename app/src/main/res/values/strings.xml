@@ -135,6 +135,11 @@
     <string name="no_result_found_desc">Better luck next time !</string>
     <string name="not_sent">Not sent</string>
     <string name="sending">Sending…</string>
+    <string name="new_chat">New chat</string>
+    <string name="new_group_chat">New group chat</string>
+    <string name="font">Font</string>
+    <string name="default_text">Default</string>
+    <string name="palette">Palette</string>
 
 
     <plurals name="delete_msg">

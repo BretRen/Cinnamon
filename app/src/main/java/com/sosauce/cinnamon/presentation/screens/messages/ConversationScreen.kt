@@ -7,7 +7,11 @@ package com.sosauce.cinnamon.presentation.screens.messages
 
 import android.provider.Telephony
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
@@ -41,7 +45,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.retain.RetainedEffect
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -64,6 +71,8 @@ import com.sosauce.cinnamon.data.conversation_settings.ConversationSettingAction
 import com.sosauce.cinnamon.data.managers.ActiveThreadId
 import com.sosauce.cinnamon.domain.model.CuteMessage
 import com.sosauce.cinnamon.presentation.navigation.Screen
+import com.sosauce.cinnamon.presentation.screens.messages.components.TextingUnavailableBar
+import com.sosauce.cinnamon.presentation.screens.messages.components.TextingUnavailableReason
 import com.sosauce.cinnamon.presentation.screens.messages.components.bottombar.ConversationBottomBar
 import com.sosauce.cinnamon.presentation.screens.messages.components.topbars.ConversationTopBar
 import com.sosauce.cinnamon.presentation.screens.messages.components.bubble.MessageLayout
@@ -74,6 +83,7 @@ import com.sosauce.cinnamon.presentation.screens.messages.components.topbars.Sel
 import com.sosauce.cinnamon.presentation.screens.phone.CallAction
 import com.sosauce.cinnamon.presentation.shared_components.NoXFound
 import com.sosauce.cinnamon.utils.SharedTransitionKeys
+import com.sosauce.cinnamon.utils.bouncySpec
 import com.sosauce.cinnamon.utils.getAdaptivePrimaryColor
 import com.sosauce.cinnamon.utils.isEmoji
 import com.sosauce.cinnamon.utils.rememberHazeState
@@ -94,8 +104,7 @@ fun SharedTransitionScope.ConversationScreen(
     onHandleConversationSettingsActions: (ConversationSettingActions) -> Unit,
     onHandleConversationActions: (ConversationActions) -> Unit,
     onNavigateUp: () -> Unit,
-    onNavigate: (Screen) -> Unit,
-    onUpdateSeedColor: (Color) -> Unit
+    onNavigate: (Screen) -> Unit
 ) {
 
     if (state.isLoading) {
@@ -106,22 +115,10 @@ fun SharedTransitionScope.ConversationScreen(
             ContainedLoadingIndicator()
         }
     } else {
-        val context = LocalContext.current
         val listState = rememberLazyListState()
         val chatWallpaperState = rememberHazeState()
         val sweetSelectState = rememberSweetSelectState<CuteMessage>()
-        val primary = MaterialTheme.colorScheme.primary
         val lifecycleOwner = LocalLifecycleOwner.current
-
-
-        RetainedEffect(state.settings.color) {
-            if (state.settings.color != -1) {
-                onUpdateSeedColor(Color(state.settings.color))
-            }
-            onRetire {
-                onUpdateSeedColor(context.getAdaptivePrimaryColor(primary))
-            }
-        }
 
         RetainedEffect(lifecycleOwner) {
             val observer = LifecycleEventObserver { _, event ->
@@ -157,12 +154,20 @@ fun SharedTransitionScope.ConversationScreen(
                 topBar = {
                     AnimatedContent(
                         targetState = sweetSelectState.isInSelectionMode,
+                        transitionSpec = {
+                            ContentTransform(
+                                targetContentEnter = slideInVertically(bouncySpec()) { -it } + fadeIn(),
+                                initialContentExit = slideOutVertically (bouncySpec()){ -it } + fadeOut(),
+                                sizeTransform = SizeTransform(clip = false)
+                            )
+                        }
                     ) {
                         if (it) {
                             SelectedTopBar(
-                                selectedCuteMessages = sweetSelectState.selectedItems.toList(),
+                                sweetSelectState = sweetSelectState,
                                 onSelectAll = { sweetSelectState.toggleAll(state.messages.values.flatten()) },
-                                onUnselectAll = sweetSelectState::clearSelected
+                                onUnselectAll = sweetSelectState::clearSelected,
+                                onHandleConversationActions = onHandleConversationActions
                             )
                         } else {
                             ConversationTopBar(
@@ -177,26 +182,31 @@ fun SharedTransitionScope.ConversationScreen(
                     }
                 },
                 bottomBar = {
-                    ConversationBottomBar(
-                        conversationState = state,
-                        prefilledMessage = prefilledMessage,
-                        onSaveDraft = { draft ->
-                            onHandleConversationSettingsActions(
-                                ConversationSettingActions.UpsertConversationSettings(
-                                    state.settings.copy(
-                                        draft = draft
+                    when {
+                        state.isShortCode -> TextingUnavailableBar(reason = TextingUnavailableReason.SHORT_CODE)
+                        state.isSoloRecipientBlocked -> TextingUnavailableBar(reason = TextingUnavailableReason.BLOCKED)
+                        else -> {
+                            ConversationBottomBar(
+                                conversationState = state,
+                                prefilledMessage = prefilledMessage,
+                                onSaveDraft = { draft ->
+                                    onHandleConversationSettingsActions(
+                                        ConversationSettingActions.UpsertConversationSettings(
+                                            state.settings.copy(
+                                                draft = draft
+                                            )
+                                        )
                                     )
-                                )
+                                },
+                                onHandleConversationActions = onHandleConversationActions
                             )
-                        },
-                        onHandleConversationActions = onHandleConversationActions
-                    )
+                        }
+                    }
                 }
             ) { paddingValues ->
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        //.hazeSource(LocalHazeState.current)
                         .hazeEffect(
                             state = chatWallpaperState
                         ) { blurRadius = state.settings.wallpaperBlurIntensity.dp },
@@ -212,7 +222,14 @@ fun SharedTransitionScope.ConversationScreen(
 
                                 itemsIndexed(
                                     items = messages,
-                                    key = { _, message -> "${if (message.isMms) "mms" else "sms"}_${message.id}" },
+                                    key = { _, message ->
+                                        val type = when {
+                                            message.isScheduled -> "scheduled"
+                                            message.isMms -> "mms"
+                                            else -> "sms"
+                                        }
+                                        "${type}_${message.id}"
+                                    },
                                     contentType = { _, message -> message.isMms }
                                 ) { index, message ->
 
@@ -235,14 +252,22 @@ fun SharedTransitionScope.ConversationScreen(
                                         message.type == Telephony.Sms.MESSAGE_TYPE_INBOX -> MaterialTheme.colorScheme.tertiaryFixedDim
                                         else -> MaterialTheme.colorScheme.primaryFixedDim
                                     }
-
-                                    println("test mms: ${message.type}")
+                                    var isTimestampVisible by remember { mutableStateOf(false) }
 
                                     MessageLayout(
+                                        modifier = Modifier.animateItem(),
+                                        message = message,
                                         sandwichPosition = sandwichPosition,
                                         isSelected = isSelected,
-                                        message = message,
+                                        isTimestampVisible = isTimestampVisible,
                                         recipients = state.nameOrBeautifiedRecipients,
+                                        onClick = {
+                                            if (sweetSelectState.isInSelectionMode) {
+                                                sweetSelectState.toggle(message)
+                                            } else {
+                                                isTimestampVisible = !isTimestampVisible
+                                            }
+                                        },
                                         onLongClick = { sweetSelectState.toggle(message) },
                                         statusContent = {
                                             when(message.type) {
@@ -291,6 +316,7 @@ fun SharedTransitionScope.ConversationScreen(
                                 ) {
                                     Row(
                                         modifier = Modifier
+                                            .animateItem()
                                             .fillMaxWidth()
                                             .padding(vertical = 5.dp),
                                         horizontalArrangement = Arrangement.Center

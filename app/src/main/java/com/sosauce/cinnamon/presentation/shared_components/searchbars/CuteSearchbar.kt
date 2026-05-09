@@ -7,6 +7,8 @@ package com.sosauce.cinnamon.presentation.shared_components.searchbars
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -16,12 +18,15 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
@@ -42,6 +47,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -79,7 +85,6 @@ fun CuteSearchbar(
         )
     val currentScreen = LocalScreen.current
     var isInScreenSelectionMode by remember { mutableStateOf(false) }
-    val showBackButton = true
 
 
 
@@ -93,22 +98,21 @@ fun CuteSearchbar(
     ) {
 
         Row(
-            horizontalArrangement = if (navigationIcon != null) Arrangement.SpaceBetween else Arrangement.End,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 4.dp)
+                .padding(bottom = 4.dp),
+            horizontalArrangement = Arrangement.End
         ) {
-            if (showBackButton) {
-                navigationIcon?.invoke()
-            }
+            navigationIcon?.invoke()
+            Spacer(Modifier.weight(1f))
             fab?.invoke()
         }
-        Column(
+        Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(24.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainer)
         ) {
-            AnimatedVisibility(
+            this@Column.AnimatedVisibility(
                 visible = showSearchField
             ) {
                 Column(
@@ -118,65 +122,73 @@ fun CuteSearchbar(
                         .background(MaterialTheme.colorScheme.surfaceContainer)
                         .padding(6.dp)
                 ) {
-                    AnimatedContent(
-                        targetState = isInScreenSelectionMode,
-                        transitionSpec = { slideInVertically(bouncySpec()) { it } + fadeIn() togetherWith slideOutVertically(bouncySpec()) { it } + fadeOut() }
-                    ) {
-                        if (it) {
-                            ScreenSelection(
-                                onNavigate = onNavigate,
-                                dismiss = { isInScreenSelectionMode = false }
-                            )
-                        } else {
-                            TextField(
-                                state = textFieldState,
-                                colors = TextFieldDefaults.colors(
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent,
-                                ),
-                                placeholder = {
-                                    Text(
-                                        text = stringResource(R.string.search_here),
-                                        maxLines = 1
-                                    )
-                                },
-                                leadingIcon = {
-                                    IconButton(
-                                        onClick = { isInScreenSelectionMode = true },
-                                        shapes = IconButtonDefaults.shapes()
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(
-                                                screenToLeadingIcon[currentScreen]
-                                                    ?: R.drawable.search
-                                            ),
-                                            contentDescription = null
+                    SharedTransitionLayout {
+                        AnimatedContent(
+                            targetState = isInScreenSelectionMode,
+                            //transitionSpec = { slideInVertically(bouncySpec()) { it } + fadeIn() togetherWith slideOutVertically(bouncySpec()) { it } + fadeOut() }
+                        ) {
+                            if (it) {
+                                ScreenSelection(
+                                    onNavigate = onNavigate,
+                                    dismiss = { isInScreenSelectionMode = false },
+                                    animatedVisibilityScope = this
+                                )
+                            } else {
+                                TextField(
+                                    state = textFieldState,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .sharedElement(
+                                            sharedContentState = rememberSharedContentState("yeah"),
+                                            animatedVisibilityScope = this,
+                                        ),
+                                    colors = TextFieldDefaults.colors(
+                                        focusedIndicatorColor = Color.Transparent,
+                                        unfocusedIndicatorColor = Color.Transparent,
+                                    ),
+                                    placeholder = {
+                                        Text(
+                                            text = stringResource(R.string.search_here),
+                                            maxLines = 1
                                         )
-                                    }
-                                },
-                                trailingIcon = {
-                                    Row {
-                                        sortingMenu?.invoke()
+                                    },
+                                    leadingIcon = {
                                         IconButton(
-                                            onClick = { onNavigate(Screen.Settings) },
+                                            onClick = { isInScreenSelectionMode = true },
                                             shapes = IconButtonDefaults.shapes()
                                         ) {
                                             Icon(
-                                                painter = painterResource(R.drawable.settings_filled),
-                                                contentDescription = stringResource(R.string.settings)
+                                                painter = painterResource(
+                                                    screenToLeadingIcon[currentScreen]
+                                                        ?: R.drawable.search
+                                                ),
+                                                contentDescription = null
                                             )
                                         }
-                                    }
-                                },
-                                textStyle = TextStyle.Default.copy(
-                                    fontFamily = nunitoFontFamily
-                                ),
-                                lineLimits = TextFieldLineLimits.SingleLine,
-                                shape = FloatingToolbarDefaults.ContainerShape,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
+                                    },
+                                    trailingIcon = {
+                                        Row {
+                                            sortingMenu?.invoke()
+                                            IconButton(
+                                                onClick = { onNavigate(Screen.Settings) },
+                                                shapes = IconButtonDefaults.shapes()
+                                            ) {
+                                                Icon(
+                                                    painter = painterResource(R.drawable.settings_filled),
+                                                    contentDescription = stringResource(R.string.settings)
+                                                )
+                                            }
+                                        }
+                                    },
+                                    textStyle = TextStyle.Default.copy(
+                                        fontFamily = nunitoFontFamily
+                                    ),
+                                    lineLimits = TextFieldLineLimits.SingleLine,
+                                    shape = FloatingToolbarDefaults.ContainerShape
+                                )
+                            }
 
+                        }
                     }
                 }
             }

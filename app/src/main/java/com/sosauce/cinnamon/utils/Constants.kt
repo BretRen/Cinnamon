@@ -64,6 +64,9 @@ object DefaultTabOption {
 object LazyListKeys {
     const val ARCHIVED = "archived"
     const val PINNED_CONVERSATIONS = "pinned_conversations"
+    const val FAVORITE_CONTACTS = "FAVORITE_CONTACTS"
+    const val GROUP_CHAT_BUTTON = "GROUP_CHAT_BUTTON"
+
 }
 
 object SharedTransitionKeys {
@@ -72,4 +75,14 @@ object SharedTransitionKeys {
     const val CONTACT_NAME = "CONTACT_NAME"
     const val CONVERSATION_NAME = "CONVERSATION_NAME"
     const val CONVERSATION_WALLPAPER = "CONVERSATION_WALLPAPER"
+}
+
+object CutePaletteStyle {
+    const val EXPRESSIVE = "Expressive"
+    const val FIDELITY = "Fidelity"
+    const val TONAL_SPOT = "Tonal spot"
+    const val NEUTRAL = "Neutral"
+    const val VIBRANT = "Vibrant"
+    const val MONOCHROME = "Monochrome"
+    const val FRUIT_SALAD = "Fruit salad"
 }

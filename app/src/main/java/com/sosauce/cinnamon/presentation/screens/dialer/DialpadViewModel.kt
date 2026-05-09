@@ -4,6 +4,7 @@ package com.sosauce.cinnamon.presentation.screens.dialer
 
 import android.provider.ContactsContract
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.insert
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastFilter
@@ -60,6 +61,9 @@ class DialpadViewModel(
     }
 
 
+    fun addPlus() = textFieldState.edit { insert(length, "+") }
+
+
     private fun nameToT9(name: String): String {
         return name.lowercase().map {
             when (it) {
@@ -71,27 +75,16 @@ class DialpadViewModel(
                 'p', 'q', 'r', 's' -> '7'
                 't', 'u', 'v' -> '8'
                 'w', 'x', 'y', 'z' -> '9'
+                '+' -> '+'
                 else -> '0'
             }
         }.joinToString("")
     }
 
-    companion object {
-        private val t9Map =mapOf(
-            "ABC" to "2",
-            "DEF" to "3",
-            "GHI" to "4",
-            "JKL" to "5",
-            "MNO" to "6",
-            "PQRS" to "7",
-            "TUV" to "8",
-            "WXYZ" to "9"
-        )
-    }
-
 }
 
 data class DialpadState(
+    val isLoading: Boolean = false,
     val contacts: List<CuteContact> = emptyList(),
     val textFieldState: TextFieldState = TextFieldState()
 )

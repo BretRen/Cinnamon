@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.sosauce.cinnamon.presentation.screens.messages.about
 
 import android.net.Uri
@@ -17,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -117,27 +120,18 @@ fun SharedTransitionScope.AboutConversationScreen(
                         contentScale = ContentScale.Crop
                     )
                 }
-
-                Box(
-                    modifier = Modifier
-                        .sharedElement(
-                            sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONTACT_PFP + state.threadId),
-                            animatedVisibilityScope = LocalNavAnimatedContentScope.current
-                        )
-                ) {
-                    if (isGroupChat) {
-                        DefaultGroupChatIcon(
-                            size = 170.dp,
-                            shape = MaterialShapes.Cookie9Sided.toShape()
-                        )
-                    } else {
-                        DefaultContactIcon(
-                            firstLetter = state.nameOrBeautifiedRecipients.firstOrNull()?.firstOrNull(),
-                            size = 170.dp,
-                            contactPfp = state.recipients.firstOrNull()?.getContactPfpFromNumber(context) ?: Uri.EMPTY,
-                            shape = MaterialShapes.Cookie9Sided.toShape()
-                        )
-                    }
+                if (isGroupChat) {
+                    DefaultGroupChatIcon(
+                        size = 170.dp,
+                        shape = MaterialShapes.Cookie9Sided.toShape()
+                    )
+                } else {
+                    DefaultContactIcon(
+                        firstLetter = state.nameOrBeautifiedRecipients.firstOrNull()?.firstOrNull(),
+                        size = 170.dp,
+                        contactPfp = state.recipients.firstOrNull()?.getContactPfpFromNumber(context) ?: Uri.EMPTY,
+                        shape = MaterialShapes.Cookie9Sided.toShape()
+                    )
                 }
             }
 
@@ -154,11 +148,7 @@ fun SharedTransitionScope.AboutConversationScreen(
                 },
                 modifier = Modifier
                     .selfAlignHorizontally()
-                    .basicMarquee()
-                    .sharedBounds(
-                        sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONVERSATION_NAME + state.threadId),
-                        animatedVisibilityScope = LocalNavAnimatedContentScope.current
-                    ),
+                    .basicMarquee(),
                 style = MaterialTheme.typography.headlineLargeEmphasized
             )
 

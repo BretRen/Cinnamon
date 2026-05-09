@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
+import com.sosauce.cinnamon.presentation.shared_components.animations.AnimatedFab
 import com.sosauce.cinnamon.utils.selfAlignHorizontally
 
 @Composable
@@ -41,15 +42,10 @@ fun CuteNavigationButtonSurface(
     modifier: Modifier = Modifier,
     onNavigateUp: () -> Unit
 ) {
-    FloatingActionButton(
-        onClick = onNavigateUp,
+    AnimatedFab(
         modifier = modifier,
-        shape = MaterialShapes.Cookie9Sided.toShape(),
-        containerColor = MaterialTheme.colorScheme.surfaceContainer
-    ) {
-        Icon(
-            painter = painterResource(R.drawable.back),
-            contentDescription = null
-        )
-    }
+        onClick = onNavigateUp,
+        icon = R.drawable.back,
+        color = MaterialTheme.colorScheme.surfaceContainer
+    )
 }

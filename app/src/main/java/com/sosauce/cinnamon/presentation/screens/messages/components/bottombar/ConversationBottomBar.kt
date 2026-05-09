@@ -49,7 +49,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorPosition
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -75,8 +78,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.data.datastore.rememberShowCharCount
@@ -183,27 +193,28 @@ fun ConversationBottomBar(
             .selfAlignHorizontally()
             .fillMaxWidth(0.95f)
     ) {
-        FloatingActionButtonMenu(
-            expanded = isActionPickerExpanded,
-            button = {},
-            horizontalAlignment = Alignment.Start,
-            modifier = Modifier
-                .animateContentSize()
-                .padding(bottom = 5.dp)
+        Popup(
+            popupPositionProvider = MenuDefaults.rememberDropdownMenuPopupPositionProvider(MenuAnchorPosition.Below)
         ) {
-            attachmentOptions.fastForEach { option ->
-                FloatingActionButtonMenuItem(
-                    onClick = option.onClick,
-                    text = { Text(stringResource(option.text)) },
-                    icon = {
-                        Icon(
-                            painter = painterResource(option.icon),
-                            contentDescription = null
-                        )
-                    }
-                )
-            }
+            FloatingActionButtonMenu(
+                expanded = isActionPickerExpanded,
+                button = {},
+                horizontalAlignment = Alignment.Start
+            ) {
+                attachmentOptions.fastForEach { option ->
+                    FloatingActionButtonMenuItem(
+                        onClick = option.onClick,
+                        text = { Text(stringResource(option.text)) },
+                        icon = {
+                            Icon(
+                                painter = painterResource(option.icon),
+                                contentDescription = null
+                            )
+                        }
+                    )
+                }
 
+            }
         }
 
         AnimatedVisibility(
@@ -268,103 +279,99 @@ fun ConversationBottomBar(
                 }
             }
         }
-        if (conversationState.isSoloRecipientBlocked) {
-            TextingUnavailableBar(reason = TextingUnavailableReason.BLOCKED)
-        } else {
-            Column(
-                modifier = Modifier
-                    .imePadding()
-                    .navigationBarsPadding()
-                    .background(
-                        color = MaterialTheme.colorScheme.surfaceContainer,
-                        shape = RoundedCornerShape(50.dp)
-                    )
-                    .padding(10.dp)
+        Column(
+            modifier = Modifier
+                .imePadding()
+                .navigationBarsPadding()
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    shape = RoundedCornerShape(50.dp)
+                )
+                .padding(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.animateContentSize(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.animateContentSize(),
-                    verticalAlignment = Alignment.CenterVertically
+                IconButton(
+                    onClick = { isActionPickerExpanded = !isActionPickerExpanded },
+                    shapes = IconButtonDefaults.shapes()
                 ) {
-                    IconButton(
-                        onClick = { isActionPickerExpanded = !isActionPickerExpanded },
-                        shapes = IconButtonDefaults.shapes()
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.add),
-                            contentDescription = null,
-                            modifier = Modifier.rotate(attachmentRotation)
-                        )
-                    }
-                    TextField(
-                        state = viewModel.textFieldState,
-                        shape = FloatingToolbarDefaults.ContainerShape,
-                        lineLimits = TextFieldLineLimits.SingleLine,
-                        modifier = Modifier.weight(1f),
-                        colors = TextFieldDefaults.colors(
-                            unfocusedIndicatorColor = Color.Transparent,
-                            focusedIndicatorColor = Color.Transparent
-                        ),
-                        trailingIcon =
-                            if (showCharCount) {
-                                {
-                                    val charCount = state.message.length
-                                    val segmentCount = if (charCount <= 160) 1 else ceil(charCount / 160.0).toInt()
-                                    CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.bodySmallEmphasized) {
-                                        Row {
-                                            AnimatedCounter(charCount)
-                                            Text("/")
-                                            AnimatedCounter(segmentCount)
-                                        }
+                    Icon(
+                        painter = painterResource(R.drawable.add),
+                        contentDescription = null,
+                        modifier = Modifier.rotate(attachmentRotation)
+                    )
+                }
+                TextField(
+                    state = viewModel.textFieldState,
+                    shape = FloatingToolbarDefaults.ContainerShape,
+                    lineLimits = TextFieldLineLimits.SingleLine,
+                    modifier = Modifier.weight(1f),
+                    colors = TextFieldDefaults.colors(
+                        unfocusedIndicatorColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent
+                    ),
+                    trailingIcon =
+                        if (showCharCount) {
+                            {
+                                val charCount = state.message.length
+                                val segmentCount = if (charCount <= 160) 1 else ceil(charCount / 160.0).toInt()
+                                CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.bodySmallEmphasized) {
+                                    Row {
+                                        AnimatedCounter(charCount)
+                                        Text("/")
+                                        AnimatedCounter(segmentCount)
                                     }
                                 }
+                            }
 
-                            } else null
-                    )
-                    IconButton(
-                        onClick = {
-                            if (state.scheduledTime != null) {
-                                onHandleConversationActions(
-                                    ConversationActions.ScheduleMessage(
-                                        ScheduledMessage(
-                                            threadId = conversationState.threadId,
-                                            address = conversationState.recipients.first(),
-                                            message = state.message,
-                                            sendAt = state.scheduledTime ?: return@IconButton
-                                        )
-                                    )
-                                )
-                            } else {
-                                onHandleConversationActions(
-                                    ConversationActions.SendMessage(
-                                        addresses = conversationState.recipients,
+                        } else null
+                )
+                IconButton(
+                    onClick = {
+                        if (state.scheduledTime != null) {
+                            onHandleConversationActions(
+                                ConversationActions.ScheduleMessage(
+                                    ScheduledMessage(
+                                        threadId = conversationState.threadId,
+                                        address = conversationState.recipients.first(),
                                         message = state.message,
-                                        attachments = state.attachments
+                                        sendAt = state.scheduledTime ?: return@IconButton
                                     )
                                 )
-                            }
-                            viewModel.resetState()
-                        },
-                        shapes = IconButtonDefaults.shapes(),
-                        enabled = (state.message.isNotEmpty() && state.message.isNotBlank()) || state.attachments.isNotEmpty(),
-                    ) {
-
-                        AnimatedContent(
-                            targetState = state.scheduledTime != null,
-                            transitionSpec = { slideInHorizontally { -it } togetherWith slideOutHorizontally { it } }
-                        ) {
-                            if (it) {
-                                Icon(
-                                    painter = painterResource(R.drawable.schedule_send),
-                                    contentDescription = "send scheduled message"
+                            )
+                        } else {
+                            onHandleConversationActions(
+                                ConversationActions.SendMessage(
+                                    addresses = conversationState.recipients,
+                                    message = state.message,
+                                    attachments = state.attachments
                                 )
-                            } else {
-                                Icon(
-                                    painter = painterResource(R.drawable.send_filled),
-                                    contentDescription = "send message"
-                                )
-                            }
-
+                            )
                         }
+                        viewModel.resetState()
+                    },
+                    shapes = IconButtonDefaults.shapes(),
+                    enabled = (state.message.isNotEmpty() && state.message.isNotBlank()) || state.attachments.isNotEmpty(),
+                ) {
+
+                    AnimatedContent(
+                        targetState = state.scheduledTime != null,
+                        transitionSpec = { slideInHorizontally { -it } togetherWith slideOutHorizontally { it } }
+                    ) {
+                        if (it) {
+                            Icon(
+                                painter = painterResource(R.drawable.schedule_send),
+                                contentDescription = "send scheduled message"
+                            )
+                        } else {
+                            Icon(
+                                painter = painterResource(R.drawable.send_filled),
+                                contentDescription = "send message"
+                            )
+                        }
+
                     }
                 }
             }

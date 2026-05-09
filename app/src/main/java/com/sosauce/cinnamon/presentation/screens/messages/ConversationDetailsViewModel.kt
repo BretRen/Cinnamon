@@ -9,10 +9,14 @@ import android.net.Uri
 import android.provider.BlockedNumberContract
 import android.provider.MediaStore
 import android.widget.Toast
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.util.fastFilter
+import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.core.content.contentValuesOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
@@ -31,21 +35,31 @@ import com.sosauce.cinnamon.domain.repository.ConversationsRepository
 import com.sosauce.cinnamon.utils.beautifyNumber
 import com.sosauce.cinnamon.utils.blockNumbers
 import com.sosauce.cinnamon.utils.getContactNameOrNothing
+import com.sosauce.cinnamon.utils.getContactPfpFromNumber
+import com.sosauce.cinnamon.utils.isShortCode
 import com.sosauce.cinnamon.utils.observe
 import com.sosauce.cinnamon.utils.toDate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 class ConversationDetailsViewModel(
@@ -64,53 +78,68 @@ class ConversationDetailsViewModel(
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
-            supervisorScope {
-                launch {
-                    combine(
-                        conversationsRepository.fetchLatestSmsForThread(threadId),
-                        conversationsRepository.fetchLatestMmsForThread(threadId),
-                        scheduledMessagesDao.getScheduledMessagesForThread(threadId),
-                        application.contentResolver.observe(BlockedNumberContract.BlockedNumbers.CONTENT_URI)
-                    ) { sms, mms, scheduled, _ -> sms + mms + scheduled.fastMap { it.toCuteMessage() } }.collectLatest { messages ->
-                        _state.update {
-                            it.copy(
-                                messages = messages.sortedByDescending { it.date }.groupBy { it.date.toDate() },
-                                isLoading = false
-                            )
-                        }
-                    }
-                }
-                launch {
-                    val threadRecipients = conversationsRepository.fetchThreadRecipients(threadId)
-
-                    _state.update {
-                        it.copy(
-                            recipients = threadRecipients,
-                            nameOrBeautifiedRecipients = threadRecipients.fastMap { it.getContactNameOrNothing(application).beautifyNumber() }
-                        )
-                    }
-
-                    application.contentResolver.observe(BlockedNumberContract.BlockedNumbers.CONTENT_URI).onEach {
-                        if (state.value.recipients.size > 1) return@onEach
-
-                        val number = state.value.recipients.firstOrNull() ?: return@onEach
-                        _state.update {
-                            it.copy(
-                                isSoloRecipientBlocked = BlockedNumberContract.isBlocked(application, number)
-                            )
-                        }
-                    }.launchIn(viewModelScope + Dispatchers.IO)
-
-                }
-                launch {
-                    conversationSettingsDao.getConversationSettings(threadId).collectLatest { settings ->
-                        _state.update {
-                            it.copy(settings = settings ?: ConversationSettings(threadId = threadId))
-                        }
-                    }
+            combine(
+                conversationsRepository.fetchLatestSmsForThread(threadId),
+                conversationsRepository.fetchLatestMmsForThread(threadId),
+                scheduledMessagesDao.getScheduledMessagesForThread(threadId),
+                application.contentResolver.observe(BlockedNumberContract.BlockedNumbers.CONTENT_URI)
+            ) { sms, mms, scheduled, _ ->
+                sms + mms + scheduled.fastMap { it.toCuteMessage() }
+            }.collectLatest { messages ->
+                _state.update {
+                    it.copy(
+                        messages = messages.sortedByDescending { it.date }.groupBy { it.date.toDate() },
+                        isLoading = false
+                    )
                 }
             }
+        }
 
+        viewModelScope.launch(Dispatchers.IO) {
+            val number = state
+                .mapLatest { it.recipients }
+                .filter { it.isNotEmpty() }
+                .first()
+                .first()
+
+            _state.update {
+                it.copy(
+                    pfp = number.getContactPfpFromNumber(application)
+                )
+            }
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val threadRecipients = conversationsRepository.fetchThreadRecipients(threadId)
+
+            val isShortCode = if (threadRecipients.size > 1) false else threadRecipients.firstOrNull()?.isShortCode() == true
+
+            _state.update {
+                it.copy(
+                    recipients = threadRecipients,
+                    nameOrBeautifiedRecipients = threadRecipients.fastMap { it.getContactNameOrNothing(application).beautifyNumber() },
+                    isShortCode = isShortCode
+                )
+            }
+
+            application.contentResolver.observe(BlockedNumberContract.BlockedNumbers.CONTENT_URI).collectLatest {
+                if (state.value.recipients.size > 1) return@collectLatest
+
+                val number = state.value.recipients.firstOrNull() ?: return@collectLatest
+                _state.update {
+                    it.copy(
+                        isSoloRecipientBlocked = BlockedNumberContract.isBlocked(application, number)
+                    )
+                }
+            }
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            conversationSettingsDao.getConversationSettings(threadId).collectLatest { settings ->
+                _state.update {
+                    it.copy(settings = settings ?: ConversationSettings(threadId = threadId))
+                }
+            }
         }
     }
 
@@ -155,7 +184,7 @@ class ConversationDetailsViewModel(
                             )
                         )
                         .build()
-                    workManager.enqueue(request)
+                    workManager.enqueueUniqueWork("Scheduled message ID: $scheduledMessageId", ExistingWorkPolicy.KEEP, request)
                 }
             }
 
@@ -209,6 +238,23 @@ class ConversationDetailsViewModel(
                     }
                 }
             }
+
+            is ConversationActions.DeleteSelectedMessages -> {
+
+                val scheduledMessages = action.messages.fastFilter { it.isScheduled }
+
+                viewModelScope.launch(Dispatchers.IO) { conversationsRepository.deleteMessages(action.messages) }
+
+                if (scheduledMessages.isNotEmpty()) {
+                    viewModelScope.launch(Dispatchers.IO) {
+                        scheduledMessages.fastMap { scheduledMessagesDao.getScheduledMessageById(it.id) }.fastForEach {
+                            scheduledMessagesDao.deleteScheduledMessage(it)
+                            workManager.cancelUniqueWork("Scheduled message ID: ${it.id}")
+                        }
+                    }
+
+                }
+            }
         }
     }
 
@@ -224,7 +270,9 @@ data class ConversationDetailsState(
     val nameOrBeautifiedRecipients: List<String> = emptyList(), // phone numbers or contacts in the conversation
     val settings: ConversationSettings = ConversationSettings(),
     val messages: Map<String, List<CuteMessage>> = emptyMap(),
-    val isSoloRecipientBlocked: Boolean = false // Always false for GCs
+    val isSoloRecipientBlocked: Boolean = false, // Always false for GCs
+    val pfp: Uri = Uri.EMPTY,
+    val isShortCode: Boolean = false
 )
 
 sealed interface ConversationActions {
@@ -243,4 +291,9 @@ sealed interface ConversationActions {
     data class DownloadMmsImage(val image: Uri) : ConversationActions
 
     data object ToggleBlock : ConversationActions
+
+    data class DeleteSelectedMessages(
+        val messages: List<CuteMessage>
+    ) : ConversationActions
+
 }

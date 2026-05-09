@@ -22,7 +22,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.sosauce.cinnamon.data.managers.AudioManager
-import com.sosauce.cinnamon.presentation.shared_components.searchbars.MiniCuteSearchbar
+import com.sosauce.cinnamon.presentation.shared_components.buttons.CuteNavigationButton
+import com.sosauce.cinnamon.presentation.shared_components.searchbars.CuteSearchbar
+import com.sosauce.cinnamon.utils.selfAlignHorizontally
 
 @Composable
 fun VoicemailScreen(
@@ -52,13 +54,15 @@ fun VoicemailScreen(
         Scaffold(
             contentWindowInsets = WindowInsets.safeDrawing,
             bottomBar = {
-                MiniCuteSearchbar(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentWidth()
-                        .navigationBarsPadding(),
+                CuteSearchbar(
+                    modifier = Modifier.selfAlignHorizontally(),
                     textFieldState = textState,
-                    onNavigateUp = onNavigateUp
+                    navigationIcon = {
+                        CuteNavigationButton(
+                            onNavigateUp = onNavigateUp
+                        )
+                    },
+                    onNavigate = {}
                 )
             }
         ) { paddingValues ->

@@ -11,6 +11,7 @@ import androidx.lifecycle.viewModelScope
 import coil3.request.Disposable
 import com.sosauce.cinnamon.domain.model.CuteContact
 import com.sosauce.cinnamon.domain.repository.ContactsRepository
+import com.sosauce.cinnamon.utils.copyMutate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -60,6 +61,28 @@ class StartConversationViewModel(
             }
         }
     }
+
+
+    fun toggleGroupChatMode() {
+        _state.update {
+            it.copy(
+                isGroupChatMode = !it.isGroupChatMode
+            )
+        }
+    }
+
+    fun addNumberToGroup(number: String) {
+        _state.update {
+            it.copy(
+                selectedNumbers = it.selectedNumbers.copyMutate {
+                    if (!remove(number)) {
+                        add(number)
+                        println("added: $number")
+                    }
+                }
+            )
+        }
+    }
 }
 
 
@@ -68,7 +91,7 @@ data class StartConversationState(
     val isGroupChatMode: Boolean = false,
     val selectedNumbers: List<String> = emptyList(),
     val textFieldState: TextFieldState = TextFieldState(),
-    val isSearching: Boolean = textFieldState.text.isNotEmpty()
+    val isSearching: Boolean = textFieldState.text.isNotEmpty(),
 )
 
 sealed interface StartConversationActions {

@@ -30,13 +30,10 @@ class MainActivity : ComponentActivity() {
 
         setContent {
 
-            val context = LocalContext.current
             val theme by rememberAppTheme()
             val isSystemInDarkTheme = isSystemInDarkTheme()
-            val primary = MaterialTheme.colorScheme.primary
-            var seedColor by remember { mutableStateOf(context.getAdaptivePrimaryColor(primary)) }
 
-            CinnamonTheme(seedColor) {
+            CinnamonTheme {
 
                 WindowCompat
                     .getInsetsController(window, window.decorView)
@@ -52,8 +49,7 @@ class MainActivity : ComponentActivity() {
                 var hasBothRoles by remember { mutableStateOf(hasBothRoles()) }
                 if (hasBothRoles) {
                     Nav(
-                        intent = intent,
-                        onUpdateSeedColor = { seedColor = it }
+                        intent = intent
                     )
                 } else {
                     SetupPermissions { hasBothRoles = hasBothRoles() }

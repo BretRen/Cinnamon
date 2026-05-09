@@ -8,6 +8,7 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.provider.BlockedNumberContract
+import android.provider.ContactsContract
 import android.provider.Telephony
 import android.provider.Telephony.Mms
 import android.provider.Telephony.MmsSms
@@ -25,6 +26,7 @@ import com.sosauce.cinnamon.domain.model.CuteConversation
 import com.sosauce.cinnamon.domain.model.CuteMessage
 import com.sosauce.cinnamon.utils.beautifyNumber
 import com.sosauce.cinnamon.utils.getContactNameOrNothing
+import com.sosauce.cinnamon.utils.getContactPfpFromNumber
 import com.sosauce.cinnamon.utils.observe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -40,19 +42,17 @@ class MessagesRepository(private val context: Context) {
 
     fun fetchLatestConversations(
         extraSelection: String? = null,
-        extraSelectionArgs: Array<String> = emptyArray(),
-        extraSortOrder: String = "${Telephony.Threads.DATE} DESC"
+        extraSelectionArgs: Array<String> = emptyArray()
     ): Flow<List<CuteConversation>> {
         return context.contentResolver.observe(Telephony.Threads.CONTENT_URI).mapLatest {
-            fetchConversations(extraSelection, extraSelectionArgs, extraSortOrder)
+            fetchConversations(extraSelection, extraSelectionArgs)
         }.flowOn(Dispatchers.IO)
     }
 
 
     private fun fetchConversations(
         extraSelection: String?,
-        extraSelectionArgs: Array<String>,
-        extraSortOrder: String
+        extraSelectionArgs: Array<String>
     ): List<CuteConversation> {
         val conversations = mutableListOf<CuteConversation>()
 
@@ -88,7 +88,7 @@ class MessagesRepository(private val context: Context) {
             projection,
             selection,
             selectionArgs,
-            extraSortOrder,
+            "${Telephony.Threads.DATE} DESC",
         )?.use { cursor ->
             val idColumn = cursor.getColumnIndexOrThrow(Telephony.Threads._ID)
             val snippetColumn = cursor.getColumnIndexOrThrow(Telephony.Threads.SNIPPET)
@@ -98,9 +98,7 @@ class MessagesRepository(private val context: Context) {
 
             while (cursor.moveToNext()) {
                 val threadId = cursor.getLong(idColumn)
-                val recipientIds = cursor.getString(recipientIdColumn)
-                    .split(" ")
-                    .fastMap { it.toLongOrNull() ?: 0 }
+                val recipientIds = cursor.getString(recipientIdColumn).split(" ")
                 val date = cursor.getLong(dateColumn)
                 val read = cursor.getInt(readColumn) != 0
                 val rawRecipients = recipientIds.fastMap { it.getNumberForId() }
@@ -112,6 +110,9 @@ class MessagesRepository(private val context: Context) {
                 } else {
                     systemSnippet
                 }
+
+
+
 
                 conversations.add(
                     CuteConversation(
@@ -130,6 +131,7 @@ class MessagesRepository(private val context: Context) {
 
        return conversations
     }
+
 
     /**
      * I don't wanna use [android.provider.BlockedNumberContract.isBlocked] because they say it's slow and that's spooky
@@ -157,7 +159,7 @@ class MessagesRepository(private val context: Context) {
 
     }
 
-    private fun Long.getNumberForId(): String {
+    private fun String.getNumberForId(): String {
 
         val uri = Uri.withAppendedPath(MmsSms.CONTENT_URI, "canonical-addresses")
 
@@ -165,7 +167,7 @@ class MessagesRepository(private val context: Context) {
             uri,
             arrayOf(Mms.Addr.ADDRESS),
             "${Mms._ID} = ?",
-            arrayOf(this.toString()),
+            arrayOf(this),
             null
         )?.use { cursor ->
             val addressColumn = cursor.getColumnIndexOrThrow(Mms.Addr.ADDRESS)

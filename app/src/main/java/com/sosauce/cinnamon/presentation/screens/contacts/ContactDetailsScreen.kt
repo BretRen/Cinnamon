@@ -2,19 +2,10 @@
 
 package com.sosauce.cinnamon.presentation.screens.contacts
 
-import android.graphics.Matrix
-import android.graphics.Path
-import android.graphics.Rect
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -37,7 +28,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ContainedLoadingIndicator
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuGroup
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.DropdownMenuPopup
@@ -58,52 +48,37 @@ import androidx.compose.material3.contentColorFor
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.zIndex
-import androidx.graphics.shapes.Morph
-import androidx.graphics.shapes.RoundedPolygon
-import androidx.graphics.shapes.toPath
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import coil3.compose.AsyncImage
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
-import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.skydoves.cloudy.cloudy
 import com.sosauce.cinnamon.R
-import com.sosauce.cinnamon.data.contact_settings.ContactSettingsActions
 import com.sosauce.cinnamon.presentation.navigation.Screen
 import com.sosauce.cinnamon.presentation.screens.contacts.components.ContactActionsRow
 import com.sosauce.cinnamon.presentation.screens.contacts.components.ContactInfos
 import com.sosauce.cinnamon.presentation.screens.messages.components.bottombar.MoreOptions
 import com.sosauce.cinnamon.presentation.screens.phone.CallAction
 import com.sosauce.cinnamon.presentation.shared_components.DefaultContactIcon
+import com.sosauce.cinnamon.presentation.shared_components.animations.AnimatedMoreIcon
 import com.sosauce.cinnamon.presentation.shared_components.buttons.CuteNavigationButtonSurface
 import com.sosauce.cinnamon.utils.SharedTransitionKeys
 import com.sosauce.cinnamon.utils.getItemShape
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import java.io.File
-import kotlin.math.max
 
 @Composable
 fun SharedTransitionScope.ContactDetailsScreen(
@@ -116,11 +91,13 @@ fun SharedTransitionScope.ContactDetailsScreen(
 
     var showMoreOptions by remember { mutableStateOf(false) }
     var showBlockDialog by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
+    var playFavoriteAnimation by remember { mutableStateOf(false) }
 
     val moreOptions = listOf(
         MoreOptions(
             onClick = {},
-            icon = R.drawable.share,
+            icon = R.drawable.share_outlined,
             text = R.string.share
         ),
         MoreOptions(
@@ -219,10 +196,6 @@ fun SharedTransitionScope.ContactDetailsScreen(
             ContainedLoadingIndicator()
         }
     } else {
-        val context = LocalContext.current
-        val scrollState = rememberScrollState()
-        var playFavoriteAnimation by remember { mutableStateOf(false) }
-
 
         AnimatedVisibility(
             visible = playFavoriteAnimation,
@@ -236,8 +209,7 @@ fun SharedTransitionScope.ContactDetailsScreen(
                 LottieCompositionSpec.RawRes(raw)
             )
             val progress by animateLottieCompositionAsState(
-                composition = composition,
-                speed = 2f
+                composition = composition
             )
 
             Box(
@@ -287,10 +259,7 @@ fun SharedTransitionScope.ContactDetailsScreen(
                                     onClick = { showMoreOptions = true },
                                     shapes = IconButtonDefaults.shapes()
                                 ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.more_vert),
-                                        contentDescription = null
-                                    )
+                                    AnimatedMoreIcon(showMoreOptions)
                                 }
                                 DropdownMenuPopup(
                                     expanded = showMoreOptions,

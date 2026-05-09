@@ -18,6 +18,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.utils.ICON_TEXT_SPACING
+import com.sosauce.cinnamon.utils.selfAlignHorizontally
 
 @Composable
 fun TextingUnavailableBar(
@@ -38,9 +39,9 @@ fun TextingUnavailableBar(
     HorizontalFloatingToolbar(
         expanded = false,
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 5.dp)
             .navigationBarsPadding()
+            .selfAlignHorizontally()
+            .fillMaxWidth(0.95f)
     ) {
         Icon(
             painter = painterResource(reasonIcon),

@@ -17,6 +17,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,7 +31,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
 import com.sosauce.cinnamon.R
+import com.sosauce.cinnamon.utils.getContactPfpFromNumber
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun DefaultContactIcon(
@@ -41,6 +47,10 @@ fun DefaultContactIcon(
     shape: Shape = MaterialShapes.Circle.toShape(),
     @DrawableRes icon: Int = R.drawable.person_filled
 ) {
+
+    val context = LocalContext.current
+
+
     Box(
         modifier = modifier
             .size(size)

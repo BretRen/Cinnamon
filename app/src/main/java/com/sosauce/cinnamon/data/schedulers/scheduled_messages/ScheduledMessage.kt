@@ -2,8 +2,10 @@ package com.sosauce.cinnamon.data.schedulers.scheduled_messages
 
 import android.provider.Telephony
 import androidx.room.Entity
+import androidx.room.Ignore
 import androidx.room.PrimaryKey
 import com.sosauce.cinnamon.domain.model.CuteMessage
+import java.util.UUID
 import kotlin.random.Random
 
 @Entity
@@ -18,7 +20,7 @@ data class ScheduledMessage(
 
 fun ScheduledMessage.toCuteMessage(): CuteMessage {
     return CuteMessage(
-        id = Random.nextLong(),
+        id = id,
         body = message,
         address = address,
         date = sendAt,

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -68,6 +69,7 @@ import com.sosauce.cinnamon.presentation.screens.contacts.groupedContactsList
 import com.sosauce.cinnamon.presentation.screens.phone.CallAction
 import com.sosauce.cinnamon.presentation.screens.phone.components.DisableSoftKeyboard
 import com.sosauce.cinnamon.presentation.shared_components.NoXFound
+import com.sosauce.cinnamon.presentation.shared_components.buttons.LongClickButton
 import com.sosauce.cinnamon.presentation.shared_components.items.CuteListItem
 import com.sosauce.cinnamon.utils.backspace
 import com.sosauce.cinnamon.utils.getThreadIdOrCreate
@@ -78,7 +80,8 @@ fun SharedTransitionScope.DialpadScreen(
     state: DialpadState,
     onNavigate: (Screen) -> Unit,
     onNavigateUp: () -> Unit,
-    onHandleCallAction: (CallAction) -> Unit
+    onHandleCallAction: (CallAction) -> Unit,
+    onAddPlus: () -> Unit
 ) {
     val dialpadLayout = listOf(
         listOf("1", "2", "3"),
@@ -125,43 +128,44 @@ fun SharedTransitionScope.DialpadScreen(
                     )
                     .navigationBarsPadding()
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = onNavigateUp,
-                        shapes = IconButtonDefaults.shapes()
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.back),
-                            contentDescription = null
-                        )
-                    }
-                    DisableSoftKeyboard {
-                        OutlinedTextField(
-                            state = state.textFieldState,
-                            lineLimits = TextFieldLineLimits.SingleLine,
-                            modifier = Modifier.focusRequester(focusRequester),
-                            colors = TextFieldDefaults.colors(
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent,
-                                focusedContainerColor = Color.Transparent
-                            )
-                        )
-                    }
-                    IconButton(
-                        onClick = { state.textFieldState.backspace() },
-                        shapes = IconButtonDefaults.shapes(),
-                        enabled = state.textFieldState.text.isNotEmpty()
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.backspace),
-                            contentDescription = null
-                        )
-                    }
+                DisableSoftKeyboard {
+                    OutlinedTextField(
+                        state = state.textFieldState,
+                        lineLimits = TextFieldLineLimits.SingleLine,
+                        modifier = Modifier
+                            .padding(horizontal = 5.dp)
+                            .fillMaxWidth()
+                            .focusRequester(focusRequester),
+                        colors = TextFieldDefaults.colors(
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            focusedContainerColor = Color.Transparent
+                        ),
+                        leadingIcon = {
+                            IconButton(
+                                onClick = onNavigateUp,
+                                shapes = IconButtonDefaults.shapes()
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.back),
+                                    contentDescription = null
+                                )
+                            }
+                        },
+                        trailingIcon = {
+                            IconButton(
+                                onClick = { state.textFieldState.backspace() },
+                                shapes = IconButtonDefaults.shapes(),
+                                enabled = state.textFieldState.text.isNotEmpty()
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.backspace),
+                                    contentDescription = null
+                                )
+                            }
+                        }
+                    )
                 }
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                     Column(
@@ -176,14 +180,28 @@ fun SharedTransitionScope.DialpadScreen(
                                 horizontalArrangement = Arrangement.spacedBy(5.dp)
                             ) {
                                 rowKeys.fastForEach { number ->
-                                    Button(
+                                    val letters = t9Map[number] ?: ""
+                                    val onLongClick = remember {
+                                        if (letters == "+") {
+                                            onAddPlus
+                                        } else null
+                                    }
+
+                                    LongClickButton(
                                         onClick = {
                                             state.textFieldState.edit {
                                                 insert(state.textFieldState.text.length, number)
                                             }
                                         },
-                                        modifier = Modifier.weight(1f),
-                                        shapes = ButtonDefaults.shapes(),
+                                        onLongClick = onLongClick,
+                                        modifier = Modifier
+                                            //.aspectRatio(18f / 9f)
+                                            .size(
+                                                IconButtonDefaults.mediumContainerSize(
+                                                    IconButtonDefaults.IconButtonWidthOption.Wide
+                                                )
+                                            )
+                                            .weight(1f),
                                         colors = ButtonDefaults.buttonColors(
                                             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                                             contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainerHigh)
@@ -194,8 +212,6 @@ fun SharedTransitionScope.DialpadScreen(
                                                 text = number,
                                                 style = MaterialTheme.typography.bodyLargeEmphasized
                                             )
-
-                                            val letters = t9Map[number] ?: ""
                                             Text(
                                                 text = letters,
                                                 style = MaterialTheme.typography.labelSmallEmphasized.copy(
@@ -227,29 +243,38 @@ fun SharedTransitionScope.DialpadScreen(
             }
         }
     ) { paddingValues ->
-        LazyColumn(
-            contentPadding = paddingValues,
-            modifier = Modifier.padding(horizontal = 10.dp)
-        ) {
-            groupedContactsList(
-                contacts = state.contacts,
-                showPhoneNumbers = true,
-                sharedTransitionScope = this@DialpadScreen,
-                onContactClicked = { contact ->
-                    if (contact.details.phoneNumbers.size > 1) {
-                        showMultiNumberSelection = Pair(true, contact.id)
-                    } else {
-                        onHandleCallAction(CallAction.LaunchCall(contact.details.phoneNumbers.first().number))
+        if (state.isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                ContainedLoadingIndicator()
+            }
+        } else {
+            LazyColumn(
+                contentPadding = paddingValues,
+                modifier = Modifier.padding(horizontal = 10.dp)
+            ) {
+                groupedContactsList(
+                    contacts = state.contacts,
+                    showPhoneNumbers = true,
+                    sharedTransitionScope = this@DialpadScreen,
+                    onContactClicked = { contact ->
+                        if (contact.details.phoneNumbers.size > 1) {
+                            showMultiNumberSelection = Pair(true, contact.id)
+                        } else {
+                            onHandleCallAction(CallAction.LaunchCall(contact.details.phoneNumbers.first().number))
+                        }
+                    },
+                    emptyState = {
+                        NoXFound(
+                            headlineText = R.string.no_contacts_found,
+                            bodyText = R.string.no_contacts_found_dialer_desc,
+                            icon = R.drawable.contacts
+                        )
                     }
-                },
-                emptyState = {
-                    NoXFound(
-                        headlineText = R.string.no_contacts_found,
-                        bodyText = R.string.no_contacts_found_dialer_desc,
-                        icon = R.drawable.contacts
-                    )
-                }
-            )
+                )
+            }
         }
 
     }

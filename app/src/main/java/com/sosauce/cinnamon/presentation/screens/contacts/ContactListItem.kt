@@ -3,25 +3,19 @@
 package com.sosauce.cinnamon.presentation.screens.contacts
 
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import com.sosauce.cinnamon.domain.model.CuteContact
 import com.sosauce.cinnamon.presentation.shared_components.DefaultContactIcon
+import com.sosauce.cinnamon.presentation.shared_components.animations.AnimatedSelectedIcon
 import com.sosauce.cinnamon.presentation.shared_components.items.CuteListItem
 import com.sosauce.cinnamon.utils.SharedTransitionKeys
 import com.sosauce.cinnamon.utils.beautifyNumber
@@ -30,21 +24,34 @@ import com.sosauce.cinnamon.utils.beautifyNumber
 fun SharedTransitionScope.ContactListItem(
     modifier: Modifier = Modifier,
     contact: CuteContact,
-    onContactClick: () -> Unit,
+    isSelected: Boolean = false,
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
     showNumber: Boolean = false
 ) {
 
 
+    val scale by animateFloatAsState(
+        targetValue = if (isSelected) 0.95f else 1f
+    )
+
     CuteListItem(
-        modifier = modifier,
-        onClick = onContactClick,
+        modifier = modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            },
+        onClick = onClick,
+        onLongClick = onLongClick,
         leadingContent = {
-            DefaultContactIcon(
-                firstLetter = contact.displayName.firstOrNull(),
-                modifier = Modifier
-                    .padding(start = 10.dp),
-                contactPfp = contact.photo
-            )
+            AnimatedSelectedIcon(
+                isSelected = isSelected
+            ) {
+                DefaultContactIcon(
+                    firstLetter = contact.displayName.firstOrNull(),
+                    contactPfp = contact.photo
+                )
+            }
         }
     ) {
         Text(

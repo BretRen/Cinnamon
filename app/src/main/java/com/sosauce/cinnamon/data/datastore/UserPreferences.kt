@@ -7,7 +7,6 @@ import android.telephony.SubscriptionManager
 import androidx.compose.ui.util.fastForEach
 import androidx.datastore.preferences.core.edit
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.ARCHIVED_CONVOS
-import com.sosauce.cinnamon.data.datastore.PreferencesKeys.BLOCKED_NUMBERS
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.DEFAULT_MESSAGES_SIM
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.ENABLE_DELIVERY_REPORTS
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.PINNED_CONVOS
@@ -31,10 +30,6 @@ class UserPreferences(private val context: Context) {
         it[ARCHIVED_CONVOS] ?: emptySet()
     }
 
-    val blockedNumbers = context.dataStore.data.map {
-        it[BLOCKED_NUMBERS] ?: emptySet()
-    }
-
     val groupAsMms = context.dataStore.data.map {
         it[SEND_GROUP_AS_MMS] ?: false
     }
@@ -47,11 +42,6 @@ class UserPreferences(private val context: Context) {
         it[ENABLE_DELIVERY_REPORTS] ?: false
     }
 
-    suspend fun saveBlockedNumbers(blockedNumbers: Set<String>) {
-        context.dataStore.edit {
-            it[BLOCKED_NUMBERS] = blockedNumbers
-        }
-    }
 
     val defaultMessagesSim = context.dataStore.data.map {
         it[DEFAULT_MESSAGES_SIM] ?: SubscriptionManager.getDefaultSmsSubscriptionId()

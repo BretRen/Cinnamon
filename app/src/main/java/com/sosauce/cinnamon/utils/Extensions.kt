@@ -31,7 +31,10 @@ import android.util.Patterns
 import android.widget.Toast
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
@@ -48,6 +51,7 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -56,8 +60,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
@@ -65,6 +71,7 @@ import androidx.core.content.contentValuesOf
 import androidx.core.net.toUri
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import com.materialkolor.PaletteStyle
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.data.datastore.rememberIsLandscape
 import com.sosauce.cinnamon.presentation.navigation.Screen
@@ -74,7 +81,9 @@ import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.hazeEffect
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.FileNotFoundException
@@ -229,6 +238,7 @@ fun String.getContactId(context: Context): Long {
 
     if (isNullOrEmpty() || isNullOrBlank()) return -1
 
+
     context.contentResolver.query(
         Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI, Uri.encode(this)),
         arrayOf(PhoneLookup._ID),
@@ -246,22 +256,32 @@ fun String.getContactId(context: Context): Long {
     return -1
 }
 
+/**
+ * Optimized using PhoneLookup + only one query, so should be pretty safe to call inna loop
+ */
+fun String.getContactPfpFromNumber(
+    context: Context,
+    highRes: Boolean = true
+): Uri {
 
-fun String.getContactPfpFromNumber(context: Context): Uri {
+    if (this.isEmpty()) return Uri.EMPTY
+
 
     val uri = Uri.withAppendedPath(
         PhoneLookup.CONTENT_FILTER_URI,
         Uri.encode(this)
     )
 
+    val photoPath = if (highRes) PhoneLookup.PHOTO_URI else PhoneLookup.PHOTO_THUMBNAIL_URI
+
     context.contentResolver.query(
         uri,
-        arrayOf(PhoneLookup.PHOTO_URI),
+        arrayOf(photoPath),
         null,
         null
     )?.use { cursor ->
 
-        val photoColumn = cursor.getColumnIndexOrThrow(PhoneLookup.PHOTO_URI)
+        val photoColumn = cursor.getColumnIndexOrThrow(photoPath)
 
         if (cursor.moveToFirst()) {
             return cursor.getString(photoColumn)?.toUri() ?: Uri.EMPTY
@@ -274,12 +294,12 @@ fun String.getContactPfpFromNumber(context: Context): Uri {
 
 }
 
-//fun Long.getContactPfpUriFromId(): Uri {
-//    if (this < 0) return Uri.EMPTY
-//    val contactUri = ContentUris.withAppendedId(Contacts.CONTENT_URI, this)
-//    val photoUri = Uri.withAppendedPath(contactUri, Contacts.Photo.DISPLAY_PHOTO)
-//    return photoUri
-//}
+fun Long.getContactPfpUriFromId(): Uri {
+    if (this < 0) return Uri.EMPTY
+    val contactUri = ContentUris.withAppendedId(Contacts.CONTENT_URI, this)
+    val photoUri = Uri.withAppendedPath(contactUri, Contacts.Photo.DISPLAY_PHOTO)
+    return photoUri
+}
 
 // Arranged from Fossify
 fun Context.getMMSSize(uri: Uri): Long {
@@ -417,20 +437,7 @@ fun Long.toShortDate(context: Context): String {
 
 }
 
-/**
- * Attempts to block the number this function is called on.
- */
-fun String.blockNumber(context: Context) {
-    val values = contentValuesOf(
-        BlockedNumbers.COLUMN_ORIGINAL_NUMBER to this
-    )
-    context.contentResolver.insert(BlockedNumbers.CONTENT_URI, values)
-    Toast.makeText(
-        context,
-        "Blocked",
-        Toast.LENGTH_SHORT
-    ).show()
-}
+
 
 fun Activity.requestRole(
     role: String // RoleManager.ROLE_SMS
@@ -443,8 +450,6 @@ fun Activity.requestRole(
         if (isRoleAvailable && !isRoleHeld) {
             val roleRequestIntent = roleManager.createRequestRoleIntent(role)
             startActivityForResult(roleRequestIntent, 1)
-
-            println("Hello - $roleRequestIntent")
         }
     } else {
         if (role == RoleManager.ROLE_SMS) {
@@ -499,24 +504,6 @@ fun getMmsText(
     }
 
     return stringBuilder.toString()
-}
-
-fun <E> MutableList<E>.addOrRemove(element: E) {
-    if (contains(element)) {
-        remove(element)
-    } else add(element)
-}
-
-fun <E> MutableList<E>.addOrNot(element: E) {
-    if (!contains(element)) {
-        add(element)
-    }
-}
-
-fun <E> MutableSet<E>.addOrRemove(element: E) {
-    if (contains(element)) {
-        remove(element)
-    } else add(element)
 }
 
 inline fun <E> List<E>.copyMutate(block: MutableList<E>.() -> Unit): List<E> {
@@ -760,6 +747,11 @@ fun <T> bouncySpec() = spring<T>(
     stiffness = Spring.StiffnessLow
 )
 
+fun <T> bouncySpecNavigation() = spring<T>(
+    dampingRatio = Spring.DampingRatioLowBouncy,
+    stiffness = Spring.StiffnessLow
+)
+
 /**
  * It can also take emails
  */
@@ -784,5 +776,27 @@ suspend fun Context.blockNumbers(numbers: List<String>) = withContext(Dispatcher
 
             Toast.makeText(this@blockNumbers, text, Toast.LENGTH_SHORT).show()
         }
+    }
+}
+
+
+fun String.isShortCode(): Boolean {
+    if (Patterns.EMAIL_ADDRESS.matcher(this).matches()) {
+        return false
+    }
+
+    return any { it.isLetter() }
+}
+
+fun String.toPaletteStyle(): PaletteStyle {
+    return when (this) {
+        CutePaletteStyle.EXPRESSIVE -> PaletteStyle.Expressive
+        CutePaletteStyle.FIDELITY -> PaletteStyle.Fidelity
+        CutePaletteStyle.TONAL_SPOT -> PaletteStyle.TonalSpot
+        CutePaletteStyle.NEUTRAL -> PaletteStyle.Neutral
+        CutePaletteStyle.VIBRANT -> PaletteStyle.Vibrant
+        CutePaletteStyle.MONOCHROME -> PaletteStyle.Monochrome
+        CutePaletteStyle.FRUIT_SALAD -> PaletteStyle.FruitSalad
+        else -> throw IllegalArgumentException("Not a valid palette!")
     }
 }

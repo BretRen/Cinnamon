@@ -1,8 +1,19 @@
+import com.android.build.api.variant.VariantOutputConfiguration
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.serialization)
     alias(libs.plugins.ksp)
+}
+
+androidComponents {
+    onVariants(selector().withBuildType("release")) { variant ->
+        val mainOutput = variant.outputs.single { it.outputType == VariantOutputConfiguration.OutputType.SINGLE }
+
+        @Suppress("UnstableApiUsage")
+        mainOutput.outputFileName = "Cinnamon_${mainOutput.versionName.get()}.apk"
+    }
 }
 
 android {
@@ -26,16 +37,6 @@ android {
             abiFilters += arrayOf("arm64-v8a", "armeabi-v7a")
         }
     }
-
-//    applicationVariants.all {
-//        val variant = this
-//        variant.outputs
-//            .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
-//            .forEach { output ->
-//                val outputFileName = "CCNT_${variant.versionName}.apk"
-//                output.outputFileName = outputFileName
-//            }
-//    }
 
     buildTypes {
         release {
@@ -70,7 +71,6 @@ android {
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.core.splashscreen)
@@ -114,5 +114,6 @@ dependencies {
     implementation(libs.zoomable)
     implementation("androidx.glance:glance-appwidget:1.1.1")
     implementation("androidx.glance:glance-material3:1.1.1")
+    implementation("io.github.developersyndicate:composense:alpha-1.0.0")
 
 }

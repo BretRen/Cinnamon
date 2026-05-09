@@ -18,7 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.domain.model.CuteVoicemail
-import com.sosauce.cinnamon.presentation.shared_components.AnimatedSlider
+import com.sosauce.cinnamon.presentation.shared_components.animations.AnimatedSlider
 import com.sosauce.cinnamon.utils.getContactNameOrNothing
 
 @Composable

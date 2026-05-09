@@ -6,21 +6,12 @@ import android.content.ClipData
 import android.net.Uri
 import android.provider.CallLog
 import android.widget.Toast
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.ContentTransform
-import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenuGroup
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.DropdownMenuPopup
@@ -36,13 +27,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
@@ -51,27 +42,23 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
-import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.domain.model.CuteCallLog
 import com.sosauce.cinnamon.presentation.navigation.Screen
 import com.sosauce.cinnamon.presentation.screens.phone.CallAction
 import com.sosauce.cinnamon.presentation.shared_components.DefaultContactIcon
-import com.sosauce.cinnamon.presentation.shared_components.DefaultGroupChatIcon
-import com.sosauce.cinnamon.presentation.shared_components.SelectedItemLogo
+import com.sosauce.cinnamon.presentation.shared_components.animations.AnimatedMoreIcon
 import com.sosauce.cinnamon.presentation.shared_components.animations.AnimatedSelectedIcon
 import com.sosauce.cinnamon.presentation.shared_components.items.CuteListItem
-import com.sosauce.cinnamon.utils.SharedTransitionKeys
 import com.sosauce.cinnamon.utils.beautifyNumber
-import com.sosauce.cinnamon.utils.bouncySpec
 import com.sosauce.cinnamon.utils.getContactPfpFromNumber
 import com.sosauce.cinnamon.utils.getItemShape
 import com.sosauce.cinnamon.utils.getThreadIdOrCreate
 import com.sosauce.cinnamon.utils.secondsToDuration
 import com.sosauce.cinnamon.utils.toTime
-import com.sosauce.sweetselect.SweetSelectState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 
 @Composable
@@ -96,6 +83,11 @@ fun CallLogItem(
     val scale by animateFloatAsState(
         targetValue = if (isSelected) 0.95f else 1f
     )
+    val pfp by produceState(Uri.EMPTY) {
+        value = withContext(Dispatchers.IO) {
+            callLog.rawNumber.getContactPfpFromNumber(context, false)
+        }
+    }
 
 
     val icon = when(callLog.callType) {
@@ -175,7 +167,7 @@ fun CallLogItem(
             ) {
                 DefaultContactIcon(
                     firstLetter = displayNameOrNumber.firstOrNull(),
-                    contactPfp = callLog.rawNumber.getContactPfpFromNumber(context)
+                    contactPfp = pfp
                 )
             }
         },
@@ -185,10 +177,7 @@ fun CallLogItem(
                     onClick = { showMoreOptions = true },
                     shapes = IconButtonDefaults.shapes()
                 ) {
-                    Icon(
-                        painter = painterResource(R.drawable.more_vert),
-                        contentDescription = null
-                    )
+                    AnimatedMoreIcon(showMoreOptions)
                 }
 
                 DropdownMenuPopup(

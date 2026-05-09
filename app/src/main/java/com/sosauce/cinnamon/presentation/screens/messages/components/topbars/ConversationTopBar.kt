@@ -4,7 +4,6 @@
 
 package com.sosauce.cinnamon.presentation.screens.messages.components.topbars
 
-import android.net.Uri
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -47,10 +46,9 @@ import com.sosauce.cinnamon.presentation.screens.messages.ConversationDetailsSta
 import com.sosauce.cinnamon.presentation.screens.phone.CallAction
 import com.sosauce.cinnamon.presentation.shared_components.DefaultContactIcon
 import com.sosauce.cinnamon.presentation.shared_components.DefaultGroupChatIcon
+import com.sosauce.cinnamon.presentation.shared_components.animations.AnimatedMoreIcon
 import com.sosauce.cinnamon.presentation.shared_components.toolbars.ToolbarSkeleton
 import com.sosauce.cinnamon.utils.SharedTransitionKeys
-import com.sosauce.cinnamon.utils.getContactId
-import com.sosauce.cinnamon.utils.getContactPfpFromNumber
 import com.sosauce.cinnamon.utils.getItemShape
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 
@@ -119,11 +117,11 @@ fun SharedTransitionScope.ConversationTopBar(
             text = {
                 val text = if (state.isSoloRecipientBlocked) R.string.unblock_no_u_sure else R.string.block_are_u_sure
                 Text(stringResource(text, state.recipients.first()))
-                   },
+            },
             title = {
                 val text = if (state.isSoloRecipientBlocked) R.string.unblock else R.string.block
                 Text(stringResource(text))
-                    },
+            }
         )
     }
     if (showDeleteDialog) {
@@ -174,10 +172,6 @@ fun SharedTransitionScope.ConversationTopBar(
             Box(
                 modifier = Modifier
                     .padding(end = 10.dp)
-                    .sharedElement(
-                        sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONTACT_PFP + state.threadId),
-                        animatedVisibilityScope = LocalNavAnimatedContentScope.current
-                    )
             ) {
                 if (isGroupChat) {
                     DefaultGroupChatIcon()
@@ -185,7 +179,7 @@ fun SharedTransitionScope.ConversationTopBar(
                     DefaultContactIcon(
                         firstLetter = state.nameOrBeautifiedRecipients.firstOrNull()?.firstOrNull(),
                         size = 38.dp,
-                        contactPfp = state.recipients.firstOrNull()?.getContactPfpFromNumber(context) ?: Uri.EMPTY
+                        contactPfp = state.pfp
                     )
                 }
 
@@ -201,11 +195,7 @@ fun SharedTransitionScope.ConversationTopBar(
                 },
                 maxLines = 1,
                 modifier = Modifier
-                    .weight(1f)
-                    .sharedBounds(
-                        sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONVERSATION_NAME + state.threadId),
-                        animatedVisibilityScope = LocalNavAnimatedContentScope.current
-                    ),
+                    .weight(1f),
                 overflow = TextOverflow.Ellipsis
             )
 
@@ -226,10 +216,7 @@ fun SharedTransitionScope.ConversationTopBar(
                 onClick = { showMoreMenu = true },
                 shapes = IconButtonDefaults.shapes()
             ) {
-                Icon(
-                    painter = painterResource(R.drawable.more_vert),
-                    contentDescription = null
-                )
+                AnimatedMoreIcon(showMoreMenu)
                 DropdownMenuPopup(
                     expanded = showMoreMenu,
                     onDismissRequest = { showMoreMenu = false },

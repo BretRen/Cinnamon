@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
-package com.sosauce.cinnamon.presentation.shared_components
+package com.sosauce.cinnamon.presentation.shared_components.animations
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState

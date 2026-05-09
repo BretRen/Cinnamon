@@ -42,15 +42,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.domain.model.CuteMessage
+import com.sosauce.cinnamon.presentation.screens.messages.ConversationActions
+import com.sosauce.sweetselect.SweetSelectState
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Composable
 fun SelectedTopBar(
-    selectedCuteMessages: List<CuteMessage>,
+    sweetSelectState: SweetSelectState<CuteMessage>,
     onSelectAll: () -> Unit,
     onUnselectAll: () -> Unit,
+    onHandleConversationActions: (ConversationActions) -> Unit
 ) {
 
     val clipboard = LocalClipboard.current
@@ -61,7 +64,7 @@ fun SelectedTopBar(
         AlertDialog(
             onDismissRequest = { showDeleteMsgDialog = false },
             title = {
-                Text(pluralStringResource(R.plurals.delete_msg, selectedCuteMessages.size, selectedCuteMessages.size),)
+                Text(pluralStringResource(R.plurals.delete_msg, sweetSelectState.selectedItems.size, sweetSelectState.selectedItems.size),)
             },
             text = {
                 Text("Are you sure? This cannot be undone!")
@@ -74,7 +77,11 @@ fun SelectedTopBar(
             },
             confirmButton = {
                 TextButton(
-                    onClick = {  },
+                    onClick = {
+                        onHandleConversationActions(ConversationActions.DeleteSelectedMessages(sweetSelectState.selectedItems.toList()))
+                        sweetSelectState.clearSelected()
+                        showDeleteMsgDialog = false
+                    },
                     shapes = ButtonDefaults.shapes()
                 ) {
                     Text(stringResource(R.string.delete))
@@ -120,15 +127,15 @@ fun SelectedTopBar(
                     contentDescription = null
                 )
             }
-            Text(selectedCuteMessages.size.toString())
+            Text(sweetSelectState.selectedItems.size.toString())
             Spacer(Modifier.weight(1f))
-            AnimatedVisibility(selectedCuteMessages.size == 1) {
+            AnimatedVisibility(sweetSelectState.selectedItems.size == 1) {
                 IconButton(
                     onClick = {
                         scope.launch(Dispatchers.IO) {
                             clipboard.setClipEntry(
                                 ClipEntry(
-                                    ClipData.newPlainText("",selectedCuteMessages.first().body)
+                                    ClipData.newPlainText("",sweetSelectState.selectedItems.first().body)
                                 )
                             )
                         }

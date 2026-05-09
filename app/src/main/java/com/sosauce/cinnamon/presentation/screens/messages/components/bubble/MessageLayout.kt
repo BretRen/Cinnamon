@@ -5,6 +5,8 @@ import android.provider.Telephony
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
@@ -34,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.domain.model.CuteMessage
 import com.sosauce.cinnamon.presentation.shared_components.DefaultContactIcon
+import com.sosauce.cinnamon.utils.bouncySpec
 import com.sosauce.cinnamon.utils.toTime
 
 @SuppressLint("ConfigurationScreenWidthHeight")
@@ -43,7 +46,9 @@ fun MessageLayout(
     message: CuteMessage,
     sandwichPosition: SandwichPosition,
     isSelected: Boolean,
+    isTimestampVisible: Boolean,
     recipients: List<String>,
+    onClick: () -> Unit,
     onLongClick: () -> Unit,
     statusContent: @Composable (ColumnScope.() -> Unit)? = null,
     bubbleContent: @Composable () -> Unit
@@ -51,7 +56,6 @@ fun MessageLayout(
 
     val config = LocalConfiguration.current
     val alignment = if (message.type == Telephony.Sms.MESSAGE_TYPE_INBOX) Alignment.Start else Alignment.End
-    var isTimestampVisible by remember { mutableStateOf(false) }
     val verticalPadding = when(sandwichPosition) {
         SandwichPosition.SOLO -> 5.dp
         else -> 1.dp
@@ -62,7 +66,7 @@ fun MessageLayout(
         modifier = modifier
             .fillMaxWidth()
             .combinedClickable(
-                onClick = { isTimestampVisible = !isTimestampVisible },
+                onClick = onClick,
                 onLongClick = onLongClick
             )
             .background(if (isSelected) MaterialTheme.colorScheme.surfaceContainerHighest else Color.Transparent)
@@ -78,6 +82,8 @@ fun MessageLayout(
         }
         AnimatedVisibility(
             visible = isTimestampVisible,
+            enter = expandVertically(bouncySpec()),
+            exit = shrinkVertically(bouncySpec()),
             modifier = Modifier
                 .padding(vertical = 3.dp)
                 .background(

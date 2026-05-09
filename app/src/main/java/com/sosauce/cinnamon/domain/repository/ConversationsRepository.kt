@@ -2,6 +2,7 @@
 
 package com.sosauce.cinnamon.domain.repository
 
+import android.content.ContentProviderOperation
 import android.content.ContentUris
 import android.content.Context
 import android.net.Uri
@@ -11,6 +12,7 @@ import android.provider.Telephony.Mms
 import android.provider.Telephony.MmsSms
 import android.provider.Telephony.Sms
 import android.util.Xml
+import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.core.net.toUri
@@ -26,6 +28,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.withContext
 import org.xmlpull.v1.XmlPullParser
 
 class ConversationsRepository(
@@ -431,9 +434,40 @@ class ConversationsRepository(
         }
     }
 
-    fun deleteConversation(threadId: Long) {
+    suspend fun deleteConversation(threadId: Long) = withContext(Dispatchers.IO) {
         context.contentResolver.delete(Sms.CONTENT_URI, "${Sms.THREAD_ID} = ?", arrayOf(threadId.toString()))
         context.contentResolver.delete(Mms.CONTENT_URI, "${Mms.THREAD_ID} = ?", arrayOf(threadId.toString()))
+    }
+
+    suspend fun deleteMessages(messages: List<CuteMessage>) = withContext(Dispatchers.IO) {
+
+        val smsOps = ArrayList<ContentProviderOperation>()
+        val mmsOps = ArrayList<ContentProviderOperation>()
+
+        messages.fastFilter { !it.isScheduled }.fastForEach { message ->
+
+            if (message.isMms) {
+                mmsOps.add(
+                    ContentProviderOperation.newDelete(Mms.CONTENT_URI)
+                        .withSelection("${Mms._ID} = ?", arrayOf(message.id.toString()))
+                        .build()
+                )
+            } else {
+                smsOps.add(
+                    ContentProviderOperation.newDelete(Sms.CONTENT_URI)
+                        .withSelection("${Sms._ID} = ?", arrayOf(message.id.toString()))
+                        .build()
+                )
+            }
+        }
+
+        if (smsOps.isNotEmpty()) {
+            context.contentResolver.applyBatch("sms", smsOps)
+        }
+
+        if (mmsOps.isNotEmpty()) {
+            context.contentResolver.applyBatch("mms", mmsOps)
+        }
     }
 
 }

@@ -40,14 +40,11 @@ class ContactDetailsViewModel(
     init {
 
         viewModelScope.launch(Dispatchers.IO) {
-            contactsRepository.fetchLatestContacts(
-                extraSelection = "${ContactsContract.Contacts._ID} = ?",
-                extraSelectionArgs = arrayOf(contactId.toString())
-            ).collectLatest { contacts ->
+            contactsRepository.fetchLatestContactsDetails(contactId).collectLatest { contact ->
                 _state.update {
                     it.copy(
                         isLoading = false,
-                        contact = contacts.firstOrNull() ?: CuteContact(id = contactId)
+                        contact = contact
                     )
                 }
             }

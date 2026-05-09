@@ -4,6 +4,7 @@ package com.sosauce.cinnamon.presentation.screens.dialer
 
 import android.provider.CallLog
 import android.telecom.Call
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -51,12 +52,14 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.data.datastore.rememberGroupSubsequentCalls
 import com.sosauce.cinnamon.data.datastore.rememberSortLogsAscending
 import com.sosauce.cinnamon.domain.model.CuteCallLog
+import com.sosauce.cinnamon.domain.model.CuteContact
 import com.sosauce.cinnamon.presentation.navigation.Screen
 import com.sosauce.cinnamon.presentation.screens.messages.components.bottombar.MoreOptions
 import com.sosauce.cinnamon.presentation.screens.phone.CallAction
 import com.sosauce.cinnamon.presentation.shared_components.NoSearchFound
 import com.sosauce.cinnamon.presentation.shared_components.NoXFound
 import com.sosauce.cinnamon.presentation.shared_components.SelectedBarSurface
+import com.sosauce.cinnamon.presentation.shared_components.animations.AnimatedFab
 import com.sosauce.cinnamon.presentation.shared_components.menus.SortingDropdownMenu
 import com.sosauce.cinnamon.presentation.shared_components.searchbars.CuteSearchbar
 import com.sosauce.cinnamon.utils.CuteRoundedCornerShape
@@ -81,94 +84,93 @@ fun DialerScreen(
 
     Scaffold(
         bottomBar = {
-            if (sweetSelectState.isInSelectionMode) {
 
-                val items = state.callLogs.values.flatten()
+            AnimatedContent(
+                targetState = sweetSelectState.isInSelectionMode
+            ) {
+                if (it) {
+                    val items = state.callLogs.values.flatten()
 
-                SelectedBarSurface(
-                    modifier = Modifier.selfAlignHorizontally(),
-                    items = items,
-                    multiSelectState = sweetSelectState
-                ) {
-                    ButtonGroup(
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    SelectedBarSurface(
+                        modifier = Modifier.selfAlignHorizontally(),
+                        items = items,
+                        multiSelectState = sweetSelectState
                     ) {
-                        Button(
-                            onClick = {
-                                val logs = sweetSelectState.selectedItems.map { it.id }
-                                onHandleDialerActions(DialerAction.DeleteLogs(logs))
-                                sweetSelectState.clearSelected()
-                            },
-                            shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 50.dp, bottomEnd = 50.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                                contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
-                            ),
-                            modifier = Modifier.weight(1f)
+                        ButtonGroup(
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
-                            Icon(
-                                painter = painterResource(R.drawable.delete_filled),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
-                }
-            } else {
-                CuteSearchbar(
-                    modifier = Modifier.selfAlignHorizontally(),
-                    textFieldState = state.textFieldState,
-                    sortingMenu = {
-                        SortingDropdownMenu(
-                            isSortedAscending = sortLogsAscending,
-                            onChangeSorting = { sortLogsAscending = it }
-                        ) {
-                            repeat(5) { index ->
-
-                                val filter = when(index) {
-                                    0 -> CallLogsFilter.ALL
-                                    1 -> CallLogsFilter.CONTACTS
-                                    2 -> CallLogsFilter.INCOMING
-                                    3 -> CallLogsFilter.OUTGOING
-                                    4 -> CallLogsFilter.MISSED
-                                    else -> throw IndexOutOfBoundsException()
-                                }
-                                val text = when(index) {
-                                    0 -> R.string.all
-                                    1 -> R.string.contacts
-                                    2 -> R.string.incoming
-                                    3 -> R.string.outgoing
-                                    4 -> R.string.missed
-                                    else -> throw IndexOutOfBoundsException()
-                                }
-
-                                DropdownMenuItem(
-                                    selected = filter == state.filter,
-                                    onClick = { onHandleDialerActions(DialerAction.ChangeFilter(filter)) },
-                                    shapes = MenuDefaults.itemShapes(),
-                                    text = {
-                                        Text(
-                                            text = stringResource(text)
-                                        )
-                                    }
+                            Button(
+                                onClick = {
+                                    val logs = sweetSelectState.selectedItems.map { it.id }
+                                    onHandleDialerActions(DialerAction.DeleteLogs(logs))
+                                    sweetSelectState.clearSelected()
+                                },
+                                shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 50.dp, bottomEnd = 50.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                    contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
+                                ),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.delete_filled),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error
                                 )
                             }
                         }
-                    },
-                    fab = {
-                        FloatingActionButton(
-                            onClick = { onNavigate(Screen.Dialpad()) },
-                            shape = MaterialShapes.Cookie9Sided.toShape()
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.dialpad),
-                                contentDescription = null
-                            )
-                        }
-                    },
-                    onNavigate = onNavigate
-                )
+                    }
+                } else {
+                    CuteSearchbar(
+                        modifier = Modifier.selfAlignHorizontally(),
+                        textFieldState = state.textFieldState,
+                        sortingMenu = {
+                            SortingDropdownMenu(
+                                isSortedAscending = sortLogsAscending,
+                                onChangeSorting = { sortLogsAscending = it }
+                            ) {
+                                repeat(5) { index ->
 
+                                    val filter = when(index) {
+                                        0 -> CallLogsFilter.ALL
+                                        1 -> CallLogsFilter.CONTACTS
+                                        2 -> CallLogsFilter.INCOMING
+                                        3 -> CallLogsFilter.OUTGOING
+                                        4 -> CallLogsFilter.MISSED
+                                        else -> throw IndexOutOfBoundsException()
+                                    }
+                                    val text = when(index) {
+                                        0 -> R.string.all
+                                        1 -> R.string.contacts
+                                        2 -> R.string.incoming
+                                        3 -> R.string.outgoing
+                                        4 -> R.string.missed
+                                        else -> throw IndexOutOfBoundsException()
+                                    }
+
+                                    DropdownMenuItem(
+                                        selected = filter == state.filter,
+                                        onClick = { onHandleDialerActions(DialerAction.ChangeFilter(filter)) },
+                                        shapes = MenuDefaults.itemShapes(),
+                                        text = {
+                                            Text(
+                                                text = stringResource(text)
+                                            )
+                                        }
+                                    )
+                                }
+                            }
+                        },
+                        fab = {
+                            AnimatedFab(
+                                onClick = { onNavigate(Screen.ContactEditor(CuteContact())) },
+                                icon = R.drawable.dialpad
+                            )
+                        },
+                        onNavigate = onNavigate
+                    )
+
+                }
             }
         }
     ) { paddingValues ->
@@ -222,13 +224,17 @@ fun DialerScreen(
                                 .forEach { (date, callLogs) ->
 
                                     val groupedCalls = callLogs.groupSubsequentlyBy { it.rawNumber }
-                                    item {
+                                    item(
+                                        key = date
+                                    ) {
                                         Text(
                                             text = date,
                                             style = MaterialTheme.typography.bodyLargeEmphasized.copy(
                                                 color = MaterialTheme.colorScheme.primary
                                             ),
-                                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
+                                            modifier = Modifier
+                                                .animateItem()
+                                                .padding(horizontal = 20.dp, vertical = 10.dp)
                                         )
                                     }
 
@@ -263,13 +269,17 @@ fun DialerScreen(
                                 }
                         } else {
                             state.callLogs.forEach { (date, logs) ->
-                                item {
+                                item(
+                                    key = date
+                                ) {
                                     Text(
                                         text = date,
                                         style = MaterialTheme.typography.bodyLargeEmphasized.copy(
                                             color = MaterialTheme.colorScheme.primary
                                         ),
-                                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
+                                        modifier = Modifier
+                                            .animateItem()
+                                            .padding(horizontal = 20.dp, vertical = 10.dp)
                                     )
                                 }
                                 items(

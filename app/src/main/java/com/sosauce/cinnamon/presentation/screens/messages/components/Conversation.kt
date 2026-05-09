@@ -28,6 +28,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -58,6 +59,8 @@ import com.sosauce.cinnamon.utils.bouncySpec
 import com.sosauce.cinnamon.utils.getContactId
 import com.sosauce.cinnamon.utils.getContactPfpFromNumber
 import com.sosauce.cinnamon.utils.toDate
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun SharedTransitionScope.Conversation(
@@ -73,6 +76,11 @@ fun SharedTransitionScope.Conversation(
     val scale by animateFloatAsState(
         targetValue = if (isSelected) 0.95f else 1f
     )
+    val pfp by produceState(Uri.EMPTY) {
+        value = withContext(Dispatchers.IO) {
+            conversation.rawRecipients.firstOrNull()?.getContactPfpFromNumber(context, false) ?: Uri.EMPTY
+        }
+    }
 
 
 
@@ -136,21 +144,13 @@ fun SharedTransitionScope.Conversation(
             AnimatedSelectedIcon(
                 isSelected = isSelected
             ) {
-                Box(
-                    modifier = Modifier
-                        .sharedElement(
-                            sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONTACT_PFP + conversation.threadId),
-                            animatedVisibilityScope = LocalNavAnimatedContentScope.current
-                        )
-                ) {
-                    if (conversation.isGroupChat) {
-                        DefaultGroupChatIcon()
-                    } else {
-                        DefaultContactIcon(
-                            firstLetter = conversation.recipients.firstOrNull()?.firstOrNull(),
-                            contactPfp = conversation.rawRecipients.firstOrNull()?.getContactPfpFromNumber(context) ?: Uri.EMPTY
-                        )
-                    }
+                if (conversation.isGroupChat) {
+                    DefaultGroupChatIcon()
+                } else {
+                    DefaultContactIcon(
+                        firstLetter = conversation.recipients.firstOrNull()?.firstOrNull(),
+                        contactPfp = pfp
+                    )
                 }
             }
         },
@@ -199,12 +199,7 @@ fun SharedTransitionScope.Conversation(
                 }
             },
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier
-                .sharedBounds(
-                    sharedContentState = rememberSharedContentState(SharedTransitionKeys.CONVERSATION_NAME + conversation.threadId),
-                    animatedVisibilityScope = LocalNavAnimatedContentScope.current
-                )
+            overflow = TextOverflow.Ellipsis
         )
 
         val text = when {
