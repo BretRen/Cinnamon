@@ -25,6 +25,15 @@
   
 <h1>👀 Overview</h1>
 
+- Unified UI/UX for a fluid and gorgeous experience among the 3 modules!
+- Send and receive Sms & MMS!
+- Schedule messages!
+- Per chat customzation: Wallpaper & color
+- Manage & edit contacts!
+- Support for contact posters!
+- Device level blocking!
+- Full dialer capabilities!
+- Voicemail support!
 
 
 ---
