@@ -33,6 +33,7 @@
 - Support for contact posters!
 - Device level blocking!
 - Full dialer capabilities!
+- T9 dialing!
 - Voicemail support!
 - Multi-sim support along side separation of choice to choose default sim for messages and calls!
 
