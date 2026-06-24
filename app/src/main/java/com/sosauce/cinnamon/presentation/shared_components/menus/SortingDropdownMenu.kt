@@ -42,6 +42,8 @@ fun SortingDropdownMenu(
 ) {
 
     var expanded by remember { mutableStateOf(false) }
+    val interactionSources = List(2) { rememberInteractionSource() }
+
     Box {
         IconButton(
             onClick = { expanded = !expanded },
@@ -73,56 +75,66 @@ fun SortingDropdownMenu(
             ButtonGroup(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterHorizontally),
+                overflowIndicator = {}
             ) {
 
-                val interactionSources = List(2) { rememberInteractionSource() }
+                customItem(
+                    buttonGroupContent = {
 
-                val shape by animateDpAsState(
-                    targetValue = if (isSortedAscending) 50.dp else 12.dp
+                        val shape by animateDpAsState(
+                            targetValue = if (isSortedAscending) 50.dp else 12.dp
+                        )
+
+                        FilledIconButton(
+                            onClick = { onChangeSorting(true) },
+                            interactionSource = interactionSources[0],
+                            modifier = Modifier
+                                .animateWidth(interactionSources[0])
+                                .weight(1f)
+                                .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide)),
+                            colors = IconButtonDefaults.filledIconButtonColors(
+                                containerColor = if (isSortedAscending) MenuDefaults.groupVibrantContainerColor else MenuDefaults.groupStandardContainerColor
+                            ),
+                            shape = RoundedCornerShape(shape)
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.up),
+                                contentDescription = null,
+                                modifier = Modifier.size(IconButtonDefaults.mediumIconSize)
+                            )
+                        }
+                    },
+                    menuContent = {}
                 )
 
-                FilledIconButton(
-                    onClick = { onChangeSorting(true) },
-                    interactionSource = interactionSources[0],
-                    modifier = Modifier
-                        .animateWidth(interactionSources[0])
-                        .weight(1f)
-                        .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide)),
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = if (isSortedAscending) MenuDefaults.groupVibrantContainerColor else MenuDefaults.groupStandardContainerColor
-                    ),
-                    shape = RoundedCornerShape(shape)
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.up),
-                        contentDescription = null,
-                        modifier = Modifier.size(IconButtonDefaults.mediumIconSize)
-                    )
-                }
+                customItem(
+                    buttonGroupContent = {
 
+                        val shape2 by animateDpAsState(
+                            targetValue = if (!isSortedAscending) 50.dp else 12.dp
+                        )
 
-                val shape2 by animateDpAsState(
-                    targetValue = if (!isSortedAscending) 50.dp else 12.dp
+                        FilledIconButton(
+                            onClick = { onChangeSorting(false) },
+                            interactionSource = interactionSources[1],
+                            modifier = Modifier
+                                .animateWidth(interactionSources[1])
+                                .weight(1f)
+                                .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide)),
+                            colors = IconButtonDefaults.filledIconButtonColors(
+                                containerColor = if (!isSortedAscending) MenuDefaults.groupVibrantContainerColor else MenuDefaults.groupStandardContainerColor
+                            ),
+                            shape = RoundedCornerShape(shape2)
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.down),
+                                contentDescription = null,
+                                modifier = Modifier.size(IconButtonDefaults.mediumIconSize)
+                            )
+                        }
+                    },
+                    menuContent = {}
                 )
-
-                FilledIconButton(
-                    onClick = { onChangeSorting(false) },
-                    interactionSource = interactionSources[1],
-                    modifier = Modifier
-                        .animateWidth(interactionSources[1])
-                        .weight(1f)
-                        .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide)),
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = if (!isSortedAscending) MenuDefaults.groupVibrantContainerColor else MenuDefaults.groupStandardContainerColor
-                    ),
-                    shape = RoundedCornerShape(shape2)
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.down),
-                        contentDescription = null,
-                        modifier = Modifier.size(IconButtonDefaults.mediumIconSize)
-                    )
-                }
             }
         }
     }

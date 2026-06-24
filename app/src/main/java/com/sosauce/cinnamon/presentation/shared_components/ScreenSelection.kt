@@ -58,79 +58,50 @@ fun SharedTransitionScope.ScreenSelection(
     val key = rememberSharedContentState(key = "yeah")
 
     ButtonGroup(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        overflowIndicator = {}
     ) {
         screens.fastForEachIndexed { index, category ->
             val isActive = currentScreen == category.screen
+            customItem(
+                buttonGroupContent = {
 
-            val containerColor =
-                if (isActive) MaterialTheme.colorScheme.primary else Color.Transparent
-
-            Button(
-                onClick = {
-                    category.onClick()
-                    dismiss()
-                },
-                interactionSource = interactionsSources[index],
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = containerColor,
-                    contentColor = contentColorFor(containerColor)
-                ),
-                shapes = ButtonDefaults.shapes(),
-                modifier = Modifier
-                    .defaultMinSize(
-                        minWidth = TextFieldDefaults.MinWidth,
-                        minHeight = TextFieldDefaults.MinHeight,
-                    )
-                    .weight(1f)
-                    .animateWidth(interactionsSources[index])
-                    .thenIf(isActive) {
-                        sharedElement(
-                            sharedContentState = key,
-                            animatedVisibilityScope = animatedVisibilityScope,
+                    val containerColor =
+                        if (isActive) MaterialTheme.colorScheme.primary else Color.Transparent
+                    Button(
+                        onClick = {
+                            category.onClick()
+                            dismiss()
+                        },
+                        interactionSource = interactionsSources[index],
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = containerColor,
+                            contentColor = contentColorFor(containerColor)
+                        ),
+                        shapes = ButtonDefaults.shapes(),
+                        modifier = Modifier
+                            .defaultMinSize(
+                                minWidth = TextFieldDefaults.MinWidth,
+                                minHeight = TextFieldDefaults.MinHeight,
+                            )
+                            .weight(1f)
+                            .animateWidth(interactionsSources[index])
+                            .thenIf(isActive) {
+                                sharedElement(
+                                    sharedContentState = key,
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                )
+                            }
+                    ) {
+                        val icon = if (isActive) category.selectedIcon else category.unselectedIcon
+                        Icon(
+                            painter = painterResource(icon),
+                            contentDescription = null
                         )
                     }
-            ) {
-                val icon =
-                    if (isActive) category.selectedIcon else category.unselectedIcon
-
-                Icon(
-                    painter = painterResource(icon),
-                    contentDescription = null
-                )
-            }
-
-//            ToggleButton(
-//                checked = currentScreen == category.screen,
-//                onCheckedChange = {
-//                    category.onClick()
-//                    dismiss()
-//                },
-//                shapes =
-//                    when (index) {
-//                        0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
-//                        screens.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
-//                        else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
-//                    },
-//                interactionSource = interactionsSources[index],
-//                modifier = Modifier
-//                    .weight(1f)
-//                    .animateWidth(interactionsSources[index])
-//                    .thenIf(currentScreen == category.screen) {
-//                        sharedElement(
-//                            sharedContentState = key,
-//                            animatedVisibilityScope = animatedVisibilityScope,
-//                        )
-//                    }
-//            ) {
-//                val icon =
-//                    if (currentScreen == category.screen) category.selectedIcon else category.unselectedIcon
-//
-//                Icon(
-//                    painter = painterResource(icon),
-//                    contentDescription = null
-//                )
-//            }
+                },
+                menuContent = {}
+            )
         }
     }
 }

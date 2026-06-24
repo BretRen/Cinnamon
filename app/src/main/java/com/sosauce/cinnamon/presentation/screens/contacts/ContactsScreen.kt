@@ -29,7 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastForEach
+import com.skydoves.cloudy.cloudy
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.data.datastore.rememberSortContactsAscending
 import com.sosauce.cinnamon.domain.model.CuteContact
@@ -95,24 +95,28 @@ fun SharedTransitionScope.ContactsScreen(
                                     isSortedAscending = sortContactsAscending,
                                     onChangeSorting = { sortContactsAscending = it }
                                 ) {
-                                    state.contactAccounts.fastForEach { account ->
+                                    state.accountsToCount.onEachIndexed { index, (account, count) ->
                                         DropdownMenuItem(
-                                            selected = state.accountFilter == account.type,
+                                            selected = state.accountFilter == account,
                                             onClick = {
                                                 onHandleContactsAction(
                                                     ContactsAction.ChangeAccountFiltering(
-                                                        account.type
+                                                        account
                                                     )
                                                 )
                                             },
-                                            shapes = MenuDefaults.itemShapes(),
+                                            shapes = MenuDefaults.itemShape(
+                                                index,
+                                                state.accountsToCount.size
+                                            ),
                                             leadingIcon = {
                                                 Icon(
                                                     painter = painterResource(R.drawable.contact),
                                                     contentDescription = null
                                                 )
                                             },
-                                            text = { Text(account.name) }
+                                            text = { Text(account) },
+                                            trailingIcon = { Text(count.toString()) }
                                         )
                                     }
                                 }
@@ -157,7 +161,8 @@ fun SharedTransitionScope.ContactsScreen(
                                     ),
                                     style = MaterialTheme.typography.bodyLargeEmphasized.copy(
                                         color = MaterialTheme.colorScheme.primary
-                                    )
+                                    ),
+                                    modifier = Modifier.animateItem()
                                 )
                             }
                         }
@@ -187,39 +192,46 @@ fun SharedTransitionScope.ContactsScreen(
 
 
                     nonFavorites.groupBy { it.displayName.firstOrNull()?.uppercaseChar() ?: '#' }
-                        .toSortedMap().forEach { (letter, contacts) ->
-                        item {
-                            Text(
-                                text = letter.toString(),
-                                style = MaterialTheme.typography.bodyLargeEmphasized.copy(
-                                    color = MaterialTheme.colorScheme.primary
-                                ),
-                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
-                            )
-                        }
-                        items(
-                            items = contacts,
-                            key = { contact -> contact.id }
-                        ) { contact ->
+                        .forEach { (letter, contacts) ->
+                            item(
+                                key = letter
+                            ) {
+                                Text(
+                                    text = letter.toString(),
+                                    style = MaterialTheme.typography.bodyLargeEmphasized.copy(
+                                        color = MaterialTheme.colorScheme.primary
+                                    ),
+                                    modifier = Modifier
+                                        .padding(
+                                            horizontal = 20.dp,
+                                            vertical = 10.dp
+                                        )
+                                        .animateItem()
+                                )
+                            }
+                            items(
+                                items = contacts,
+                                key = { contact -> contact.id }
+                            ) { contact ->
 
-                            val isSelected by sweetSelectState.isSelectedAsState(contact)
+                                val isSelected by sweetSelectState.isSelectedAsState(contact)
 
-                            ContactListItem(
-                                modifier = Modifier.animateItem(),
-                                contact = contact,
-                                isSelected = isSelected,
-                                onClick = {
-                                    if (sweetSelectState.isInSelectionMode) {
-                                        sweetSelectState.toggle(contact)
-                                    } else {
-                                        onNavigate(Screen.ContactDetails(contact.id))
-                                    }
-                                },
-                                onLongClick = { sweetSelectState.toggle(contact) },
-                                showNumber = false
-                            )
+                                ContactListItem(
+                                    modifier = Modifier.animateItem(),
+                                    contact = contact,
+                                    isSelected = isSelected,
+                                    onClick = {
+                                        if (sweetSelectState.isInSelectionMode) {
+                                            sweetSelectState.toggle(contact)
+                                        } else {
+                                            onNavigate(Screen.ContactDetails(contact.id))
+                                        }
+                                    },
+                                    onLongClick = { sweetSelectState.toggle(contact) },
+                                    showNumber = false
+                                )
+                            }
                         }
-                    }
                 } else {
                     item {
                         NoXFound(

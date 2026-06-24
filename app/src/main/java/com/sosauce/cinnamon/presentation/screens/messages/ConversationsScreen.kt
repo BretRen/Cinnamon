@@ -30,7 +30,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -55,7 +54,6 @@ fun SharedTransitionScope.ConversationsScreen(
     onNavigate: (Screen) -> Unit,
     onHandleConversationsAction: (ConversationsAction) -> Unit
 ) {
-    val context = LocalContext.current
     val listState = rememberLazyListState()
     val sweetSelectState = rememberSweetSelectState<CuteConversation>()
     var sortConversationsAscending by rememberSortConversationsAscending()
@@ -80,7 +78,8 @@ fun SharedTransitionScope.ConversationsScreen(
                             textFieldState = state.textFieldState,
                             fab = {
                                 AnimatedFab(
-                                    onClick = { onNavigate(Screen.StartConversation) }
+                                    onClick = { onNavigate(Screen.StartConversation) },
+                                    icon = R.drawable.add
                                 )
                             },
                             onNavigate = onNavigate
@@ -211,9 +210,7 @@ fun LazyListScope.threadsList(
         ) { conversation ->
 
 
-            val isSelected by remember {
-                derivedStateOf { sweetSelectState.isSelected(conversation) }
-            }
+            val isSelected by sweetSelectState.isSelectedAsState(conversation)
 
             Conversation(
                 conversation = conversation,

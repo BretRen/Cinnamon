@@ -5,25 +5,19 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Context.NOTIFICATION_SERVICE
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.PorterDuff.Mode
-import android.graphics.PorterDuffXfermode
-import android.graphics.Rect
 import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
 import androidx.core.app.RemoteInput
-import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.IconCompat
-import coil3.ImageLoader
+import coil3.imageLoader
 import coil3.request.ImageRequest
+import coil3.request.transformations
 import coil3.toBitmap
+import coil3.transform.CircleCropTransformation
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.data.fetchers.RecipientPhone
-import com.sosauce.cinnamon.data.fetchers.RecipientPhotoFetcher
 import com.sosauce.cinnamon.data.receivers.MessageReplyReceiver
 import com.sosauce.cinnamon.data.telephony.CuteTelephonyManager
 import com.sosauce.cinnamon.main.MainActivity
@@ -33,10 +27,7 @@ import com.sosauce.cinnamon.utils.THREAD_ID
 import com.sosauce.cinnamon.utils.getAddressFromThreadId
 import com.sosauce.cinnamon.utils.getContactNameOrNothing
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlin.math.min
 
 class MessageNotificationManager(
     private val context: Context,
@@ -98,36 +89,7 @@ class MessageNotificationManager(
         }
     }
 
-
-    // https://www.geeksforgeeks.org/kotlin/circular-crop-an-image-and-save-it-to-the-file-in-android/
-    private fun circleBitmap(bitmap: Bitmap): Bitmap {
-        val size = min(bitmap.width, bitmap.height)
-        val squaredBitmap = Bitmap.createBitmap(bitmap, 0, 0, size, size)
-
-        val output = createBitmap(size, size)
-        val canvas = Canvas(output)
-
-        val paint = Paint()
-        val rect = Rect(0, 0, size, size)
-        val radius = (size / 2).toFloat()
-
-        paint.isAntiAlias = true
-        canvas.drawARGB(0, 0, 0, 0)
-
-        canvas.drawCircle(radius, radius, radius, paint)
-
-        paint.xfermode = PorterDuffXfermode(Mode.SRC_IN)
-
-        canvas.drawBitmap(squaredBitmap, rect, rect, paint)
-
-        bitmap.recycle()
-        squaredBitmap.recycle()
-
-        return output
-
-    }
-
-    fun sendOrAppendMessageNotification(
+    suspend fun sendOrAppendMessageNotification(
         threadId: Long,
         message: String,
         number: String?,
@@ -138,16 +100,12 @@ class MessageNotificationManager(
 
         val request = ImageRequest.Builder(context)
             .data(RecipientPhone(number ?: ""))
+            .transformations(CircleCropTransformation())
             .build()
-        val bitmap = runBlocking(Dispatchers.IO) {
-            ImageLoader.Builder(context)
-                .components { add(RecipientPhotoFetcher.Factory()) }
-                .build()
-                .execute(request)
-                .image?.toBitmap()
-        }
+        val result = context.imageLoader.execute(request)
+        val bitmap = result.image?.toBitmap()
+        val personIcon = bitmap?.let { IconCompat.createWithBitmap(it) }
 
-        val personIcon = bitmap?.let { IconCompat.createWithBitmap(circleBitmap(it)) }
 
         val person = Person.Builder()
             .setIcon(personIcon)

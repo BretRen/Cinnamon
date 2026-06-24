@@ -5,6 +5,7 @@ package com.sosauce.cinnamon.presentation.screens.wallpaper
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -143,35 +144,45 @@ fun ConversationTheming(
                     .height(280.dp)
                     .width(200.dp)
             )
-            var tempSliderValue by remember { mutableStateOf<Float?>(null) }
-            val value = tempSliderValue ?: state.settings.wallpaperBlurIntensity.toFloat()
-            HeaderText(stringResource(R.string.blur_intensity) + " (${value.roundToInt()}%)")
-            CategoryCard(
-                topDp = 24.dp,
-                bottomDp = 24.dp
+
+            AnimatedVisibility(
+                visible = state.settings.wallpaper.isNotEmpty()
             ) {
+                var tempSliderValue by remember { mutableStateOf<Float?>(null) }
+                val value = tempSliderValue ?: state.settings.wallpaperBlurIntensity.toFloat()
 
-
-                WavySlider(
-                    value = value,
-                    onValueChange = { tempSliderValue = it },
-                    onValueChangeFinished = {
-                        tempSliderValue?.let {
-                            onHandleConversationSettingsActions(
-                                ConversationSettingActions.UpsertConversationSettings(
-                                    state.settings.copy(
-                                        wallpaperBlurIntensity = it.roundToInt(),
+                Column {
+                    HeaderText(stringResource(R.string.blur_intensity) + " (${value.roundToInt()}%)")
+                    CategoryCard(
+                        topDp = 24.dp,
+                        bottomDp = 24.dp
+                    ) {
+                        WavySlider(
+                            value = value,
+                            onValueChange = { tempSliderValue = it },
+                            onValueChangeFinished = {
+                                tempSliderValue?.let {
+                                    onHandleConversationSettingsActions(
+                                        ConversationSettingActions.UpsertConversationSettings(
+                                            state.settings.copy(
+                                                wallpaperBlurIntensity = it.roundToInt(),
+                                            )
+                                        )
                                     )
-                                )
-                            )
-                        }
-                    },
-                    valueRange = 0f..100f,
-                    modifier = Modifier.padding(10.dp)
-                )
+                                }
+                            },
+                            valueRange = 0f..100f,
+                            modifier = Modifier.padding(10.dp)
+                        )
+                    }
+                }
+
             }
 
-            HeaderText("Chat color")
+
+            HeaderText(
+                text = stringResource(R.string.chat_color)
+            )
             val color =
                 if (state.settings.color != -1) Color(state.settings.color) else MaterialTheme.colorScheme.surfaceContainer
             Card(

@@ -10,6 +10,7 @@ import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastFilter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sosauce.cinnamon.data.datastore.UserPreferences
 import com.sosauce.cinnamon.domain.model.CuteContact
 import com.sosauce.cinnamon.domain.repository.ContactsRepository
 import kotlinx.coroutines.Dispatchers
@@ -21,10 +22,12 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 class DialpadViewModel(
     private val prefilledNumber: String,
-    private val contactsRepository: ContactsRepository
+    private val contactsRepository: ContactsRepository,
+    private val userPreferences: UserPreferences
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DialpadState())
@@ -40,12 +43,23 @@ class DialpadViewModel(
                     extraSelection = "${ContactsContract.Contacts.HAS_PHONE_NUMBER} = ?",
                     extraSelectionArgs = arrayOf("1")
                 ),
-                snapshotFlow { textFieldState.text }.debounce(250)
-            ) { contacts, searchQuery ->
+                userPreferences.enableT9Dialing,
+                snapshotFlow { textFieldState.text }.debounce(250.milliseconds)
+            ) { contacts, t9, searchQuery ->
 
-                contacts.fastFilter { contact ->
-                    nameToT9(contact.displayName).contains(searchQuery, true) ||
-                            contact.details.phoneNumbers.fastAny { it.number.contains(searchQuery) }
+                if (t9) {
+                    contacts.fastFilter { contact ->
+                        nameToT9(contact.displayName).contains(searchQuery, true) ||
+                                contact.details.phoneNumbers.fastAny {
+                                    it.number.contains(
+                                        searchQuery
+                                    )
+                                }
+                    }
+                } else {
+                    contacts.fastFilter { contact ->
+                        contact.details.phoneNumbers.fastAny { it.number.contains(searchQuery) }
+                    }
                 }
 
 

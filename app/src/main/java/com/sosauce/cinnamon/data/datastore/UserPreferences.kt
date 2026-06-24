@@ -15,6 +15,7 @@ import com.sosauce.cinnamon.data.datastore.PreferencesKeys.ARCHIVED_CONVOS
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.DEFAULT_MESSAGES_SIM
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.DEFAULT_PHONE_HANDLE_ID
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.ENABLE_DELIVERY_REPORTS
+import com.sosauce.cinnamon.data.datastore.PreferencesKeys.ENABLE_T9_DIALING
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.GROUP_SUBSEQUENT_CALLS
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.PINNED_CONVOS
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.SEND_GROUP_AS_MMS
@@ -27,7 +28,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
-import kotlinx.serialization.json.Json
 
 class UserPreferences(
     private val context: Context,
@@ -66,6 +66,10 @@ class UserPreferences(
 
     val groupSubsequentCalls = context.dataStore.data.map {
         it[GROUP_SUBSEQUENT_CALLS] ?: false
+    }
+
+    val enableT9Dialing = context.dataStore.data.map {
+        it[ENABLE_T9_DIALING] ?: true
     }
 
 

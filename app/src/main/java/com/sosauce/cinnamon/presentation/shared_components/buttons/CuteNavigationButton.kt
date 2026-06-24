@@ -41,6 +41,6 @@ fun CuteNavigationButtonSurface(
         modifier = modifier,
         onClick = onNavigateUp,
         icon = R.drawable.back,
-        color = MaterialTheme.colorScheme.surfaceContainer
+        containerColor = MaterialTheme.colorScheme.surfaceContainer
     )
 }

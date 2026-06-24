@@ -2,14 +2,12 @@
 
 package com.sosauce.cinnamon.presentation.screens.contacts
 
-import android.accounts.Account
 import android.app.Application
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.util.fastFilter
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.data.contact_settings.ContactSettingsDao
 import com.sosauce.cinnamon.data.datastore.UserPreferences
 import com.sosauce.cinnamon.domain.model.CuteContact
@@ -28,6 +26,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 class ContactsViewModel(
     private val application: Application,
@@ -36,18 +35,22 @@ class ContactsViewModel(
     private val contactSettingsDao: ContactSettingsDao
 ) : AndroidViewModel(application) {
 
-    private val _state = MutableStateFlow(ContactsState(isLoading = true))
-    val state = _state.asStateFlow()
-
     private val textFieldState = TextFieldState()
+    private val _state = MutableStateFlow(
+        ContactsState(
+            isLoading = true,
+            textFieldState = textFieldState
+        )
+    )
+
+    val state = _state.asStateFlow()
 
 
     init {
-        viewModelScope.launch(Dispatchers.IO) {
-
+        viewModelScope.launch {
             combine(
                 contactsRepository.fetchLatestContacts(),
-                snapshotFlow { textFieldState.text }.debounce(250),
+                snapshotFlow { textFieldState.text }.debounce(250.milliseconds),
                 userPreferences.getSortContactsAscending(),
                 state.mapLatest { it.accountFilter }.distinctUntilChanged()
             ) { contacts, search, asc, accountFilter ->
@@ -61,7 +64,7 @@ class ContactsViewModel(
                     }
                     .fastFilter {
                         if (accountFilter == ACCOUNT_FILTER_DEFAULT) true
-                        else it.accountType == accountFilter
+                        else it.accountName == accountFilter
                     }.copyMutate {
                         if (!asc) reverse()
                     }
@@ -69,23 +72,23 @@ class ContactsViewModel(
                 _state.update {
                     it.copy(
                         isLoading = false,
-                        contacts = contacts,
-                        textFieldState = textFieldState
+                        contacts = contacts
                     )
                 }
             }
-
         }
 
-        viewModelScope.launch(Dispatchers.IO) {
-            val all = Account(application.getString(R.string.all), ACCOUNT_FILTER_DEFAULT)
-            val accounts = contactsRepository.fetchAccounts().copyMutate {
-                add(0, all)
-            }
-            _state.update {
-                it.copy(
-                    contactAccounts = accounts
-                )
+        viewModelScope.launch {
+            contactsRepository.fetchLatestContacts().collectLatest { contacts ->
+                val accountsToCount =
+                    mapOf("All" to contacts.size) + contacts.groupingBy { it.accountName ?: "IDK" }
+                        .eachCount()
+
+                _state.update {
+                    it.copy(
+                        accountsToCount = accountsToCount
+                    )
+                }
             }
         }
     }
@@ -96,7 +99,7 @@ class ContactsViewModel(
             is ContactsAction.ChangeAccountFiltering -> {
                 _state.update {
                     it.copy(
-                        accountFilter = action.accountType
+                        accountFilter = action.accountName
                     )
                 }
             }
@@ -117,7 +120,7 @@ class ContactsViewModel(
     }
 
     companion object {
-        const val ACCOUNT_FILTER_DEFAULT = "all"
+        const val ACCOUNT_FILTER_DEFAULT = "All"
     }
 
 }
@@ -125,13 +128,13 @@ class ContactsViewModel(
 data class ContactsState(
     val isLoading: Boolean = false,
     val contacts: List<CuteContact> = emptyList(),
-    val contactAccounts: List<Account> = emptyList(),
     val textFieldState: TextFieldState = TextFieldState(),
+    val accountsToCount: Map<String, Int> = emptyMap(),
     val accountFilter: String = ContactsViewModel.ACCOUNT_FILTER_DEFAULT
 )
 
 sealed interface ContactsAction {
-    data class ChangeAccountFiltering(val accountType: String) : ContactsAction
+    data class ChangeAccountFiltering(val accountName: String) : ContactsAction
     data class DeleteContacts(
         val ids: List<Long>
     ) : ContactsAction

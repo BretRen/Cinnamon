@@ -32,8 +32,6 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun SettingsMessages() {
 
-    val context = LocalContext.current
-    val scrollState = rememberScrollState()
     var sendGroupAsMms by rememberSendGroupAsMms()
     var enableDeliveryReports by rememberEnableDeliveryReports()
     var sendLongAsMms by rememberSendLongAsMms()
@@ -42,10 +40,7 @@ fun SettingsMessages() {
     var showCharCount by rememberShowCharCount()
 
 
-    Column(
-        modifier = Modifier
-            .verticalScroll(scrollState)
-    ) {
+    Column {
         SettingsWithTitle(title = R.string.messages) {
             Card(
                 colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surfaceContainer),

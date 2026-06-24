@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 class DialerViewModel(
     private val dialerRepository: DialerRepository,
@@ -52,7 +53,7 @@ class DialerViewModel(
                 state.mapLatest { it.filter }.distinctUntilChanged(),
                 userPreferences.sortLogsAscending,
                 userPreferences.groupSubsequentCalls,
-                snapshotFlow { textFieldState.text }.debounce(250)
+                snapshotFlow { textFieldState.text }.debounce(250.milliseconds)
             ) { logs, filter, asc, groupSub, searQuery ->
 
                 val filteredLogs = logs.fastFilter { it.cachedName.contains(searQuery, true) }

@@ -64,7 +64,8 @@ class StartConversationViewModel(
     fun toggleGroupChatMode() {
         _state.update {
             it.copy(
-                isGroupChatMode = !it.isGroupChatMode
+                isGroupChatMode = !it.isGroupChatMode,
+                selectedNumbers = emptyList()
             )
         }
     }
@@ -75,7 +76,6 @@ class StartConversationViewModel(
                 selectedNumbers = it.selectedNumbers.copyMutate {
                     if (!remove(number)) {
                         add(number)
-                        println("added: $number")
                     }
                 }
             )

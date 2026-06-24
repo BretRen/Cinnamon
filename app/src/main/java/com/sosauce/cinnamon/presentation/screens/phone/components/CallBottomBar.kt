@@ -111,104 +111,132 @@ fun CallBottomBar(
         ) {
             ButtonGroup(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(2.dp)
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                overflowIndicator = {}
             ) {
-                ToggleButton(
-                    checked = callUiState.isMuted,
-                    onCheckedChange = { onCallAction(CallAction.ToggleMute(!callUiState.isMuted)) },
-                    enabled = callUiState.callState != CallState.ENDED,
-                    interactionSource = interactionSources[0],
-                    shapes = ToggleButtonDefaults.shapes(),
-                    colors = ToggleButtonDefaults.toggleButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainerHigh)
-                    ),
-                    modifier = Modifier
-                        .weight(1f)
-                        .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
-                        .animateWidth(interactionSources[0])
-                ) {
-                    Icon(
-                        painter = if (callUiState.isMuted) painterResource(R.drawable.mic_off) else painterResource(
-                            R.drawable.mic
-                        ),
-                        contentDescription = null
-                    )
-                }
-                ToggleButton(
-                    checked = callUiState.currentAudioRoute.type != CallAudioState.ROUTE_EARPIECE,
-                    onCheckedChange = {
-                        paneContent = if (paneContent == DialerPaneContent.AUDIO_SWITCHER) {
-                            DialerPaneContent.NOTHING
-                        } else DialerPaneContent.AUDIO_SWITCHER
-                    },
-                    enabled = callUiState.callState != CallState.ENDED,
-                    interactionSource = interactionSources[1],
-                    shapes = ToggleButtonDefaults.shapes(),
-                    colors = ToggleButtonDefaults.toggleButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainerHigh)
-                    ),
-                    modifier = Modifier
-                        .weight(1f)
-                        .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
-                        .animateWidth(interactionSources[1])
-                ) {
-                    AnimatedContent(
-                        targetState = callUiState.currentAudioRoute.type.routeToIcon()
-                    ) {
-                        Icon(
-                            painter = painterResource(it),
-                            contentDescription = null
-                        )
-                    }
-                }
-                ToggleButton(
-                    checked = callUiState.isHolding,
-                    onCheckedChange = { onCallAction(CallAction.ToggleHold) },
-                    enabled = callUiState.callState != CallState.ENDED,
-                    interactionSource = interactionSources[2],
-                    shapes = ToggleButtonDefaults.shapes(),
-                    colors = ToggleButtonDefaults.toggleButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainerHigh)
-                    ),
-                    modifier = Modifier
-                        .weight(1f)
-                        .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
-                        .animateWidth(interactionSources[2])
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.pause_filled),
-                        contentDescription = null
-                    )
-                }
-                ToggleButton(
-                    checked = paneContent == DialerPaneContent.DIALPAD,
-                    onCheckedChange = {
-                        paneContent = if (paneContent != DialerPaneContent.DIALPAD) {
-                            DialerPaneContent.DIALPAD
-                        } else {
-                            DialerPaneContent.NOTHING
+                // 1. Mute Button
+                customItem(
+                    buttonGroupContent = {
+                        ToggleButton(
+                            checked = callUiState.isMuted,
+                            onCheckedChange = { onCallAction(CallAction.ToggleMute(!callUiState.isMuted)) },
+                            enabled = callUiState.callState != CallState.ENDED,
+                            interactionSource = interactionSources[0],
+                            shapes = ToggleButtonDefaults.shapes(),
+                            colors = ToggleButtonDefaults.toggleButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainerHigh)
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
+                                .animateWidth(interactionSources[0])
+                        ) {
+                            Icon(
+                                painter = if (callUiState.isMuted) painterResource(R.drawable.mic_off) else painterResource(
+                                    R.drawable.mic
+                                ),
+                                contentDescription = null
+                            )
                         }
                     },
-                    enabled = callUiState.callState != CallState.ENDED,
-                    interactionSource = interactionSources[3],
-                    shapes = ToggleButtonDefaults.shapes(),
-                    colors = ToggleButtonDefaults.toggleButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainerHigh)
-                    ),
-                    modifier = Modifier
-                        .weight(1f)
-                        .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
-                        .animateWidth(interactionSources[3])
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.dialpad),
-                        contentDescription = null
-                    )
-                }
+                    menuContent = {}
+                )
+
+                // 2. Audio Route Button
+                customItem(
+                    buttonGroupContent = {
+                        ToggleButton(
+                            checked = callUiState.currentAudioRoute.type != CallAudioState.ROUTE_EARPIECE,
+                            onCheckedChange = {
+                                paneContent = if (paneContent == DialerPaneContent.AUDIO_SWITCHER) {
+                                    DialerPaneContent.NOTHING
+                                } else DialerPaneContent.AUDIO_SWITCHER
+                            },
+                            enabled = callUiState.callState != CallState.ENDED,
+                            interactionSource = interactionSources[1],
+                            shapes = ToggleButtonDefaults.shapes(),
+                            colors = ToggleButtonDefaults.toggleButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainerHigh)
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
+                                .animateWidth(interactionSources[1])
+                        ) {
+                            AnimatedContent(
+                                targetState = callUiState.currentAudioRoute.type.routeToIcon()
+                            ) {
+                                Icon(
+                                    painter = painterResource(it),
+                                    contentDescription = null
+                                )
+                            }
+                        }
+                    },
+                    menuContent = {}
+                )
+
+                // 3. Hold Button
+                customItem(
+                    buttonGroupContent = {
+                        ToggleButton(
+                            checked = callUiState.isHolding,
+                            onCheckedChange = { onCallAction(CallAction.ToggleHold) },
+                            enabled = callUiState.callState != CallState.ENDED,
+                            interactionSource = interactionSources[2],
+                            shapes = ToggleButtonDefaults.shapes(),
+                            colors = ToggleButtonDefaults.toggleButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainerHigh)
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
+                                .animateWidth(interactionSources[2])
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.pause_filled),
+                                contentDescription = null
+                            )
+                        }
+                    },
+                    menuContent = {}
+                )
+
+                // 4. Dialpad Button
+                customItem(
+                    buttonGroupContent = {
+                        ToggleButton(
+                            checked = paneContent == DialerPaneContent.DIALPAD,
+                            onCheckedChange = {
+                                paneContent = if (paneContent != DialerPaneContent.DIALPAD) {
+                                    DialerPaneContent.DIALPAD
+                                } else {
+                                    DialerPaneContent.NOTHING
+                                }
+                            },
+                            enabled = callUiState.callState != CallState.ENDED,
+                            interactionSource = interactionSources[3],
+                            shapes = ToggleButtonDefaults.shapes(),
+                            colors = ToggleButtonDefaults.toggleButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainerHigh)
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
+                                .animateWidth(interactionSources[3])
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.dialpad),
+                                contentDescription = null
+                            )
+                        }
+                    },
+                    menuContent = {}
+                )
             }
             //Spacer(Modifier.height(10.dp))
             IconButton(

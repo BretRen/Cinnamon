@@ -29,6 +29,8 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.sosauce.cinnamon.data.datastore.PreferencesKeys.DEFAULT_TAB
 import com.sosauce.cinnamon.data.datastore.dataStore
+import com.sosauce.cinnamon.data.datastore.rememberInitialTab
+import com.sosauce.cinnamon.data.datastore.rememberInitialTabBlocking
 import com.sosauce.cinnamon.presentation.screens.archived.ArchivedThreads
 import com.sosauce.cinnamon.presentation.screens.archived.ArchivedViewModel
 import com.sosauce.cinnamon.presentation.screens.contacts.AboutMeScreen
@@ -66,7 +68,6 @@ import com.sosauce.cinnamon.utils.rememberHazeState
 import com.sosauce.cinnamon.utils.tabToScreen
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.runBlocking
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -77,18 +78,11 @@ fun Nav(
 ) {
 
     val context = LocalContext.current
-    val initialTab = remember {
-        // meh, but works
-        runBlocking {
-            context.dataStore.data.map { it[DEFAULT_TAB] }.first() ?: DefaultTabOption.MESSAGES
-        }
-    }
-    val backStack = rememberNavBackStack(initialTab.tabToScreen()).apply {
-        handleIntent(context, intent)
-    }
+    val initialTab = rememberInitialTabBlocking()
+    val backStack = rememberNavBackStack(initialTab.tabToScreen())
     val hazeState = rememberHazeState()
 
-
+    LaunchedEffect(intent) { backStack.handleIntent(context, intent) }
 
     CompositionLocalProvider(
         LocalScreen provides backStack.last(),

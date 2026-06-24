@@ -39,7 +39,6 @@ fun SettingsLookAndFeel() {
 
     var theme by rememberAppTheme()
     val isSystemDark = isSystemInDarkTheme()
-    val scrollState = rememberScrollState()
     var useSystemFont by rememberUseSystemFont()
     var paletteStyle by rememberPaletteStyle()
 
@@ -119,10 +118,7 @@ fun SettingsLookAndFeel() {
         CutePaletteStyle.FRUIT_SALAD
     )
 
-    Column(
-        modifier = Modifier
-            .verticalScroll(scrollState)
-    ) {
+    Column {
         SettingsWithTitle(
             title = R.string.theme
         ) {

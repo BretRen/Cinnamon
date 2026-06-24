@@ -24,7 +24,11 @@ import com.sosauce.cinnamon.data.managers.CallServiceCallback
 import com.sosauce.cinnamon.domain.model.AudioRoute
 import com.sosauce.cinnamon.domain.model.CuteSimCard
 import com.sosauce.cinnamon.domain.states.CallState
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Runnable
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import kotlin.uuid.ExperimentalUuidApi
@@ -32,6 +36,8 @@ import kotlin.uuid.ExperimentalUuidApi
 class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, KoinComponent {
 
 
+    private val job = SupervisorJob()
+    private val scope = CoroutineScope(job)
     private lateinit var audioManager: AudioManager
     val callNotificationManager by inject<CallNotificationManager>()
     val callManager by inject<CallManager>()
@@ -52,30 +58,33 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
         override fun onStateChanged(call: Call, state: Int) {
             super.onStateChanged(call, state)
 
-            when (state) {
-                Call.STATE_RINGING -> {
-                    callManager.updateCallState(CallState.RINGING)
-                    callNotificationManager.createIncomingNotification(call.details)
+            scope.launch {
+                when (state) {
+                    Call.STATE_RINGING -> {
+                        callManager.updateCallState(CallState.RINGING)
+                        callNotificationManager.createIncomingNotification(call.details)
+                    }
+
+                    Call.STATE_DIALING, Call.STATE_CONNECTING -> {
+                        callManager.updateCallState(CallState.DIALING)
+                        callNotificationManager.createOutgoingNotification(call.details)
+                    }
+
+                    Call.STATE_ACTIVE -> {
+                        handler.post(runnable)
+                        callManager.updateCallState(CallState.ONGOING)
+                        callNotificationManager.createOngoingNotification(call.details)
+                    }
+
+                    Call.STATE_DISCONNECTED, Call.STATE_DISCONNECTING -> callManager.updateCallState(
+                        CallState.ENDED
+                    )
+
+                    Call.STATE_HOLDING -> callManager.updateIsHolding(true)
+                    else -> return@launch
                 }
-
-                Call.STATE_DIALING, Call.STATE_CONNECTING -> {
-                    callManager.updateCallState(CallState.DIALING)
-                    callNotificationManager.createOutgoingNotification(call.details)
-                }
-
-                Call.STATE_ACTIVE -> {
-                    handler.post(runnable)
-                    callManager.updateCallState(CallState.ONGOING)
-                    callNotificationManager.createOngoingNotification(call.details)
-                }
-
-                Call.STATE_DISCONNECTED, Call.STATE_DISCONNECTING -> callManager.updateCallState(
-                    CallState.ENDED
-                )
-
-                Call.STATE_HOLDING -> callManager.updateIsHolding(true)
-                else -> return
             }
+
 
             callManager.updateIsHolding(state == Call.STATE_HOLDING)
         }
@@ -107,7 +116,7 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
     override fun onDestroy() {
         super.onDestroy()
         audioManager.abandonAudioFocusRequest(audioFocus)
-
+        job.cancel()
     }
 
     private fun launchCallActivity() {
@@ -125,6 +134,7 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
     @SuppressLint("MissingPermission")
     override fun onCallAdded(call: Call) {
         super.onCallAdded(call)
+
         cuteCall = call
 
         val state = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -148,41 +158,43 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
         callManager.updateActiveSim(sim)
 
 
-        val notification = when (state) {
-            Call.STATE_RINGING -> {
-                callManager.updateCallState(CallState.RINGING)
-                callManager.updateNumber(
-                    call.details?.handle?.schemeSpecificPart ?: getString(R.string.unknown)
-                )
-                callNotificationManager.createIncomingNotification(call.details)
-            }
+        scope.launch {
+            val notification = when (state) {
+                Call.STATE_RINGING -> {
+                    callManager.updateCallState(CallState.RINGING)
+                    callManager.updateNumber(
+                        call.details?.handle?.schemeSpecificPart ?: getString(R.string.unknown)
+                    )
+                    callNotificationManager.createIncomingNotification(call.details)
+                }
 
-            Call.STATE_DIALING, Call.STATE_CONNECTING -> {
-                callManager.updateCallState(CallState.DIALING)
-                launchCallActivity()
-                callNotificationManager.createOutgoingNotification(call.details)
-            }
+                Call.STATE_DIALING, Call.STATE_CONNECTING -> {
+                    callManager.updateCallState(CallState.DIALING)
+                    launchCallActivity()
+                    callNotificationManager.createOutgoingNotification(call.details)
+                }
 
-            Call.STATE_ACTIVE -> {
-                handler.post(runnable)
-                callManager.updateCallState(CallState.ONGOING)
-                callNotificationManager.createOngoingNotification(call.details)
-            }
+                Call.STATE_ACTIVE -> {
+                    handler.post(runnable)
+                    callManager.updateCallState(CallState.ONGOING)
+                    callNotificationManager.createOngoingNotification(call.details)
+                }
 
-            Call.STATE_DISCONNECTED, Call.STATE_DISCONNECTING -> {
-                callManager.updateCallState(CallState.ENDED)
-                null
-            }
+                Call.STATE_DISCONNECTED, Call.STATE_DISCONNECTING -> {
+                    callManager.updateCallState(CallState.ENDED)
+                    null
+                }
 
-            Call.STATE_HOLDING -> {
-                callManager.updateIsHolding(true)
-                null
-            }
+                Call.STATE_HOLDING -> {
+                    callManager.updateIsHolding(true)
+                    null
+                }
 
-            else -> null
+                else -> null
+            }
+            notification?.let { startForeground(CallNotificationManager.CALL_NOTIF_ID, it) }
         }
 
-        notification?.let { startForeground(CallNotificationManager.CALL_NOTIF_ID, it) }
         callManager.registerCallServiceCallback(this)
         callManager.registerAndroidCallCallback(this)
         cuteCall?.registerCallback(callback)
@@ -195,6 +207,7 @@ class CallService : InCallService(), CallServiceCallback, AndroidCallCallback, K
         callManager.unregisterCallServiceCallback()
         callManager.unregisterAndroidCallCallback()
         handler.removeCallbacks(runnable)
+        job.cancelChildren()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }

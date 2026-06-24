@@ -5,14 +5,19 @@ import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.telecom.Call
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.Person
 import androidx.core.graphics.drawable.IconCompat
+import coil3.imageLoader
+import coil3.request.ImageRequest
+import coil3.request.transformations
+import coil3.toBitmap
+import coil3.transform.CircleCropTransformation
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.activities.CallActivity
+import com.sosauce.cinnamon.data.fetchers.RecipientPhone
 import com.sosauce.cinnamon.data.receivers.CallReceiver
 import com.sosauce.cinnamon.utils.ACCEPT_INCOMING_CALL
 import com.sosauce.cinnamon.utils.DECLINE_INCOMING_CALL
@@ -65,18 +70,20 @@ class CallNotificationManager(
 
 
     @SuppressLint("MissingPermission")
-    fun createIncomingNotification(
+    suspend fun createIncomingNotification(
         callDetails: Call.Details
     ): Notification {
 
         val number = callDetails.gatewayInfo?.originalAddress?.schemeSpecificPart
             ?: callDetails.handle.schemeSpecificPart
 
-        //val contactPfpUri = number.getContactPfpFromNumber(context)
-        val contactPfpUri = Uri.EMPTY
-        val icon = if (contactPfpUri != Uri.EMPTY) {
-            IconCompat.createWithContentUri(contactPfpUri)
-        } else IconCompat.createWithResource(context, R.drawable.account)
+        val request = ImageRequest.Builder(context)
+            .data(RecipientPhone(number ?: ""))
+            .transformations(CircleCropTransformation())
+            .build()
+        val result = context.imageLoader.execute(request)
+        val bitmap = result.image?.toBitmap()
+        val personIcon = bitmap?.let { IconCompat.createWithBitmap(it) }
 
 
         val builder = NotificationCompat.Builder(context, CALLS_CHANNEL_ID)
@@ -88,7 +95,7 @@ class CallNotificationManager(
             .setStyle(
                 NotificationCompat.CallStyle.forIncomingCall(
                     Person.Builder()
-                        .setIcon(icon)
+                        .setIcon(personIcon)
                         .setName(number.getContactNameOrNothing(context))
                         .build(),
                     declinePendingIntent,
@@ -104,18 +111,20 @@ class CallNotificationManager(
     }
 
     @SuppressLint("MissingPermission")
-    fun createOngoingNotification(
+    suspend fun createOngoingNotification(
         callDetails: Call.Details
     ): Notification {
 
         val number = callDetails.gatewayInfo?.originalAddress?.schemeSpecificPart
             ?: callDetails.handle.schemeSpecificPart
 
-        //val contactPfpUri = number.getContactPfpFromNumber(context)
-        val contactPfpUri = Uri.EMPTY
-        val icon = if (contactPfpUri != Uri.EMPTY) {
-            IconCompat.createWithContentUri(contactPfpUri)
-        } else IconCompat.createWithResource(context, R.drawable.account)
+        val request = ImageRequest.Builder(context)
+            .data(RecipientPhone(number ?: ""))
+            .transformations(CircleCropTransformation())
+            .build()
+        val result = context.imageLoader.execute(request)
+        val bitmap = result.image?.toBitmap()
+        val personIcon = bitmap?.let { IconCompat.createWithBitmap(it) }
 
 
         val builder = NotificationCompat.Builder(context, CALLS_CHANNEL_ID)
@@ -131,7 +140,7 @@ class CallNotificationManager(
             .setStyle(
                 NotificationCompat.CallStyle.forOngoingCall(
                     Person.Builder()
-                        .setIcon(icon)
+                        .setIcon(personIcon)
                         .setName(number.getContactNameOrNothing(context))
                         .build(),
                     hangupPendingIntent
@@ -147,18 +156,20 @@ class CallNotificationManager(
     }
 
     @SuppressLint("MissingPermission")
-    fun createOutgoingNotification(
+    suspend fun createOutgoingNotification(
         callDetails: Call.Details
     ): Notification {
 
         val number = callDetails.gatewayInfo?.originalAddress?.schemeSpecificPart
             ?: callDetails.handle.schemeSpecificPart
 
-        //val contactPfpUri = number.getContactPfpFromNumber(context)
-        val contactPfpUri = Uri.EMPTY
-        val icon = if (contactPfpUri != Uri.EMPTY) {
-            IconCompat.createWithContentUri(contactPfpUri)
-        } else IconCompat.createWithResource(context, R.drawable.account)
+        val request = ImageRequest.Builder(context)
+            .data(RecipientPhone(number ?: ""))
+            .transformations(CircleCropTransformation())
+            .build()
+        val result = context.imageLoader.execute(request)
+        val bitmap = result.image?.toBitmap()
+        val personIcon = bitmap?.let { IconCompat.createWithBitmap(it) }
 
 
         val builder = NotificationCompat.Builder(context, CALLS_CHANNEL_ID)
@@ -172,7 +183,7 @@ class CallNotificationManager(
             .setStyle(
                 NotificationCompat.CallStyle.forOngoingCall(
                     Person.Builder()
-                        .setIcon(icon)
+                        .setIcon(personIcon)
                         .setName(number.getContactNameOrNothing(context))
                         .build(),
                     hangupPendingIntent

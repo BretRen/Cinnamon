@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
+import kotlin.time.Duration.Companion.milliseconds
 
 class ConversationsViewModel(
     private val application: Application,
@@ -49,7 +50,7 @@ class ConversationsViewModel(
                 userPreferences.pinnedConversations,
                 conversationSettingsDao.getAllDrafts(),
                 userPreferences.archivedConversations,
-                snapshotFlow { textFieldState.text }.debounce(250)
+                snapshotFlow { textFieldState.text }.debounce(250.milliseconds)
             ) { cleanConversations, pinned, allDrafts, archived, searchQuery ->
                 val (pinnedThreads, unpinnedThreads) = cleanConversations
                     .fastFilter { it.threadId.toString() !in archived }

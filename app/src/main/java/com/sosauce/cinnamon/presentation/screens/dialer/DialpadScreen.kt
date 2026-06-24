@@ -295,36 +295,39 @@ fun SharedTransitionScope.DialpadScreen(
 
                     nonFavorites.groupBy { it.displayName.firstOrNull()?.uppercaseChar() ?: '#' }
                         .toSortedMap().forEach { (letter, contacts) ->
-                        item {
-                            Text(
-                                text = letter.toString(),
-                                style = MaterialTheme.typography.bodyLargeEmphasized.copy(
-                                    color = MaterialTheme.colorScheme.primary
-                                ),
-                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
-                            )
-                        }
-                        items(
-                            items = contacts,
-                            key = { contact -> contact.id }
-                        ) { contact ->
+                            item {
+                                Text(
+                                    text = letter.toString(),
+                                    style = MaterialTheme.typography.bodyLargeEmphasized.copy(
+                                        color = MaterialTheme.colorScheme.primary
+                                    ),
+                                    modifier = Modifier.padding(
+                                        horizontal = 20.dp,
+                                        vertical = 10.dp
+                                    )
+                                )
+                            }
+                            items(
+                                items = contacts,
+                                key = { contact -> contact.id }
+                            ) { contact ->
 
 
-                            ContactListItem(
-                                modifier = Modifier.animateItem(),
-                                contact = contact,
-                                isSelected = false,
-                                onClick = {
-                                    if (contact.details.phoneNumbers.size > 1) {
-                                        showMultiNumberSelection = Pair(true, contact.id)
-                                    } else {
-                                        onHandleCallAction(CallAction.LaunchCall(contact.details.phoneNumbers.first().number))
-                                    }
-                                },
-                                showNumber = false
-                            )
+                                ContactListItem(
+                                    modifier = Modifier.animateItem(),
+                                    contact = contact,
+                                    isSelected = false,
+                                    onClick = {
+                                        if (contact.details.phoneNumbers.size > 1) {
+                                            showMultiNumberSelection = Pair(true, contact.id)
+                                        } else {
+                                            onHandleCallAction(CallAction.LaunchCall(contact.details.phoneNumbers.first().number))
+                                        }
+                                    },
+                                    showNumber = false
+                                )
+                            }
                         }
-                    }
                 } else {
                     item {
                         NoXFound(

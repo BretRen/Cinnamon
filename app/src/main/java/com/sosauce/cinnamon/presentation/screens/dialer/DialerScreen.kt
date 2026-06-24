@@ -76,32 +76,38 @@ fun DialerScreen(
                         multiSelectState = sweetSelectState
                     ) {
                         ButtonGroup(
-                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                            horizontalArrangement = Arrangement.spacedBy(2.dp),
+                            overflowIndicator = {}
                         ) {
-                            Button(
-                                onClick = {
-                                    val logs = sweetSelectState.selectedItems.map { it.id }
-                                    onHandleDialerActions(DialerAction.DeleteLogs(logs))
-                                    sweetSelectState.clearSelected()
+                            customItem(
+                                buttonGroupContent = {
+                                    Button(
+                                        onClick = {
+                                            val logs = sweetSelectState.selectedItems.map { it.id }
+                                            onHandleDialerActions(DialerAction.DeleteLogs(logs))
+                                            sweetSelectState.clearSelected()
+                                        },
+                                        shape = RoundedCornerShape(
+                                            topStart = 50.dp,
+                                            bottomStart = 50.dp,
+                                            topEnd = 50.dp,
+                                            bottomEnd = 50.dp
+                                        ),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                            contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
+                                        ),
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(R.drawable.delete_filled),
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                    }
                                 },
-                                shape = RoundedCornerShape(
-                                    topStart = 50.dp,
-                                    bottomStart = 50.dp,
-                                    topEnd = 50.dp,
-                                    bottomEnd = 50.dp
-                                ),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                                    contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
-                                ),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.delete_filled),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.error
-                                )
-                            }
+                                menuContent = {}
+                            )
                         }
                     }
                 } else {

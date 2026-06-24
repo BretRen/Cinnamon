@@ -5,7 +5,6 @@ import android.content.Context
 import android.net.Uri
 import android.os.Bundle
 import android.telecom.TelecomManager
-import android.telephony.TelephonyManager
 import com.sosauce.cinnamon.data.datastore.UserPreferences
 import com.sosauce.cinnamon.domain.model.AudioRoute
 import com.sosauce.cinnamon.domain.model.CuteSimCard

@@ -342,6 +342,7 @@ fun ContactInfos(
                         }
                     }
 
+                    println("contact details: ${contact.details.note}")
                     if (contact.details.note?.isNotEmpty() == true) {
                         CuteListItem(
                             onClick = null,

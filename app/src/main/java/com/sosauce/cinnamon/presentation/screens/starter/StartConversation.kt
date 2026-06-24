@@ -222,55 +222,57 @@ fun SharedTransitionScope.StartConversation(
 
                 nonFavorites.groupBy { it.displayName.firstOrNull()?.uppercaseChar() ?: '#' }
                     .toSortedMap().forEach { (letter, contacts) ->
-                    item {
-                        Text(
-                            text = letter.toString(),
-                            style = MaterialTheme.typography.bodyLargeEmphasized.copy(
-                                color = MaterialTheme.colorScheme.primary
-                            ),
-                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
-                        )
-                    }
-                    with(this@StartConversation) {
-                        items(
-                            items = contacts,
-                            key = { contact -> contact.id }
-                        ) { contact ->
-
-                            val isSelected = remember(state.selectedNumbers) {
-                                contact.details.phoneNumbers.fastAny {
-                                    state.selectedNumbers.contains(
-                                        it.number
-                                    )
-                                }
-                            }
-                            ContactListItem(
-                                modifier = Modifier.animateItem(),
-                                contact = contact,
-                                isSelected = isSelected,
-                                onClick = {
-                                    val phoneNumbers = contact.details.phoneNumbers
-                                    val firstNumber =
-                                        phoneNumbers.firstOrNull()?.number ?: return@ContactListItem
-
-                                    when {
-                                        phoneNumbers.size > 1 -> {
-                                            contactPhoneNumbersPicker =
-                                                phoneNumbers.fastMap { it.number }
-                                        }
-
-                                        state.isGroupChatMode -> onAddNumberToGroup(firstNumber)
-                                        else -> {
-                                            val threadId = firstNumber.getThreadIdOrCreate(context)
-                                            onNavigate(Screen.Conversation(threadId))
-                                        }
-                                    }
-                                },
-                                showNumber = true
+                        item {
+                            Text(
+                                text = letter.toString(),
+                                style = MaterialTheme.typography.bodyLargeEmphasized.copy(
+                                    color = MaterialTheme.colorScheme.primary
+                                ),
+                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
                             )
                         }
+                        with(this@StartConversation) {
+                            items(
+                                items = contacts,
+                                key = { contact -> contact.id }
+                            ) { contact ->
+
+                                val isSelected = remember(state.selectedNumbers) {
+                                    contact.details.phoneNumbers.fastAny {
+                                        state.selectedNumbers.contains(
+                                            it.number
+                                        )
+                                    }
+                                }
+                                ContactListItem(
+                                    modifier = Modifier.animateItem(),
+                                    contact = contact,
+                                    isSelected = isSelected,
+                                    onClick = {
+                                        val phoneNumbers = contact.details.phoneNumbers
+                                        val firstNumber =
+                                            phoneNumbers.firstOrNull()?.number
+                                                ?: return@ContactListItem
+
+                                        when {
+                                            phoneNumbers.size > 1 -> {
+                                                contactPhoneNumbersPicker =
+                                                    phoneNumbers.fastMap { it.number }
+                                            }
+
+                                            state.isGroupChatMode -> onAddNumberToGroup(firstNumber)
+                                            else -> {
+                                                val threadId =
+                                                    firstNumber.getThreadIdOrCreate(context)
+                                                onNavigate(Screen.Conversation(threadId))
+                                            }
+                                        }
+                                    },
+                                    showNumber = true
+                                )
+                            }
+                        }
                     }
-                }
             } else {
                 item {
                     NoXFound(

@@ -20,7 +20,7 @@ fun NavBackStack<NavKey>.handleIntent(
         }
 
         Intent.ACTION_DIAL -> {
-            val number = (intent.data?.toString() ?: "").removePrefix("tel:")
+            val number = (intent.data?.toString() ?: "").removePrefix("tel:").replace('%', ' ')
             add(Screen.Dialpad(number))
         }
 

@@ -148,73 +148,88 @@ fun ConversationsSelectedBar(
         multiSelectState = multiSelectState
     ) {
         ButtonGroup(
-            horizontalArrangement = Arrangement.spacedBy(2.dp)
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            overflowIndicator = {}
         ) {
-            Button(
-                onClick = onPinThreads,
-                interactionSource = interactionSources[0],
-                shape = RoundedCornerShape(
-                    topStart = 50.dp,
-                    bottomStart = 50.dp,
-                    topEnd = 4.dp,
-                    bottomEnd = 4.dp
-                ),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
-                ),
-                modifier = Modifier
-                    .animateWidth(interactionSources[0])
-                    .weight(1f)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.pin_filled),
-                    contentDescription = null
-                )
-            }
-            Button(
-                onClick = onArchiveThreads,
-                interactionSource = interactionSources[1],
-                shape = RoundedCornerShape(4.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
-                ),
-                modifier = Modifier
-                    .animateWidth(interactionSources[1])
-                    .weight(1f)
-            ) {
-                val icon =
-                    if (screen is Screen.ArchivedThreads) R.drawable.unarchive else R.drawable.archive
-
-                Icon(
-                    painter = painterResource(icon),
-                    contentDescription = null
-                )
-            }
-            Button(
-                onClick = { showDeleteConversationsDialog = true },
-                interactionSource = interactionSources[2],
-                shape = RoundedCornerShape(
-                    topStart = 4.dp,
-                    bottomStart = 4.dp,
-                    topEnd = 50.dp,
-                    bottomEnd = 50.dp
-                ),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
-                ),
-                modifier = Modifier
-                    .animateWidth(interactionSources[2])
-                    .weight(1f)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.delete_filled),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.error
-                )
-            }
+            customItem(
+                buttonGroupContent = {
+                    Button(
+                        onClick = onPinThreads,
+                        interactionSource = interactionSources[0],
+                        shape = RoundedCornerShape(
+                            topStart = 50.dp,
+                            bottomStart = 50.dp,
+                            topEnd = 4.dp,
+                            bottomEnd = 4.dp
+                        ),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
+                        ),
+                        modifier = Modifier
+                            .animateWidth(interactionSources[0])
+                            .weight(1f)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.pin_filled),
+                            contentDescription = null
+                        )
+                    }
+                },
+                menuContent = {}
+            )
+            customItem(
+                buttonGroupContent = {
+                    Button(
+                        onClick = onArchiveThreads,
+                        interactionSource = interactionSources[1],
+                        shape = RoundedCornerShape(4.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
+                        ),
+                        modifier = Modifier
+                            .animateWidth(interactionSources[1])
+                            .weight(1f)
+                    ) {
+                        val icon =
+                            if (screen is Screen.ArchivedThreads) R.drawable.unarchive else R.drawable.archive
+                        Icon(
+                            painter = painterResource(icon),
+                            contentDescription = null
+                        )
+                    }
+                },
+                menuContent = {}
+            )
+            customItem(
+                buttonGroupContent = {
+                    Button(
+                        onClick = { showDeleteConversationsDialog = true },
+                        interactionSource = interactionSources[2],
+                        shape = RoundedCornerShape(
+                            topStart = 4.dp,
+                            bottomStart = 4.dp,
+                            topEnd = 50.dp,
+                            bottomEnd = 50.dp
+                        ),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
+                        ),
+                        modifier = Modifier
+                            .animateWidth(interactionSources[2])
+                            .weight(1f)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.delete_filled),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
+                menuContent = {}
+            )
         }
     }
 }
@@ -236,53 +251,64 @@ fun ContactsSelectedBar(
         multiSelectState = multiSelectState
     ) {
         ButtonGroup(
-            horizontalArrangement = Arrangement.spacedBy(2.dp)
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            overflowIndicator = {}
         ) {
-            Button(
-                onClick = onToggleFavorite,
-                interactionSource = interactionSources[0],
-                shape = RoundedCornerShape(
-                    topStart = 50.dp,
-                    bottomStart = 50.dp,
-                    topEnd = 4.dp,
-                    bottomEnd = 4.dp
-                ),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
-                ),
-                modifier = Modifier
-                    .animateWidth(interactionSources[0])
-                    .weight(1f)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.favorite_filled),
-                    contentDescription = null
-                )
-            }
-            Button(
-                onClick = onDeleteContacts,
-                interactionSource = interactionSources[1],
-                shape = RoundedCornerShape(
-                    topStart = 4.dp,
-                    bottomStart = 4.dp,
-                    topEnd = 50.dp,
-                    bottomEnd = 50.dp
-                ),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
-                ),
-                modifier = Modifier
-                    .animateWidth(interactionSources[1])
-                    .weight(1f)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.delete_filled),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.error
-                )
-            }
+            customItem(
+                buttonGroupContent = {
+                    Button(
+                        onClick = onToggleFavorite,
+                        interactionSource = interactionSources[0],
+                        shape = RoundedCornerShape(
+                            topStart = 50.dp,
+                            bottomStart = 50.dp,
+                            topEnd = 4.dp,
+                            bottomEnd = 4.dp
+                        ),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
+                        ),
+                        modifier = Modifier
+                            .animateWidth(interactionSources[0])
+                            .weight(1f)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.favorite_filled),
+                            contentDescription = null
+                        )
+                    }
+                },
+                menuContent = {}
+            )
+            customItem(
+                buttonGroupContent = {
+                    Button(
+                        onClick = onDeleteContacts,
+                        interactionSource = interactionSources[1],
+                        shape = RoundedCornerShape(
+                            topStart = 4.dp,
+                            bottomStart = 4.dp,
+                            topEnd = 50.dp,
+                            bottomEnd = 50.dp
+                        ),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            contentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
+                        ),
+                        modifier = Modifier
+                            .animateWidth(interactionSources[1])
+                            .weight(1f)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.delete_filled),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
+                menuContent = {}
+            )
         }
     }
 }

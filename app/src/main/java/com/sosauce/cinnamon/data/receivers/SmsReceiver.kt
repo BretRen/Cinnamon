@@ -13,7 +13,6 @@ import com.sosauce.cinnamon.utils.getThreadIdOrCreate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
@@ -27,10 +26,13 @@ class SmsReceiver : BroadcastReceiver(), KoinComponent {
         val messagesNotificationManager by inject<MessageNotificationManager>()
         val cuteTelephonyManager by inject<CuteTelephonyManager>()
         val userPreferences by inject<UserPreferences>()
+        val scope = CoroutineScope(Dispatchers.IO)
 
-        Sms.Intents.getMessagesFromIntent(intent).forEach { message ->
+        scope.launch {
+            val archived = userPreferences.archivedConversations.first()
 
-            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+
+            Sms.Intents.getMessagesFromIntent(intent).forEach { message ->
                 val threadId = message.displayOriginatingAddress?.getThreadIdOrCreate(context) ?: 0
                 cuteTelephonyManager.saveSmsToDevice(
                     address = message.displayOriginatingAddress ?: "",
@@ -38,8 +40,7 @@ class SmsReceiver : BroadcastReceiver(), KoinComponent {
                     messageType = Sms.MESSAGE_TYPE_INBOX,
                     read = 0
                 )
-                val archived = userPreferences.archivedConversations.first()
-                if (threadId.toString() in archived) return@launch
+                if (threadId.toString() in archived) return@forEach
                 messagesNotificationManager.sendOrAppendMessageNotification(
                     threadId = threadId,
                     message = message.messageBody,
@@ -47,5 +48,6 @@ class SmsReceiver : BroadcastReceiver(), KoinComponent {
                 )
             }
         }
+
     }
 }

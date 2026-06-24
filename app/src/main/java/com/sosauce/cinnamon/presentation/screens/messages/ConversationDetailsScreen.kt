@@ -237,11 +237,6 @@ fun SharedTransitionScope.ConversationDetailsScreen(
                                     }
 
                                     val isSelected by sweetSelectState.isSelectedAsState(message)
-                                    val bubbleColor = when {
-                                        message.body.isEmoji() || message.isScheduled -> Color.Transparent
-                                        message.type == Telephony.Sms.MESSAGE_TYPE_INBOX -> MaterialTheme.colorScheme.tertiaryFixedDim
-                                        else -> MaterialTheme.colorScheme.primaryFixedDim
-                                    }
                                     var isTimestampVisible by remember { mutableStateOf(false) }
 
                                     MessageLayout(
@@ -294,6 +289,13 @@ fun SharedTransitionScope.ConversationDetailsScreen(
                                             }
                                         }
                                     ) {
+
+                                        val bubbleColor = when {
+                                            message.body.isEmoji() || message.isScheduled -> Color.Transparent
+                                            message.type == Telephony.Sms.MESSAGE_TYPE_INBOX -> MaterialTheme.colorScheme.tertiaryFixedDim
+                                            else -> MaterialTheme.colorScheme.primaryFixedDim
+                                        }
+
                                         if (message.isMms) {
                                             MmsBubble(
                                                 message,

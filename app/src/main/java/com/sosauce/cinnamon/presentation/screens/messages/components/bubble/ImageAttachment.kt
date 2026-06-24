@@ -13,11 +13,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,7 +23,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -35,6 +30,7 @@ import coil3.compose.AsyncImage
 import com.skydoves.cloudy.cloudy
 import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.presentation.screens.messages.ConversationActions
+import com.sosauce.cinnamon.presentation.shared_components.animations.AnimatedFab
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 
@@ -93,31 +89,21 @@ fun ImageAttachment(
                         .navigationBarsPadding(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    FloatingActionButton(
+                    AnimatedFab(
                         onClick = { showFullscreen = false },
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                        shape = MaterialShapes.Cookie9Sided.toShape()
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.keyboard_down),
-                            contentDescription = null
-                        )
-                    }
-                    FloatingActionButton(
+                        icon = R.drawable.keyboard_down,
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    )
+                    AnimatedFab(
                         onClick = {
                             onHandleConversationActions(
                                 ConversationActions.DownloadMmsImage(
-                                    image ?: return@FloatingActionButton
+                                    image ?: return@AnimatedFab
                                 )
                             )
                         },
-                        shape = MaterialShapes.Cookie9Sided.toShape()
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.download),
-                            contentDescription = null
-                        )
-                    }
+                        icon = R.drawable.download
+                    )
                 }
             }
         }

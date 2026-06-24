@@ -3,6 +3,8 @@ package com.sosauce.cinnamon.data.datastore
 import android.content.Context
 import android.telephony.SubscriptionManager
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -32,6 +34,9 @@ import com.sosauce.cinnamon.utils.CutePaletteStyle
 import com.sosauce.cinnamon.utils.CuteTheme
 import com.sosauce.cinnamon.utils.DefaultTabOption
 import com.sosauce.cinnamon.utils.MmsSize
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.runBlocking
 
 private const val PREFERENCES_NAME = "settings"
 
@@ -51,7 +56,7 @@ data object PreferencesKeys {
     val SHOW_CHAR_COUNT = booleanPreferencesKey("DISPLAY_CHAR_COUNT")
     val SEND_GROUP_AS_MMS = booleanPreferencesKey("SEND_GROUP_AS_MMS")
     val ENABLE_DELIVERY_REPORTS = booleanPreferencesKey("ENABLE_DELIVERY_REPORTS")
-    val DEFAULT_TAB = stringPreferencesKey("DEFAULT_TAB")
+    val DEFAULT_TAB = intPreferencesKey("DEFAULT_TAB")
 
     val GROUP_SUBSEQUENT_CALLS = booleanPreferencesKey("GROUP_SUBSEQUENT_CALLS")
     val SORT_CONVERSATIONS_ASCENDING = booleanPreferencesKey("SORT_CONVERSATIONS_ASCENDING")
@@ -101,8 +106,6 @@ fun rememberEnableDeliveryReports() = rememberPreference(ENABLE_DELIVERY_REPORTS
 @Composable
 fun rememberSendLongAsMms() = rememberPreference(SEND_LONG_AS_MMS, false)
 
-@Composable
-fun rememberDefaultTab() = rememberPreference(DEFAULT_TAB, DefaultTabOption.MESSAGES)
 
 @Composable
 fun rememberGroupSubsequentCalls() = rememberPreference(GROUP_SUBSEQUENT_CALLS, false)
@@ -118,3 +121,15 @@ fun rememberEnableT9Dialing() = rememberPreference(ENABLE_T9_DIALING, true)
 
 @Composable
 fun rememberSortLogsAscending() = rememberPreference(SORT_LOGS_ASCENDING, true)
+
+@Composable
+fun rememberInitialTab() = rememberPreference(DEFAULT_TAB, DefaultTabOption.MESSAGES)
+
+@Composable
+fun rememberInitialTabBlocking(): Int {
+    val context = LocalContext.current
+
+    return runBlocking {
+        context.dataStore.data.map { it[DEFAULT_TAB] ?: DefaultTabOption.MESSAGES }.first()
+    }
+}

@@ -14,9 +14,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sosauce.cinnamon.R
+import com.sosauce.cinnamon.data.datastore.rememberEnableT9Dialing
 import com.sosauce.cinnamon.data.datastore.rememberGroupSubsequentCalls
 import com.sosauce.cinnamon.presentation.screens.settings.components.LazyRowWithScrollButton
 import com.sosauce.cinnamon.presentation.screens.settings.components.PhoneAccountHandleSelector
@@ -28,8 +30,8 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun SettingsPhone() {
 
-    val scrollState = rememberScrollState()
     var groupSubCalls by rememberGroupSubsequentCalls()
+    var t9Dialing by rememberEnableT9Dialing()
     val simsViewModel = koinViewModel<SimsViewModel>()
     val allHandles = simsViewModel.fetchPhoneHandles()
     val defaultPhoneHandle by simsViewModel.fetchLatestDefaultPhoneHandle()
@@ -39,10 +41,7 @@ fun SettingsPhone() {
 
 
 
-    Column(
-        modifier = Modifier
-            .verticalScroll(scrollState)
-    ) {
+    Column {
 
         SettingsWithTitle(title = R.string.phone) {
             Card(
@@ -67,7 +66,7 @@ fun SettingsPhone() {
                     )
                 }
                 Text(
-                    text = "Default sim for phone functions.",
+                    text = stringResource(R.string.default_sim_phone),
                     style = MaterialTheme.typography.bodySmallEmphasized.copy(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     ),
@@ -75,11 +74,18 @@ fun SettingsPhone() {
                 )
             }
             SwitchSettingsCard(
+                checked = t9Dialing,
+                onCheckedChange = { t9Dialing = !t9Dialing },
+                topDp = 4.dp,
+                bottomDp = 4.dp,
+                text = stringResource(R.string.enable_t9_dialing)
+            )
+            SwitchSettingsCard(
                 checked = groupSubCalls,
                 onCheckedChange = { groupSubCalls = !groupSubCalls },
                 topDp = 4.dp,
                 bottomDp = 24.dp,
-                text = "Group subsequent calls"
+                text = stringResource(R.string.group_sub_calls)
             )
         }
     }

@@ -54,10 +54,10 @@ object CuteIntents {
 }
 
 object DefaultTabOption {
-    const val MESSAGES = "MESSAGES"
-    const val CONTACTS = "CONTACTS"
-    const val DIALER = "DIALER"
-    const val DIALPAD = "DIALPAD"
+    const val MESSAGES = 0
+    const val CONTACTS = 1
+    const val DIALER = 2
+    const val DIALPAD = 3
 }
 
 /**

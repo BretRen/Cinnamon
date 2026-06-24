@@ -12,6 +12,7 @@ import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import com.sosauce.cinnamon.data.datastore.rememberAppTheme
+import com.sosauce.cinnamon.data.datastore.rememberInitialTab
 import com.sosauce.cinnamon.presentation.navigation.Nav
 import com.sosauce.cinnamon.presentation.screens.setup.SetupPermissions
 import com.sosauce.cinnamon.presentation.theme.CinnamonTheme
@@ -19,6 +20,7 @@ import com.sosauce.cinnamon.utils.CuteTheme
 import com.sosauce.cinnamon.utils.hasBothRoles
 
 class MainActivity : ComponentActivity() {
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,6 +31,7 @@ class MainActivity : ComponentActivity() {
 
             val theme by rememberAppTheme()
             val isSystemInDarkTheme = isSystemInDarkTheme()
+
 
             CinnamonTheme {
 

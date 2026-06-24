@@ -17,8 +17,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,7 +43,6 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun SettingsContacts() {
 
-    val scrollState = rememberScrollState()
     val context = LocalContext.current
     val migrationViewModel = koinViewModel<MigrationViewModel>()
     var importSource by remember { mutableStateOf("" to "") }
@@ -65,7 +65,9 @@ fun SettingsContacts() {
 
     if (showContactsImportSheet) {
         ModalBottomSheet(
-            sheetState = rememberModalBottomSheetState(),
+            sheetState = rememberBottomSheetState(
+                initialValue = SheetValue.Hidden
+            ),
             onDismissRequest = { showContactsImportSheet = false }
         ) {
 
@@ -117,25 +119,22 @@ fun SettingsContacts() {
     }
 
 
-    Column(
-        modifier = Modifier
-            .verticalScroll(scrollState)
-    ) {
+    Column {
         SettingsWithTitle(
             title = R.string.contacts
         ) {
             PlainSettingsCard(
                 onClick = { showContactsImportSheet = true },
                 topDp = 24.dp,
-                bottomDp = 4.dp,
+                bottomDp = 24.dp,
                 text = stringResource(R.string.import_contact_from_vcf)
             )
-            PlainSettingsCard(
-                onClick = {},
-                topDp = 4.dp,
-                bottomDp = 24.dp,
-                text = stringResource(R.string.export_contact_to_vcf)
-            )
+//            PlainSettingsCard(
+//                onClick = {},
+//                topDp = 4.dp,
+//                bottomDp = 24.dp,
+//                text = stringResource(R.string.export_contact_to_vcf)
+//            )
         }
     }
 }

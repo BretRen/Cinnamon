@@ -46,6 +46,12 @@ fun SettingsScreen(
             onNavigate = { backStack.add(SettingsScreens.LookAndFeel) }
         ),
         Item(
+            icon = R.drawable.behavior,
+            name = stringResource(R.string.behavior),
+            description = stringResource(R.string.behavior_desc),
+            onNavigate = { backStack.add(SettingsScreens.Behavior) }
+        ),
+        Item(
             icon = R.drawable.message_rounded,
             name = stringResource(R.string.messages),
             description = stringResource(R.string.messages_settings_desc),
@@ -63,12 +69,6 @@ fun SettingsScreen(
             description = stringResource(R.string.phone_settings_desc),
             onNavigate = { backStack.add(SettingsScreens.Phone) }
         ),
-//        Item(
-//            icon = R.drawable.behavior,
-//            name = stringResource(R.string.behavior),
-//            description = stringResource(R.string.behavior_desc),
-//            onNavigate = { backStack.add(SettingsScreens.Behavior) }
-//        ),
 //        Item(
 //            icon = R.drawable.migrate,
 //            name = stringResource(R.string.migration),
@@ -94,8 +94,8 @@ fun SettingsScreen(
         NavDisplay(
             backStack = backStack,
             modifier = Modifier
-                .padding(paddingValues)
-                .background(MaterialTheme.colorScheme.background),
+                .verticalScroll(scrollState)
+                .padding(paddingValues),
             onBack = {
                 if (backStack.size == 1) {
                     onNavigateUp()
@@ -128,9 +128,7 @@ fun SettingsScreen(
             entryProvider = entryProvider {
 
                 entry<SettingsScreens.Settings> {
-                    Column(
-                        modifier = Modifier.verticalScroll(scrollState)
-                    ) {
+                    Column {
                         AboutCard()
                         Spacer(Modifier.height(20.dp))
                         items.fastForEachIndexed { index, item ->
@@ -155,13 +153,9 @@ fun SettingsScreen(
                 entry<SettingsScreens.Phone> {
                     SettingsPhone()
                 }
-
-
-
                 entry<SettingsScreens.LookAndFeel> {
                     SettingsLookAndFeel()
                 }
-
                 entry<SettingsScreens.Behavior> {
                     SettingsBehavior()
                 }

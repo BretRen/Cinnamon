@@ -75,6 +75,7 @@ import com.sosauce.cinnamon.R
 import com.sosauce.cinnamon.data.contact_settings.ContactSettingsActions
 import com.sosauce.cinnamon.domain.model.CuteContact
 import com.sosauce.cinnamon.presentation.shared_components.ImagePickerCard
+import com.sosauce.cinnamon.presentation.shared_components.animations.AnimatedFab
 import com.sosauce.cinnamon.presentation.shared_components.buttons.CuteNavigationButtonSurface
 import com.sosauce.cinnamon.utils.SharedTransitionKeys
 import com.sosauce.cinnamon.utils.bouncySpec
@@ -138,20 +139,14 @@ fun SharedTransitionScope.EditContactScreen(
                         .navigationBarsPadding(),
                     onNavigateUp = onNavigateUp
                 )
-                FilledIconButton(
+                AnimatedFab(
                     onClick = {
                         onHandeEditContactAction(EditContactAction.SaveEditedContact(contact))
                         onNavigateUp()
                     },
-                    shape = MaterialShapes.Cookie9Sided.toShape(),
-                    modifier = Modifier.size(56.dp),
+                    icon = R.drawable.check,
                     enabled = contact != state.contact
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.check),
-                        contentDescription = null
-                    )
-                }
+                )
             }
         }
     ) { paddingValues ->
@@ -434,30 +429,28 @@ fun SharedTransitionScope.EditContactScreen(
 
             Spacer(Modifier.height(15.dp))
 
-            if (contact.details.note?.isNotEmpty() == true) {
-                Card(
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer
-                    )
-                ) {
-                    ContactEditTextField(
-                        modifier = Modifier.padding(10.dp),
-                        value = contact.details.note ?: "",
-                        label = R.string.notes,
-                        leadingIcon = R.drawable.note,
-                        onValueChange = {
-                            contact = contact.copy(
-                                details = contact.details.copy(note = it)
-                            )
-                        },
-                        onClickRemove = {
-                            contact = contact.copy(
-                                details = contact.details.copy(note = "")
-                            )
-                        }
-                    )
-                }
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                )
+            ) {
+                ContactEditTextField(
+                    modifier = Modifier.padding(10.dp),
+                    value = contact.details.note ?: "",
+                    label = R.string.notes,
+                    leadingIcon = R.drawable.note,
+                    onValueChange = {
+                        contact = contact.copy(
+                            details = contact.details.copy(note = it)
+                        )
+                    },
+                    onClickRemove = {
+                        contact = contact.copy(
+                            details = contact.details.copy(note = "")
+                        )
+                    }
+                )
             }
 
 
@@ -534,17 +527,6 @@ fun SharedTransitionScope.EditContactScreen(
                             details = contact.details.copy(
                                 websites = listOf(CuteContact.Website(""))
                             )
-                        )
-                    }
-                )
-
-                AddDataButton(
-                    isVisible = contact.details.note?.isEmpty() == true,
-                    icon = R.drawable.note,
-                    text = R.string.add_note,
-                    onClick = {
-                        contact = contact.copy(
-                            details = contact.details.copy(note = "")
                         )
                     }
                 )

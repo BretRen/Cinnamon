@@ -53,7 +53,8 @@ class ContactsRepository(
                 Contacts._ID,
                 Contacts.DISPLAY_NAME_PRIMARY,
                 Contacts.STARRED,
-                Contacts.PHOTO_THUMBNAIL_URI
+                Contacts.PHOTO_THUMBNAIL_URI,
+                ContactsContract.RawContacts.ACCOUNT_NAME
             ),
             extraSelection,
             extraSelectionArgs,
@@ -63,16 +64,22 @@ class ContactsRepository(
             val nameCol = cursor.getColumnIndexOrThrow(Contacts.DISPLAY_NAME_PRIMARY)
             val starCol = cursor.getColumnIndexOrThrow(Contacts.STARRED)
             val photoCol = cursor.getColumnIndexOrThrow(Contacts.PHOTO_THUMBNAIL_URI)
+            val accountTypeCol =
+                cursor.getColumnIndexOrThrow(ContactsContract.RawContacts.ACCOUNT_NAME)
 
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idCol)
+                val accountName = cursor.getString(accountTypeCol) ?: "Device"
+
+
                 contacts.add(
                     CuteContact(
                         id = id,
                         displayName = cursor.getString(nameCol) ?: "",
                         photo = cursor.getString(photoCol)?.toUri() ?: Uri.EMPTY,
                         isFavorite = cursor.getInt(starCol) == 1,
-                        details = CuteContactDetails(phoneNumbers = allPhones[id] ?: emptyList())
+                        details = CuteContactDetails(phoneNumbers = allPhones[id] ?: emptyList()),
+                        accountName = accountName
                     )
                 )
             }
@@ -643,17 +650,24 @@ class ContactsRepository(
 
     suspend fun deleteContacts(contactIds: List<Long>) = withContext(Dispatchers.IO) {
 
-        val ops = ArrayList<ContentProviderOperation>()
-
-        contactIds.fastForEach { id ->
-            ops.add(
-                ContentProviderOperation
-                    .newDelete(Contacts.CONTENT_URI)
-                    .withSelection("${Contacts._ID} = ?", arrayOf(id.toString()))
-                    .build()
-            )
+        try {
+            val ops = ArrayList<ContentProviderOperation>()
+            contactIds.fastForEach { id ->
+                ops.add(
+                    ContentProviderOperation
+                        .newDelete(ContactsContract.RawContacts.CONTENT_URI)
+                        .withSelection(
+                            "${ContactsContract.RawContacts._ID} = ?",
+                            arrayOf(id.toString())
+                        )
+                        .build()
+                )
+            }
+            context.contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
-        context.contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
+
     }
 
     suspend fun toggleFavorite(contacts: List<CuteContact>) = withContext(Dispatchers.IO) {

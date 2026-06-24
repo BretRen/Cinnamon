@@ -33,7 +33,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -61,7 +60,6 @@ fun SharedTransitionScope.ConversationTopBar(
     onHandleConversationActions: (ConversationActions) -> Unit
 ) {
 
-    val context = LocalContext.current
     var showMoreMenu by remember { mutableStateOf(false) }
     var showBlockDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -154,15 +152,13 @@ fun SharedTransitionScope.ConversationTopBar(
 
 
 
-    ToolbarSkeleton(
-        onClick = { onNavigate(Screen.AboutConversation(state.threadId)) }
-    ) {
+    ToolbarSkeleton {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
             IconButton(
-                onClick = onNavigateUp,
+                onClick = { onNavigate(Screen.Messages) },
                 shapes = IconButtonDefaults.shapes()
             ) {
                 Icon(

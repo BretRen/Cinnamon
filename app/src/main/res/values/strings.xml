@@ -144,6 +144,10 @@
     <string name="importing_contact_success">Contact imported successfully!</string>
     <string name="import_contact_from_vcf">Import contacts from a .vcf file</string>
     <string name="export_contact_to_vcf">Export contacts to a .vcf file</string>
+    <string name="enable_t9_dialing">Enable T9 dialing</string>
+    <string name="group_sub_calls">Group subsequent calls</string>
+    <string name="default_sim_phone">Default sim for phone functions.</string>
+    <string name="chat_color">Chat color</string>
 
 
     <plurals name="delete_msg">

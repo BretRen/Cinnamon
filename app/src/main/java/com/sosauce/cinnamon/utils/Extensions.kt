@@ -492,6 +492,10 @@ inline fun <E> Set<E>.copyMutate(block: MutableSet<E>.() -> Unit): Set<E> {
     return toMutableSet().apply(block)
 }
 
+inline fun <K, V> Map<K, V>.copyMutate(block: MutableMap<K, V>.() -> Unit): Map<K, V> {
+    return toMutableMap().apply(block)
+}
+
 fun String.formateEventDate(): String {
     return when {
         startsWith("--") -> {
@@ -526,11 +530,6 @@ fun String.formateEventDate(): String {
 //    return 0
 //}
 
-fun CuteRoundedCornerShape(
-    top: Dp,
-    bottom: Dp
-): Shape =
-    RoundedCornerShape(topStart = top, topEnd = top, bottomEnd = bottom, bottomStart = bottom)
 
 @Composable
 fun rememberFocusRequester(): FocusRequester {
@@ -700,7 +699,7 @@ fun Uri.getFileName(context: Context): String? {
     return result
 }
 
-fun Context.toLocalizedTab(tab: String): String {
+fun Context.toLocalizedTab(tab: Int): String {
     return when (tab) {
         DefaultTabOption.MESSAGES -> getString(R.string.messages)
         DefaultTabOption.CONTACTS -> getString(R.string.contacts)
@@ -710,7 +709,7 @@ fun Context.toLocalizedTab(tab: String): String {
     }
 }
 
-fun String.tabToScreen(): Screen {
+fun Int.tabToScreen(): Screen {
     return when (this) {
         DefaultTabOption.MESSAGES -> Screen.Messages
         DefaultTabOption.CONTACTS -> Screen.Contacts
