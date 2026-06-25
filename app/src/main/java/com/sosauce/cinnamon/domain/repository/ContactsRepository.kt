@@ -39,6 +39,28 @@ class ContactsRepository(
             fetchContactDetails(contactId)
         }.flowOn(Dispatchers.IO)
 
+    private fun fetchAccountNames(): Map<Long, String> {
+        val map = mutableMapOf<Long, String>()
+        context.contentResolver.query(
+            ContactsContract.RawContacts.CONTENT_URI,
+            arrayOf(
+                ContactsContract.RawContacts.CONTACT_ID,
+                ContactsContract.RawContacts.ACCOUNT_NAME
+            ),
+            null, null, null
+        )?.use { cursor ->
+            val idCol = cursor.getColumnIndexOrThrow(ContactsContract.RawContacts.CONTACT_ID)
+            val nameCol = cursor.getColumnIndexOrThrow(ContactsContract.RawContacts.ACCOUNT_NAME)
+            while (cursor.moveToNext()) {
+                val contactId = cursor.getLong(idCol)
+                if (!map.containsKey(contactId)) {
+                    map[contactId] = cursor.getString(nameCol) ?: "Device"
+                }
+            }
+        }
+        return map
+    }
+
     private fun fetchContacts(
         extraSelection: String?,
         extraSelectionArgs: Array<String>,
@@ -47,14 +69,15 @@ class ContactsRepository(
 
         val allPhones = fetchAllPhoneNumbers()
 
+        val accountNames = fetchAccountNames()
+
         context.contentResolver.query(
             Contacts.CONTENT_URI,
             arrayOf(
                 Contacts._ID,
                 Contacts.DISPLAY_NAME_PRIMARY,
                 Contacts.STARRED,
-                Contacts.PHOTO_THUMBNAIL_URI,
-                ContactsContract.RawContacts.ACCOUNT_NAME
+                Contacts.PHOTO_THUMBNAIL_URI
             ),
             extraSelection,
             extraSelectionArgs,
@@ -64,13 +87,10 @@ class ContactsRepository(
             val nameCol = cursor.getColumnIndexOrThrow(Contacts.DISPLAY_NAME_PRIMARY)
             val starCol = cursor.getColumnIndexOrThrow(Contacts.STARRED)
             val photoCol = cursor.getColumnIndexOrThrow(Contacts.PHOTO_THUMBNAIL_URI)
-            val accountTypeCol =
-                cursor.getColumnIndexOrThrow(ContactsContract.RawContacts.ACCOUNT_NAME)
 
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idCol)
-                val accountName = cursor.getString(accountTypeCol) ?: "Device"
-
+                val accountName = accountNames[id] ?: "Device"
 
                 contacts.add(
                     CuteContact(
